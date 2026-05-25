@@ -2,8 +2,8 @@
   "package": "@przeprogramowani/10x-cli",
   "version": "1.6.1",
   "manifestVersion": 2,
-  "lastApplied": "2026-05-24T16:57:56.348Z",
-  "lessonId": "m1l4",
+  "lastApplied": "2026-05-25T05:35:14.987Z",
+  "lessonId": "m1l5",
   "course": "10xdevs3",
   "tool": "codex",
   "files": {
@@ -71,6 +71,12 @@
       },
       "10x-lesson": {
         "files": [
+          "SKILL.md"
+        ]
+      },
+      "10x-infra-research": {
+        "files": [
+          "references/agent-friendly-criteria.md",
           "SKILL.md"
         ]
       }
