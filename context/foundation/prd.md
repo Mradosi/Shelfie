@@ -68,7 +68,7 @@ They reach for the product when they need to decide what to use, combine, pause,
 
   > Socrates: Counter-argument considered: none. Resolution: kept as written because owned-product inventory is core to the product's guidance model.
 
-* FR-004: User can add products by product search, barcode lookup, manual entry, or AI-assisted image/photo extraction, with fallback correction flows when product data is incomplete. Priority: must-have
+* FR-004: User can add products by product search, barcode lookup, manual entry, or AI-assisted image/photo extraction, with fallback correction flows when product data is incomplete. The flow must follow a cascading data retrieval structure: querying the internal database first, falling back to Open Beauty Facts API, then offering parallel options of AI web search or photo extraction, and finally manual entry. Priority: must-have
 
   > Socrates: Counter-argument considered: supporting multiple product-input methods broadens scope. Resolution: kept because product discovery and reduced manual entry are now part of the core UX value.
 
@@ -88,11 +88,11 @@ They reach for the product when they need to decide what to use, combine, pause,
 
   > Socrates: Counter-argument considered: none. Resolution: kept as written because routine generation is central to the MVP's first value moment.
 
-* FR-009: User can view dynamically generated morning/evening and weekly skincare routines based on configured product schedules. Priority: must-have
+* FR-009: User can view dynamically generated morning/evening and weekly skincare routines based on configured product schedules. The system must support a "Use only today" option to allow users to add temporary, one-off products to the current day's routine without altering their permanent weekly schedule. Priority: must-have
 
   > Socrates: Counter-argument considered: none. Resolution: clarified the requirement because the product vision assumes product-based scheduling with generated daily and weekly routine views.
 
-* FR-010: User can receive AI explanations about product roles, missing routine elements, or possible conflicts. Priority: must-have
+* FR-010: User can receive AI explanations about product roles, missing routine elements, or possible conflicts. Every product must be automatically assigned deterministic "Routine roles" (e.g., cleanser, serum, spf) during creation, which can be modified by the user and used by the system to structure routines and identify missing steps. Priority: must-have
 
   > Socrates: Counter-argument considered: none. Resolution: kept as written because explanation is part of how the product avoids feeling like generic advice.
 
@@ -106,7 +106,7 @@ They reach for the product when they need to decide what to use, combine, pause,
 
 * FR-013: User can generate a temporary short-term routine for situations like cosmetic procedures or skin irritation. Priority: nice-to-have
 
-  > Socrates: Counter-argument considered: temporary routines risk adding too much state and timing complexity. Resolution: demoted from MVP-required to optional; if included, the scope stays limited to a short-term routine with a defined active period and return to the base routine instead of complex overlay logic.
+  > Socrates: Counter-argument considered: temporary routines risk adding too much state and timing complexity. Resolution: demoted from MVP-required to optional; if included, the scope stays limited to a short-term routine with a defined active period and return to the base routine instead of complex overlay logic. On the MVP stage, this capability will be primarily addressed through the "Use only today" feature (see FR-009).
 
 * FR-014: User can review the temporary routine before applying it for a defined period. Priority: nice-to-have
 
@@ -135,6 +135,8 @@ They reach for the product when they need to decide what to use, combine, pause,
 * The MVP gracefully handles incomplete or uncertain AI recognition by allowing manual correction and fallback flows.
 * User product shelves, routines, and feedback persist reliably between sessions.
 * Basic accessibility standards are respected for forms, navigation, readable contrast, and mobile interaction.
+* The system must cache AI-generated personalized product interpretations (fit score, compatibility, warnings, personal notes) per user and product pair, generating them only once and avoiding regeneration on every product view unless the user's skin profile changes.
+* The system must record data provenance for ingredient lists, specifically tracking the source (`inci_source`) and assigning a confidence level (`inci_confidence`), such as high for Open Beauty Facts and photo extraction, and medium for AI web search, to support appropriate user disclaimers.
 
 ## Business Logic
 
@@ -142,7 +144,7 @@ Shelfie analyzes the user's skin context, owned products, routine structure, and
 
 The system combines structured product metadata and deterministic ingredient-group classification with AI-generated personalized interpretation.
 
-The system generates routines from products available on the user's shelf while allowing users to manage owned products independently from routine configuration.
+The system generates routines from products available on the user's shelf while allowing users to manage owned products independently from routine configuration. To avoid complex overlay engines, the MVP routine schedule is stored using a simplified structure (e.g., a flat JSON model mapping days to morning/evening product roles) rather than a highly normalized day-by-day relational model.
 
 The rule consumes user-facing inputs including skin type, sensitivity, skincare goals, owned products, ingredient groups, routine structure, and optional feedback such as irritation or dryness.
 
