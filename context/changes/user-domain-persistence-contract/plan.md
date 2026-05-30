@@ -226,19 +226,19 @@ Migracja jest w pełni addytywna, bo projekt nie ma jeszcze istniejących danych
 
 #### Automated
 
-- [ ] 1.1 Migracje i polityki aplikują się czysto na lokalnym stacku
+- [x] 1.1 Migracje i polityki aplikują się czysto na lokalnym stacku
 
 #### Manual
 
-- [ ] 1.2 W Supabase Studio widać nowe tabele domenowe i przypisane do nich polityki RLS
-- [ ] 1.3 Dla tabel user-owned nie istnieje przypadkowy world-readable access dla niezwiązanego użytkownika
+- [x] 1.2 W Supabase Studio widać nowe tabele domenowe i przypisane do nich polityki RLS
+- [x] 1.3 Dla tabel user-owned nie istnieje przypadkowy world-readable access dla niezwiązanego użytkownika
 
 ### Phase 2: Typed server contract
 
 #### Automated
 
-- [ ] 2.1 Astro typy odświeżają się bez błędów dla nowych route'ów i helperów
-- [ ] 2.2 Lint przechodzi dla nowej warstwy domenowej i route'ów
+- [x] 2.1 Astro typy odświeżają się bez błędów dla nowych route'ów i helperów
+- [x] 2.2 Lint przechodzi dla nowej warstwy domenowej i route'ów
 
 #### Manual
 

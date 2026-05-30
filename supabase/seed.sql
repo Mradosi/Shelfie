@@ -1,0 +1,2 @@
+-- Intentionally blank.
+-- `supabase db reset` expects this file because `supabase/config.toml` points to `./seed.sql`.
