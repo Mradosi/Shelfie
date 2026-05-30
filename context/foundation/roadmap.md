@@ -3,7 +3,7 @@ project: Shelfie
 version: 1
 status: draft
 created: 2026-05-28
-updated: 2026-05-28
+updated: 2026-05-29
 prd_version: 1
 main_goal: market-feedback
 top_blocker: decisions
@@ -31,8 +31,8 @@ Shelfie ma pomóc użytkownikowi uporządkować pielęgnację na bazie jego real
 |---|---|---|---|---|---|
 | F-01 | user-domain-persistence-contract | (foundation) minimal persistence contract for skin profile, shelf items, product schedules, and routine configuration is in place | — | Business Logic, Access Control, Non-Functional Requirements (privacy, persistence) | ready |
 | F-02 | shared-product-provenance-contract | (foundation) shared product and provenance contract is in place for confirmed product reuse | — | FR-004, Non-Functional Requirements (inci_source, inci_confidence) | ready |
-| S-01 | first-profile-and-shelf-item | user can sign in, provide skin context, and save the first product to their shelf | F-01 | US-01, FR-001, FR-002, FR-003 | proposed |
-| S-02 | confirmed-product-intake | user can add a product from shared sources or AI/manual fallback and confirm it before save | F-01, F-02 | US-01, FR-003, FR-004, FR-005, FR-016, FR-017 | proposed |
+| S-01 | first-skin-profile | user can sign in, provide skin context, and finish onboarding with an empty shelf ready for products | F-01 | US-01, FR-001, FR-002 | proposed |
+| S-02 | first-product-intake | user can add the first product to their shelf from shared sources or AI/manual fallback and confirm it before save | F-01, F-02, S-01 | US-01, FR-003, FR-004, FR-005, FR-016, FR-017 | proposed |
 | S-03 | first-personalized-routine | user can get the first personalized base routine configuration from owned products and skin context | S-01, S-02 | US-01, FR-002, FR-008, FR-010 | blocked |
 | S-04 | todays-routine-consumption | user can view today's AM/PM routine generated from product schedules and make lightweight one-off usage edits from routine screens | S-03 | US-01, FR-009 | proposed |
 | S-05 | routine-warnings-and-guidance | user can review soft warnings, product roles, and missing-step guidance while adjusting routine usage | S-04 | US-01, FR-010, FR-011 | proposed |
@@ -45,12 +45,12 @@ Navigation aid — groups items that share a Prerequisites chain. Canonical orde
 
 | Stream | Theme | Chain | Note |
 |---|---|---|---|
-| A | First value path | `F-01` → `S-01` → `S-03` → `S-04` → `S-05` / `S-06` / `S-07` | This is the main market-feedback path; `S-03` also depends on Stream B's `S-02`, and `S-04` is the first daily-consumption checkpoint. |
+| A | First value path | `F-01` → `S-01` → `S-02` → `S-03` → `S-04` → `S-05` / `S-06` / `S-07` | This is the main market-feedback path; `S-04` is the first daily-consumption checkpoint after profile, intake, and base routine logic land. |
 | B | Product intake confidence | `F-02` → `S-02` | This keeps trusted product intake separate and feeds the north-star slice without front-loading the whole backend. |
 
 ## Baseline
 
-What's already in place in the codebase as of `2026-05-28` (auto-researched + user-confirmed).
+What's already in place in the codebase as of `2026-05-29` (auto-researched + user-confirmed).
 Foundations below assume these are present and do NOT re-scaffold them.
 
 - **Frontend:** present — Astro 6 + React 19 islands + Tailwind 4 are wired in the app shell and auth UI.
@@ -64,7 +64,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 
 ### F-01: User domain persistence contract
 
-- **Outcome:** (foundation) A minimal persistence contract exists for per-user skin context, shelf items, product schedules, and routine configuration, with ownership boundaries that match the authenticated single-user model.
+- **Outcome:** (foundation) A minimal persistence contract exists for per-user skin context, shelf items, product schedules, and routine configuration, with ownership boundaries that match the authenticated single-user model. This is explicitly a shared domain contract for downstream slices, not a full backend buildout.
 - **Change ID:** user-domain-persistence-contract
 - **PRD refs:** Business Logic; Access Control; Non-Functional Requirements (privacy, persistence between sessions)
 - **Unlocks:** S-01, S-02, S-03, S-04; verification path for per-user persistence and editability
@@ -72,7 +72,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Parallel with:** F-02
 - **Blockers:** —
 - **Unknowns:** —
-- **Risk:** If this foundation grows into a full routine engine or a full data layer redesign, the roadmap loses the fast path to first user value.
+- **Risk:** This foundation must stop at the minimum shared contract needed by `S-01` through `S-04`; if it grows into a full backend, full routine engine, or speculative data-layer redesign, the roadmap loses the fast path to first user value.
 - **Status:** ready
 
 ### F-02: Shared product provenance contract
@@ -90,28 +90,28 @@ Foundations below assume these are present and do NOT re-scaffold them.
 
 ## Slices
 
-### S-01: First profile and shelf item
+### S-01: First skin profile
 
-- **Outcome:** user can sign in, provide basic skin context, and persist the first product on their shelf.
-- **Change ID:** first-profile-and-shelf-item
-- **PRD refs:** US-01, FR-001, FR-002, FR-003
+- **Outcome:** user can sign in, provide basic skin context, and finish onboarding with a saved profile and an empty shelf ready for product intake.
+- **Change ID:** first-skin-profile
+- **PRD refs:** US-01, FR-001, FR-002
 - **Prerequisites:** F-01
 - **Parallel with:** F-02
 - **Blockers:** —
 - **Unknowns:** —
-- **Risk:** If this slice tries to include every product-input mode at once, onboarding becomes too wide before the user has even stored one usable product.
+- **Risk:** If this slice starts carrying product intake responsibilities, the onboarding boundary stops being clean and `S-02` loses its role as the first true product-domain slice.
 - **Status:** proposed
 
-### S-02: Confirmed product intake
+### S-02: First product intake
 
-- **Outcome:** user can add a product via shared source lookup, AI/photo assistance, or manual fallback, then confirm or correct it before save.
-- **Change ID:** confirmed-product-intake
+- **Outcome:** user can add the first product to their shelf via shared source lookup, AI/photo assistance, barcode lookup, or manual fallback, then confirm or correct it before save.
+- **Change ID:** first-product-intake
 - **PRD refs:** US-01, FR-003, FR-004, FR-005, FR-016, FR-017
-- **Prerequisites:** F-01, F-02
-- **Parallel with:** S-01
+- **Prerequisites:** F-01, F-02, S-01
+- **Parallel with:** —
 - **Blockers:** —
 - **Unknowns:** —
-- **Risk:** This slice has to stay focused on trusted intake; if it expands into full routine logic, the roadmap collapses two risks into one oversized change.
+- **Risk:** This slice has to stay focused on trusted intake and the first persisted shelf item; if it expands into full routine logic, the roadmap collapses two risks into one oversized change.
 - **Status:** proposed
 
 ### S-03: First personalized routine
@@ -182,8 +182,8 @@ Foundations below assume these are present and do NOT re-scaffold them.
 |---|---|---|---|---|
 | F-01 | user-domain-persistence-contract | Define minimal user-domain persistence contract | yes | Smallest cross-cutting enabler for profile, shelf, and routine persistence. |
 | F-02 | shared-product-provenance-contract | Define shared product provenance contract | yes | Can run in parallel with F-01; keep scope to reusable product intake contracts. |
-| S-01 | first-profile-and-shelf-item | Persist first skin profile and shelf item | no | Wait for F-01. |
-| S-02 | confirmed-product-intake | Ship confirmed product intake with fallback flow | no | Wait for F-01 and F-02. |
+| S-01 | first-skin-profile | Save initial skin profile and empty-shelf onboarding state | no | Wait for F-01. |
+| S-02 | first-product-intake | Ship first confirmed product intake flow onto the shelf | no | Wait for F-01, F-02, and S-01. |
 | S-03 | first-personalized-routine | Generate first personalized base routine configuration from owned products | no | Blocked by US-01 acceptance criteria and by S-01/S-02 completion. |
 | S-04 | todays-routine-consumption | Ship today's generated AM/PM routine consumption flow | no | Wait for S-03; this is the first daily-use slice. |
 | S-05 | routine-warnings-and-guidance | Add soft routine warnings and guidance during routine use | no | Wait for S-04. |
