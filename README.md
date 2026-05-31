@@ -23,8 +23,8 @@ Shelfie is an Astro app for building a private skincare workspace around a signe
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/przeprogramowani/10x-astro-starter.git
-cd 10x-astro-starter
+git clone <your-shelfie-repo-url>
+cd Shelfie
 ```
 
 2. Install dependencies:
