@@ -1,10 +1,10 @@
 ---
 change_id: user-domain-persistence-contract
 title: User domain persistence contract
-status: impl_reviewed
+status: archived
 created: 2026-05-30
 updated: 2026-05-31
-archived_at: null
+archived_at: 2026-05-31T07:41:55Z
 ---
 
 ## Notes

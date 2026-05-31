@@ -3,7 +3,7 @@ project: Shelfie
 version: 1
 status: draft
 created: 2026-05-28
-updated: 2026-05-29
+updated: 2026-05-31
 prd_version: 1
 main_goal: market-feedback
 top_blocker: decisions
@@ -29,7 +29,7 @@ Shelfie ma pomóc użytkownikowi uporządkować pielęgnację na bazie jego real
 
 | ID | Change ID | Outcome (user can …) | Prerequisites | PRD refs | Status |
 |---|---|---|---|---|---|
-| F-01 | user-domain-persistence-contract | (foundation) minimal persistence contract for skin profile, shelf items, product schedules, and routine configuration is in place | — | Business Logic, Access Control, Non-Functional Requirements (privacy, persistence) | ready |
+| F-01 | user-domain-persistence-contract | (foundation) minimal persistence contract for skin profile, shelf items, product schedules, and routine configuration is in place | — | Business Logic, Access Control, Non-Functional Requirements (privacy, persistence) | done |
 | F-02 | shared-product-provenance-contract | (foundation) shared product and provenance contract is in place for confirmed product reuse | — | FR-004, Non-Functional Requirements (inci_source, inci_confidence) | ready |
 | S-01 | first-skin-profile | user can sign in, provide skin context, and finish onboarding with an empty shelf ready for products | F-01 | US-01, FR-001, FR-002 | proposed |
 | S-02 | first-product-intake | user can add the first product to their shelf from shared sources or AI/manual fallback and confirm it before save | F-01, F-02, S-01 | US-01, FR-003, FR-004, FR-005, FR-016, FR-017 | proposed |
@@ -73,7 +73,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Blockers:** —
 - **Unknowns:** —
 - **Risk:** This foundation must stop at the minimum shared contract needed by `S-01` through `S-04`; if it grows into a full backend, full routine engine, or speculative data-layer redesign, the roadmap loses the fast path to first user value.
-- **Status:** ready
+- **Status:** done
 
 ### F-02: Shared product provenance contract
 
@@ -209,3 +209,5 @@ Foundations below assume these are present and do NOT re-scaffold them.
 ## Done
 
 (Empty on first generation. `/10x-archive` appends an entry here — and flips that item's `Status` to `done` — when a change whose `Change ID` matches the item is archived.)
+
+- **F-01: (foundation) A minimal persistence contract exists for per-user skin context, shelf items, product schedules, and routine configuration, with ownership boundaries that match the authenticated single-user model. This is explicitly a shared domain contract for downstream slices, not a full backend buildout.** — Archived 2026-05-31 → `context/archive/2026-05-30-user-domain-persistence-contract/`. Lesson: —.
