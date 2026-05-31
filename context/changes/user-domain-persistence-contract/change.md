@@ -1,7 +1,7 @@
 ---
 change_id: user-domain-persistence-contract
 title: User domain persistence contract
-status: implementing
+status: implemented
 created: 2026-05-30
 updated: 2026-05-31
 archived_at: null
