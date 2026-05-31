@@ -251,9 +251,9 @@ Migracja jest w pełni addytywna, bo projekt nie ma jeszcze istniejących danych
 
 #### Automated
 
-- [x] 3.1 Repo przechodzi końcową sekwencję weryfikacyjną
+- [x] 3.1 Repo przechodzi końcową sekwencję weryfikacyjną — 814f449
 
 #### Manual
 
-- [x] 3.2 Po wylogowaniu i ponownym zalogowaniu zapisany profil nadal istnieje i jest odczytywany z bazy
-- [x] 3.3 README prowadzi przez lokalną weryfikację bez sprzeczności ze stanem repo
+- [x] 3.2 Po wylogowaniu i ponownym zalogowaniu zapisany profil nadal istnieje i jest odczytywany z bazy — 814f449
+- [x] 3.3 README prowadzi przez lokalną weryfikację bez sprzeczności ze stanem repo — 814f449
