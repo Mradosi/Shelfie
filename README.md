@@ -1,8 +1,8 @@
-# 10x Astro Starter
+# Shelfie
 
 ![](./public/template.png)
 
-A modern, opinionated starter template for building fast, accessible web applications.
+Shelfie is an Astro app for building a private skincare workspace around a signed-in user's skin context, shelf, and routine data. The current slice includes Supabase auth plus the first persisted user-domain contract for the protected dashboard smoke flow.
 
 ## Tech Stack
 
@@ -41,7 +41,13 @@ npm install
 cp .env.example .dev.vars
 ```
 
-5. Run the development server:
+5. Apply the local database contract and seed/reset hooks:
+
+```bash
+npx supabase db reset
+```
+
+6. Run the development server:
 
 ```bash
 npm run dev
@@ -72,7 +78,7 @@ npm run dev
 
 ## Supabase Configuration
 
-This project uses [Supabase](https://supabase.com/) for authentication. Environment variables are declared via Astro's `astro:env` schema and are treated as **server-only secrets** — they are never exposed to the client.
+This project uses [Supabase](https://supabase.com/) for authentication and the first persisted user-domain tables. Environment variables are declared via Astro's `astro:env` schema and are treated as **server-only secrets** — they are never exposed to the client.
 
 ### First-time setup (local, no cloud project needed)
 
@@ -103,7 +109,15 @@ SUPABASE_URL=http://127.0.0.1:54321
 SUPABASE_KEY=<anon key from CLI output>
 ```
 
-5. To stop the stack when done:
+5. Apply the repo migrations and seed/reset contract:
+
+```bash
+npx supabase db reset
+```
+
+This applies the domain tables in `supabase/migrations/` and the seed/reset compatibility file in `supabase/seed.sql`.
+
+6. To stop the stack when done:
 
 ```bash
 npx supabase stop
@@ -111,7 +125,7 @@ npx supabase stop
 
 The local Studio UI is available at `http://localhost:54323`.
 
-No database tables or migrations are required — this project uses Supabase Auth's built-in `auth.users` table only.
+Local verification now depends on the domain schema being present. In addition to `auth.users`, the repo creates persisted user-domain tables for the dashboard smoke test, including profile ownership enforced by RLS.
 
 ### Using a cloud Supabase project instead
 
@@ -147,6 +161,24 @@ Users can then sign in immediately after sign-up without clicking a confirmation
 | `/dashboard`          | Example protected page (redirects to `/auth/signin` if unauthenticated) |
 
 Route protection is handled in `src/middleware.ts`. Add paths to the `PROTECTED_ROUTES` array there to require authentication.
+
+### Local verification flow
+
+After `npx supabase start`, `npx supabase db reset`, and `npm run dev`, verify the current slice like this:
+
+1. Sign up or sign in and open `/dashboard`.
+2. Save a sample skin profile.
+3. Refresh `/dashboard` and confirm the persisted values are rendered again.
+4. Sign out, sign back in, and confirm the same profile still loads from the database.
+5. Open `/dashboard` without a session and confirm the redirect to `/auth/signin`.
+
+Before handing off changes, run the same repo verification sequence enforced in CI:
+
+```bash
+npx astro sync
+npm run lint
+npm run build
+```
 
 ## Deployment
 
