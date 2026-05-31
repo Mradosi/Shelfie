@@ -239,21 +239,21 @@ Migracja jest w pełni addytywna, bo projekt nie ma jeszcze istniejących danych
 
 #### Automated
 
-- [x] 2.1 Astro typy odświeżają się bez błędów dla nowych route'ów i helperów
-- [x] 2.2 Lint przechodzi dla nowej warstwy domenowej i route'ów
+- [x] 2.1 Astro typy odświeżają się bez błędów dla nowych route'ów i helperów — 7b8da36
+- [x] 2.2 Lint przechodzi dla nowej warstwy domenowej i route'ów — 7b8da36
 
 #### Manual
 
-- [x] 2.3 Zalogowany użytkownik może zapisać profil skóry z dashboardu i zobaczyć te same dane po odświeżeniu strony
-- [x] 2.4 Niezalogowany użytkownik nadal jest przekierowywany z `/dashboard` do `/auth/signin`
+- [x] 2.3 Zalogowany użytkownik może zapisać profil skóry z dashboardu i zobaczyć te same dane po odświeżeniu strony — 7b8da36
+- [x] 2.4 Niezalogowany użytkownik nadal jest przekierowywany z `/dashboard` do `/auth/signin` — 7b8da36
 
 ### Phase 3: Verification surface and developer handoff
 
 #### Automated
 
-- [ ] 3.1 Repo przechodzi końcową sekwencję weryfikacyjną
+- [x] 3.1 Repo przechodzi końcową sekwencję weryfikacyjną
 
 #### Manual
 
-- [ ] 3.2 Po wylogowaniu i ponownym zalogowaniu zapisany profil nadal istnieje i jest odczytywany z bazy
-- [ ] 3.3 README prowadzi przez lokalną weryfikację bez sprzeczności ze stanem repo
+- [x] 3.2 Po wylogowaniu i ponownym zalogowaniu zapisany profil nadal istnieje i jest odczytywany z bazy
+- [x] 3.3 README prowadzi przez lokalną weryfikację bez sprzeczności ze stanem repo
