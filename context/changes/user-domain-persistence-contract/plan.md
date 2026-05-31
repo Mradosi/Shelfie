@@ -16,7 +16,7 @@ Notatki architektoniczne dobrze rozdzielają shared product catalog, osobisty sh
 
 ## Desired End State
 
-Po zakończeniu tego planu repo ma zawierać działającą migrację Supabase, która tworzy minimalny kontrakt danych dla domeny użytkownika: stub shared product identity, per-user skin profile, per-user shelf membership i per-user base routine configuration. Wszystkie user-owned tabele są chronione przez RLS oparte o `auth.uid()`, a aplikacja ma cienką, typowaną warstwę serwerową i chroniony smoke flow, który pozwala zapisać i ponownie odczytać co najmniej profil skóry zalogowanego użytkownika.
+Po zakończeniu tego planu repo ma zawierać działającą migrację Supabase, która tworzy minimalny kontrakt danych dla domeny użytkownika: stub shared product identity, per-user skin profile, per-user shelf membership i per-user base routine configuration. Profil skóry ma przechowywać `skin_type`, strukturalne `skin_aspects`, swobodne `concerns` i `goals` oraz opcjonalne `notes`, zamiast mieszać cały stan skóry w pojedynczej liście concernów. Wszystkie user-owned tabele są chronione przez RLS oparte o `auth.uid()`, a aplikacja ma cienką, typowaną warstwę serwerową i chroniony smoke flow, który pozwala zapisać i ponownie odczytać ten kontrakt dla zalogowanego użytkownika.
 
 Weryfikacja końca stanu docelowego:
 - lokalny reset bazy i migracje przechodzą czysto;
@@ -48,6 +48,8 @@ Model danych zostaje celowo zawężony względem szerzej opisanej wizji w `archi
 
 Nie tworzymy `public.users` ani nie duplikujemy emaila z `auth.users`; `auth.users` pozostaje jedynym źródłem tożsamości, a `user_profiles` przechowuje tylko pola domenowe.
 
+`user_profiles` nie powinno już mieć osobnego pola `sensitivity`. W tym slice'ie `sensitivity` staje się jednym z obowiązkowych wymiarów `skin_aspects`, obok `pigmentation`, `firmness`, `breakouts` i `texture`. `skin_aspects` jest kontraktem strukturalnym, natomiast `concerns` i `goals` pozostają na razie swobodnymi `text[]`, bo ich słowniki tagów należą do kolejnych slice'ów.
+
 Stub `public.products` w `F-01` ma być wyłącznie kotwicą referencyjną dla shelf i future shared product contract. Nie należy dodawać tu shared metadata wykraczających poza techniczną tożsamość i timestamps, bo wtedy `F-01` zacznie konsumować zakres `F-02`.
 
 `public.products` mimo shared charakteru musi mieć jawnie określone zasady dostępu już w `F-01`: tabela jest read-only dla zwykłego runtime aplikacji, a ewentualny odczyt ma być dostępny wyłącznie dla zalogowanych użytkowników potrzebujących rozwiązać referencje shelf -> product. `insert/update/delete` do `products` nie są częścią `F-01` i nie mogą być wystawione przez zwykłe app route'y; jeśli jakiś rekord testowy będzie potrzebny lokalnie, powinien powstać przez migrację, seed lub manualny trusted SQL flow.
@@ -68,7 +70,7 @@ Ta faza ustanawia minimalny kontrakt danych w Supabase/Postgres oraz zabezpiecza
 
 **Intent**: Dodać pierwszą domenową migrację tworzącą minimalne tabele i polityki potrzebne dla `F-01`, przy jednoczesnym utrzymaniu małej powierzchni odpowiedzialności tej fundacji.
 
-**Contract**: Migracja tworzy `public.products` jako shared identity stub, `public.user_profiles` jako relację 1:1 do `auth.users`, `public.user_shelf_items` jako per-user shelf membership oraz `public.user_routine_configs` jako per-user bazową konfigurację rutyny z `schedule jsonb`. `user_profiles.user_id` i `user_routine_configs.user_id` muszą być unikalne; `user_shelf_items` musi mieć stabilny techniczny klucz główny `id` oraz wymuszać unikalność `(user_id, product_id)`, tak aby `schedule` mogło referować konkretne rekordy przez `shelf_item_id`; wszystkie FKs do `auth.users` mają kasować dane kaskadowo przy usunięciu usera. Kontrakt tej fazy zakłada też, że write path usuwający shelf item nie może zostawić dangling references w `user_routine_configs.schedule`, mimo że sama relacja jest zapisana w JSONB. RLS ma być włączony na wszystkich tabelach user-owned i oparty o `auth.uid()`. `products` jako tabela shared ma dostać jawny access contract: odczyt dla authenticated users, brak app-level `insert/update/delete` w `F-01`, brak service-role write path w zwykłym runtime. Tabela `products` ma pozostać minimalna i nie przejmować jeszcze shared metadata z `F-02`.
+**Contract**: Migracja tworzy `public.products` jako shared identity stub, `public.user_profiles` jako relację 1:1 do `auth.users`, `public.user_shelf_items` jako per-user shelf membership oraz `public.user_routine_configs` jako per-user bazową konfigurację rutyny z `schedule jsonb`. `user_profiles` ma przechowywać `skin_type text`, `skin_aspects jsonb`, `concerns text[]`, `goals text[]` i opcjonalne `notes text`; `skin_aspects` musi mieć stabilny, walidowany shape z kluczami `sensitivity`, `pigmentation`, `firmness`, `breakouts` i `texture`, a wartości dla każdego klucza są ograniczone do poziomów nasilenia uzgodnionych przez aplikację. `user_profiles.user_id` i `user_routine_configs.user_id` muszą być unikalne; `user_shelf_items` musi mieć stabilny techniczny klucz główny `id` oraz wymuszać unikalność `(user_id, product_id)`, tak aby `schedule` mogło referować konkretne rekordy przez `shelf_item_id`; wszystkie FKs do `auth.users` mają kasować dane kaskadowo przy usunięciu usera. Kontrakt tej fazy zakłada też, że write path usuwający shelf item nie może zostawić dangling references w `user_routine_configs.schedule`, mimo że sama relacja jest zapisana w JSONB. RLS ma być włączony na wszystkich tabelach user-owned i oparty o `auth.uid()`. `products` jako tabela shared ma dostać jawny access contract: odczyt dla authenticated users, brak app-level `insert/update/delete` w `F-01`, brak service-role write path w zwykłym runtime. Tabela `products` ma pozostać minimalna i nie przejmować jeszcze shared metadata z `F-02`.
 
 #### 2. Seed/reset compatibility
 
@@ -107,7 +109,7 @@ Ta faza przekłada kontrakt bazy na cienką, typowaną warstwę po stronie aplik
 
 **Intent**: Skupić operacje na domenie usera w jednym module, żeby późniejsze slice'y nie rozpraszały raw nazw tabel i kształtów payloadów po route'ach oraz komponentach.
 
-**Contract**: Moduł eksportuje typy i helpery dla co najmniej `user_profiles`, `user_shelf_items` i `user_routine_configs`. Funkcje przyjmują istniejącego request-scoped Supabase clienta lub jawny `userId`, opierają się na `src/lib/supabase.ts`, nie używają service-role i nie przyjmują cross-user identifiers z zewnątrz. To ten moduł ma być jedynym miejscem mapującym `schedule` na referencje `shelf_item_id` i pilnującym, że operacje na shelf nie zostawiają osieroconych wpisów w routine config.
+**Contract**: Moduł eksportuje typy i helpery dla co najmniej `user_profiles`, `user_shelf_items` i `user_routine_configs`. Dla profilu użytkownika definiuje jawny shape `skin_type`, `skin_aspects`, `concerns`, `goals` i `notes`, z app-level typami dla aspektów skóry i ich poziomów. Funkcje przyjmują istniejącego request-scoped Supabase clienta lub jawny `userId`, opierają się na `src/lib/supabase.ts`, nie używają service-role i nie przyjmują cross-user identifiers z zewnątrz. To ten moduł ma być jedynym miejscem mapującym `schedule` na referencje `shelf_item_id` i pilnującym, że operacje na shelf nie zostawiają osieroconych wpisów w routine config.
 
 #### 2. Profile write path
 
@@ -115,7 +117,7 @@ Ta faza przekłada kontrakt bazy na cienką, typowaną warstwę po stronie aplik
 
 **Intent**: Udostępnić minimalny, chroniony write path do zapisu profilu skóry, który pozwoli zweryfikować kontrakt end-to-end bez budowania pełnego onboardingu.
 
-**Contract**: Route obsługuje zapis wyłącznie dla aktualnie zalogowanego użytkownika, waliduje i mapuje pola należące do `user_profiles`, korzysta z helpera domenowego i utrzymuje wzorzec redirect/error znany z obecnych auth route'ów. Payload nie może zawierać arbitralnego `user_id`; ownership wynika z sesji.
+**Contract**: Route obsługuje zapis wyłącznie dla aktualnie zalogowanego użytkownika, waliduje i mapuje pola należące do `user_profiles`, w tym strukturalne `skin_aspects` oraz opcjonalne `notes`, korzysta z helpera domenowego i utrzymuje wzorzec redirect/error znany z obecnych auth route'ów. Payload nie może zawierać arbitralnego `user_id`; ownership wynika z sesji.
 
 #### 3. Dashboard data load integration
 
@@ -123,7 +125,7 @@ Ta faza przekłada kontrakt bazy na cienką, typowaną warstwę po stronie aplik
 
 **Intent**: Podłączyć dashboard do nowego kontraktu danych tak, aby stał się prostym surface'em weryfikacyjnym zamiast wyłącznie placeholderem.
 
-**Contract**: Dashboard czyta persisted profile data dla `Astro.locals.user`, renderuje minimalny formularz lub status aktualnego profilu i pozostaje dostępny wyłącznie dla zalogowanego usera przez istniejące middleware. Surface nie ma udawać finalnego UX onboardingu; ma jedynie potwierdzać odczyt i zapis kontraktu.
+**Contract**: Dashboard czyta persisted profile data dla `Astro.locals.user`, renderuje minimalny formularz lub status aktualnego profilu z `skin_type`, `skin_aspects`, `concerns`, `goals` i `notes`, i pozostaje dostępny wyłącznie dla zalogowanego usera przez istniejące middleware. Surface nie ma udawać finalnego UX onboardingu; ma jedynie potwierdzać odczyt i zapis kontraktu.
 
 ### Success Criteria:
 
@@ -183,7 +185,7 @@ Ta faza domyka zmianę jako fundament repo, a nie tylko lokalną migrację. Obej
 ### Unit Tests:
 
 - Brak wydzielonego test suite w repo; logika helperów domenowych powinna być utrzymana na tyle mała i czysta, by ryzyko regresji było pokrywane przez lint, type-checking Astro i smoke flow
-- Wszelkie mapowanie formularza do `user_profiles` powinno mieć minimalną liczbę gałęzi i jawne defaulty, żeby ograniczyć potrzebę testów jednostkowych na starcie
+- Wszelkie mapowanie formularza do `user_profiles` powinno mieć minimalną liczbę gałęzi, jawne defaulty dla `skin_aspects` i jedno miejsce walidacji poziomów aspektów, żeby ograniczyć potrzebę testów jednostkowych na starcie
 
 ### Integration Tests:
 

@@ -19,11 +19,19 @@ create table public.products (
 create table public.user_profiles (
   user_id uuid primary key references auth.users (id) on delete cascade,
   skin_type text,
-  sensitivity text,
+  skin_aspects jsonb not null default jsonb_build_object(
+    'sensitivity', 'none',
+    'pigmentation', 'none',
+    'firmness', 'none',
+    'breakouts', 'none',
+    'texture', 'none'
+  ),
   concerns text[] not null default '{}'::text[],
   goals text[] not null default '{}'::text[],
+  notes text,
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+  updated_at timestamptz not null default now(),
+  constraint user_profiles_skin_aspects_object_check check (jsonb_typeof(skin_aspects) = 'object')
 );
 
 create table public.user_shelf_items (
@@ -45,9 +53,64 @@ create table public.user_routine_configs (
 
 comment on table public.products is 'Shared product identity stub for future shared product metadata.';
 comment on table public.user_profiles is 'Per-user skincare profile persisted alongside auth.users.';
+comment on column public.user_profiles.skin_aspects is 'Structured skin health aspects: sensitivity, pigmentation, firmness, breakouts, and texture.';
+comment on column public.user_profiles.notes is 'Optional free-form profile notes that do not fit the structured profile contract.';
 comment on table public.user_shelf_items is 'Per-user shelf membership keyed to shared product identities.';
 comment on table public.user_routine_configs is 'Per-user base routine configuration referencing owned shelf items.';
 comment on column public.user_routine_configs.schedule is 'JSON schedule whose entries reference user_shelf_items.id via shelf_item_id.';
+
+create or replace function public.validate_user_profile_skin_aspects()
+returns trigger
+language plpgsql
+as $$
+declare
+  expected_keys text[] := array['sensitivity', 'pigmentation', 'firmness', 'breakouts', 'texture'];
+  allowed_levels text[] := array['none', 'low', 'medium', 'high'];
+  aspect_key text;
+  aspect_value text;
+begin
+  if new.skin_aspects is null then
+    new.skin_aspects := jsonb_build_object(
+      'sensitivity', 'none',
+      'pigmentation', 'none',
+      'firmness', 'none',
+      'breakouts', 'none',
+      'texture', 'none'
+    );
+  end if;
+
+  if jsonb_typeof(new.skin_aspects) <> 'object' then
+    raise exception 'user_profiles.skin_aspects must be a JSON object';
+  end if;
+
+  for aspect_key in
+    select unnest(expected_keys)
+  loop
+    if not (new.skin_aspects ? aspect_key) then
+      raise exception 'user_profiles.skin_aspects is missing required key "%"', aspect_key;
+    end if;
+
+    if jsonb_typeof(new.skin_aspects -> aspect_key) <> 'string' then
+      raise exception 'user_profiles.skin_aspects key "%" must be a string', aspect_key;
+    end if;
+
+    aspect_value := new.skin_aspects ->> aspect_key;
+    if not aspect_value = any(allowed_levels) then
+      raise exception 'user_profiles.skin_aspects key "%" has invalid value "%"', aspect_key, aspect_value;
+    end if;
+  end loop;
+
+  if exists (
+    select 1
+    from jsonb_object_keys(new.skin_aspects) as keys(key)
+    where not (key = any(expected_keys))
+  ) then
+    raise exception 'user_profiles.skin_aspects contains unsupported keys';
+  end if;
+
+  return new;
+end;
+$$;
 
 create or replace function public.validate_user_routine_schedule()
 returns trigger
@@ -197,6 +260,11 @@ create trigger set_user_profiles_updated_at
 before update on public.user_profiles
 for each row
 execute function public.set_updated_at();
+
+create trigger validate_user_profiles_skin_aspects
+before insert or update on public.user_profiles
+for each row
+execute function public.validate_user_profile_skin_aspects();
 
 create trigger set_user_shelf_items_updated_at
 before update on public.user_shelf_items
