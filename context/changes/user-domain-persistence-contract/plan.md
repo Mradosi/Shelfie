@@ -228,12 +228,12 @@ Migracja jest w pełni addytywna, bo projekt nie ma jeszcze istniejących danych
 
 #### Automated
 
-- [x] 1.1 Migracje i polityki aplikują się czysto na lokalnym stacku
+- [x] 1.1 Migracje i polityki aplikują się czysto na lokalnym stacku — f4bd35c
 
 #### Manual
 
-- [x] 1.2 W Supabase Studio widać nowe tabele domenowe i przypisane do nich polityki RLS
-- [x] 1.3 Dla tabel user-owned nie istnieje przypadkowy world-readable access dla niezwiązanego użytkownika
+- [x] 1.2 W Supabase Studio widać nowe tabele domenowe i przypisane do nich polityki RLS — f4bd35c
+- [x] 1.3 Dla tabel user-owned nie istnieje przypadkowy world-readable access dla niezwiązanego użytkownika — f4bd35c
 
 ### Phase 2: Typed server contract
 
@@ -244,8 +244,8 @@ Migracja jest w pełni addytywna, bo projekt nie ma jeszcze istniejących danych
 
 #### Manual
 
-- [ ] 2.3 Zalogowany użytkownik może zapisać profil skóry z dashboardu i zobaczyć te same dane po odświeżeniu strony
-- [ ] 2.4 Niezalogowany użytkownik nadal jest przekierowywany z `/dashboard` do `/auth/signin`
+- [x] 2.3 Zalogowany użytkownik może zapisać profil skóry z dashboardu i zobaczyć te same dane po odświeżeniu strony
+- [x] 2.4 Niezalogowany użytkownik nadal jest przekierowywany z `/dashboard` do `/auth/signin`
 
 ### Phase 3: Verification surface and developer handoff
 

@@ -1,27 +1,268 @@
 ---
 import Layout from "@/layouts/Layout.astro";
+import { createClient } from "@/lib/supabase";
+import {
+  createEmptyUserProfile,
+  getMissingUserDomainContractMessage,
+  getUserProfile,
+  isMissingUserDomainContractError,
+  SKIN_ASPECT_KEYS,
+  SKIN_ASPECT_LABELS,
+  SKIN_ASPECT_LEVEL_LABELS,
+  SKIN_ASPECT_LEVELS,
+  SKIN_TYPE_LABELS,
+  SKIN_TYPE_OPTIONS,
+} from "@/lib/domain/user-domain";
 
 const { user } = Astro.locals;
+const error = Astro.url.searchParams.get("error");
+const success = Astro.url.searchParams.get("success");
+const supabase = createClient(Astro.request.headers, Astro.cookies);
+let domainError: string | null = null;
+let persistedProfile = null;
+
+if (supabase && user) {
+  try {
+    persistedProfile = await getUserProfile(supabase, user.id);
+  } catch (loadError) {
+    if (isMissingUserDomainContractError(loadError)) {
+      domainError = getMissingUserDomainContractMessage();
+    } else {
+      throw loadError;
+    }
+  }
+}
+
+const profile = persistedProfile ?? createEmptyUserProfile();
+const concernsValue = profile.concerns.join(", ");
+const goalsValue = profile.goals.join(", ");
+const formDisabled = Boolean(domainError);
+const skinAspectFields = SKIN_ASPECT_KEYS.map((aspectKey) => ({
+  key: aspectKey,
+  label: SKIN_ASPECT_LABELS[aspectKey],
+  value: profile.skinAspects[aspectKey],
+}));
 ---
 
 <Layout title="Dashboard">
-  <div class="bg-cosmic flex min-h-screen items-center justify-center p-4">
-    <div class="rounded-2xl border border-white/10 bg-white/10 p-8 text-center text-white backdrop-blur-xl">
-      <h1 class="mb-4 bg-gradient-to-r from-blue-200 to-purple-200 bg-clip-text text-3xl font-bold text-transparent">
-        Dashboard
-      </h1>
-      <p class="text-blue-100/80">
-        Welcome, <span class="font-semibold text-white">{user?.email}</span>
-      </p>
-      <p class="mt-2 text-sm text-blue-100/50">This page is only for authenticated users.</p>
-      <form method="POST" action="/api/auth/signout" class="mt-6">
-        <button
-          type="submit"
-          class="rounded-lg border border-white/20 bg-white/10 px-4 py-2 text-sm transition-colors hover:bg-white/20"
-        >
-          Sign out
-        </button>
-      </form>
+  <div class="bg-cosmic min-h-screen p-4 text-white">
+    <div class="mx-auto flex min-h-screen w-full max-w-6xl items-center justify-center py-10">
+      <div class="grid w-full gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(20rem,0.6fr)]">
+        <section class="rounded-[2rem] border border-white/12 bg-white/10 p-8 backdrop-blur-xl">
+          <div class="flex flex-col gap-3 border-b border-white/10 pb-6 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p class="text-sm tracking-[0.24em] text-blue-100/55 uppercase">Persistence smoke test</p>
+              <h1
+                class="mt-2 bg-gradient-to-r from-blue-100 via-cyan-100 to-purple-200 bg-clip-text text-3xl font-bold text-transparent"
+              >
+                User profile contract
+              </h1>
+            </div>
+            <div class="rounded-full border border-white/12 bg-black/15 px-4 py-2 text-sm text-blue-100/80">
+              Signed in as <span class="font-semibold text-white">{user?.email}</span>
+            </div>
+          </div>
+
+          <div class="mt-6 space-y-4">
+            {
+              domainError && (
+                <p class="rounded-2xl border border-amber-400/30 bg-amber-950/40 px-4 py-3 text-sm text-amber-100">
+                  {domainError}
+                </p>
+              )
+            }
+            {
+              success && (
+                <p class="rounded-2xl border border-emerald-400/30 bg-emerald-950/40 px-4 py-3 text-sm text-emerald-200">
+                  {success}
+                </p>
+              )
+            }
+            {
+              error && (
+                <p class="rounded-2xl border border-red-400/30 bg-red-950/40 px-4 py-3 text-sm text-red-200">{error}</p>
+              )
+            }
+          </div>
+
+          <form method="POST" action="/api/domain/profile" class="mt-6 space-y-6">
+            <label class="block">
+              <span class="mb-2 block text-sm text-blue-100/80">Skin type</span>
+              <select
+                name="skinType"
+                disabled={formDisabled}
+                class="w-full rounded-2xl border border-white/12 bg-slate-950/35 px-4 py-3 text-white focus:border-cyan-300/60 focus:outline-none"
+              >
+                <option value="" selected={profile.skinType === null}>Select a baseline skin type</option>
+                {
+                  SKIN_TYPE_OPTIONS.map((skinType) => (
+                    <option value={skinType} selected={profile.skinType === skinType}>
+                      {SKIN_TYPE_LABELS[skinType]}
+                    </option>
+                  ))
+                }
+              </select>
+            </label>
+
+            <div>
+              <div class="mb-2 flex items-center justify-between">
+                <span class="block text-sm text-blue-100/80">Skin aspects</span>
+                <span class="text-xs text-blue-100/45">Structured levels for the five core dimensions</span>
+              </div>
+              <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                {
+                  skinAspectFields.map((aspect) => (
+                    <label class="block">
+                      <span class="mb-2 block text-sm text-blue-100/75">{aspect.label}</span>
+                      <select
+                        name={`skinAspect_${aspect.key}`}
+                        disabled={formDisabled}
+                        class="w-full rounded-2xl border border-white/12 bg-slate-950/35 px-4 py-3 text-white focus:border-cyan-300/60 focus:outline-none"
+                      >
+                        {SKIN_ASPECT_LEVELS.map((level) => (
+                          <option value={level} selected={aspect.value === level}>
+                            {SKIN_ASPECT_LEVEL_LABELS[level]}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  ))
+                }
+              </div>
+            </div>
+
+            <label class="block">
+              <span class="mb-2 block text-sm text-blue-100/80">Concerns</span>
+              <input
+                type="text"
+                name="concerns"
+                value={concernsValue}
+                placeholder="e.g. closed comedones, redness, dark circles"
+                disabled={formDisabled}
+                class="w-full rounded-2xl border border-white/12 bg-slate-950/35 px-4 py-3 text-white placeholder:text-blue-100/35 focus:border-cyan-300/60 focus:outline-none"
+              />
+              <span class="mt-2 block text-xs text-blue-100/45">
+                Keep these as free-form specifics for now. Canonical concern tags belong to a later slice.
+              </span>
+            </label>
+
+            <label class="block">
+              <span class="mb-2 block text-sm text-blue-100/80">Goals</span>
+              <input
+                type="text"
+                name="goals"
+                value={goalsValue}
+                placeholder="e.g. smoother texture, calmer skin"
+                disabled={formDisabled}
+                class="w-full rounded-2xl border border-white/12 bg-slate-950/35 px-4 py-3 text-white placeholder:text-blue-100/35 focus:border-cyan-300/60 focus:outline-none"
+              />
+              <span class="mt-2 block text-xs text-blue-100/45">
+                Goals also remain free-form in this slice, so we do not lock the vocabulary too early.
+              </span>
+            </label>
+
+            <label class="block">
+              <span class="mb-2 block text-sm text-blue-100/80">Notes</span>
+              <textarea
+                name="notes"
+                rows="4"
+                disabled={formDisabled}
+                placeholder="Optional nuance that does not fit the structured profile yet"
+                class="w-full rounded-2xl border border-white/12 bg-slate-950/35 px-4 py-3 text-white placeholder:text-blue-100/35 focus:border-cyan-300/60 focus:outline-none"
+                >{profile.notes ?? ""}</textarea
+              >
+            </label>
+
+            <div
+              class="flex flex-col gap-3 border-t border-white/10 pt-5 sm:flex-row sm:items-center sm:justify-between"
+            >
+              <div class="text-sm text-blue-100/60">
+                {
+                  persistedProfile ? (
+                    <>
+                      Persisted profile last updated{" "}
+                      <span class="font-medium text-white">
+                        {new Date(persistedProfile.updatedAt).toLocaleString()}
+                      </span>
+                      .
+                    </>
+                  ) : domainError ? (
+                    "The verification surface is waiting for the domain migration to be applied."
+                  ) : (
+                    "No persisted profile yet. Saving this form will create the first record."
+                  )
+                }
+              </div>
+
+              <button
+                type="submit"
+                disabled={formDisabled}
+                class="rounded-full bg-cyan-300 px-5 py-2.5 text-sm font-semibold text-slate-950 transition-transform hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:bg-slate-400 disabled:text-slate-800 disabled:hover:translate-y-0"
+              >
+                Save profile
+              </button>
+            </div>
+          </form>
+        </section>
+
+        <aside class="flex flex-col gap-4 rounded-[2rem] border border-white/12 bg-slate-950/35 p-6 backdrop-blur-xl">
+          <div>
+            <p class="text-sm tracking-[0.24em] text-blue-100/45 uppercase">Verification state</p>
+            <h2 class="mt-2 text-xl font-semibold text-white">Current snapshot</h2>
+          </div>
+
+          <dl class="space-y-4 text-sm">
+            <div class="rounded-2xl border border-white/10 bg-white/5 p-4">
+              <dt class="text-blue-100/55">Skin type</dt>
+              <dd class="mt-1 text-base text-white">
+                {profile.skinType ? SKIN_TYPE_LABELS[profile.skinType] : "Not set"}
+              </dd>
+            </div>
+
+            <div class="rounded-2xl border border-white/10 bg-white/5 p-4">
+              <dt class="text-blue-100/55">Skin aspects</dt>
+              <dd class="mt-2 space-y-2">
+                {
+                  skinAspectFields.map((aspect) => (
+                    <div class="flex items-center justify-between gap-4 text-sm">
+                      <span class="text-blue-100/70">{aspect.label}</span>
+                      <span class="font-medium text-white">{SKIN_ASPECT_LEVEL_LABELS[aspect.value]}</span>
+                    </div>
+                  ))
+                }
+              </dd>
+            </div>
+
+            <div class="rounded-2xl border border-white/10 bg-white/5 p-4">
+              <dt class="text-blue-100/55">Concerns</dt>
+              <dd class="mt-1 text-base text-white">
+                {profile.concerns.length > 0 ? profile.concerns.join(", ") : "Not set"}
+              </dd>
+            </div>
+
+            <div class="rounded-2xl border border-white/10 bg-white/5 p-4">
+              <dt class="text-blue-100/55">Goals</dt>
+              <dd class="mt-1 text-base text-white">
+                {profile.goals.length > 0 ? profile.goals.join(", ") : "Not set"}
+              </dd>
+            </div>
+
+            <div class="rounded-2xl border border-white/10 bg-white/5 p-4">
+              <dt class="text-blue-100/55">Notes</dt>
+              <dd class="mt-1 text-base text-white">{profile.notes ?? "Not set"}</dd>
+            </div>
+          </dl>
+
+          <form method="POST" action="/api/auth/signout" class="mt-auto">
+            <button
+              type="submit"
+              class="w-full rounded-full border border-white/20 bg-white/8 px-4 py-2.5 text-sm transition-colors hover:bg-white/16"
+            >
+              Sign out
+            </button>
+          </form>
+        </aside>
+      </div>
     </div>
   </div>
 </Layout>
