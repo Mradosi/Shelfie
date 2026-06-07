@@ -1,0 +1,47 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import { createClient } from "@/lib/supabase";
+import {
+  getMissingUserDomainContractMessage,
+  getUserProfile,
+  isMissingUserDomainContractError,
+} from "@/lib/domain/user-domain";
+
+const DASHBOARD_ERROR_PATH = "/dashboard?error=";
+
+function encodeMessage(path: string, message: string) {
+  return `${path}${encodeURIComponent(message)}`;
+}
+
+const user = Astro.locals.user;
+
+if (!user) {
+  return Astro.redirect("/auth/signin");
+}
+
+const supabase = createClient(Astro.request.headers, Astro.cookies);
+
+if (!supabase) {
+  return Astro.redirect("/auth/signin");
+}
+
+try {
+  const profile = await getUserProfile(supabase, user.id);
+
+  if (profile?.skinType) {
+    return Astro.redirect("/dashboard");
+  }
+
+  return Astro.redirect("/onboarding/skin-profile");
+} catch (error) {
+  const message = isMissingUserDomainContractError(error)
+    ? getMissingUserDomainContractMessage()
+    : error instanceof Error
+      ? error.message
+      : "Could not load your profile.";
+
+  return Astro.redirect(encodeMessage(DASHBOARD_ERROR_PATH, message));
+}
+---
+
+<Layout title="Starting Shelfie" />

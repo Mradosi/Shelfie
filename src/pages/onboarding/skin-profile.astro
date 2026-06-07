@@ -1,0 +1,93 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import { createClient } from "@/lib/supabase";
+import {
+  getMissingUserDomainContractMessage,
+  getUserProfile,
+  isMissingUserDomainContractError,
+} from "@/lib/domain/user-domain";
+
+const user = Astro.locals.user;
+
+if (!user) {
+  return Astro.redirect("/auth/signin");
+}
+
+const supabase = createClient(Astro.request.headers, Astro.cookies);
+let routeError: string | null = null;
+
+if (!supabase) {
+  routeError = "Supabase is not configured.";
+} else {
+  try {
+    const profile = await getUserProfile(supabase, user.id);
+
+    if (profile?.skinType) {
+      return Astro.redirect("/dashboard");
+    }
+  } catch (error) {
+    routeError = isMissingUserDomainContractError(error)
+      ? getMissingUserDomainContractMessage()
+      : error instanceof Error
+        ? error.message
+        : "Could not load your current profile state.";
+  }
+}
+---
+
+<Layout title="Skin profile onboarding">
+  <div class="bg-cosmic min-h-screen p-4 text-white">
+    <div class="mx-auto flex min-h-screen w-full max-w-4xl items-center justify-center py-10">
+      <section class="w-full rounded-[2rem] border border-white/12 bg-white/10 p-8 backdrop-blur-xl">
+        <p class="text-sm tracking-[0.24em] text-cyan-100/55 uppercase">First skin profile</p>
+        <h1 class="mt-3 text-3xl font-bold text-white">Let&apos;s start with your skin profile.</h1>
+        <p class="mt-4 max-w-2xl text-sm leading-6 text-blue-100/75">
+          This route is now the first authenticated stop for users who still need their baseline skin context. The
+          guided questionnaire will land here in the next implementation phase.
+        </p>
+
+        {
+          routeError && (
+            <p class="mt-6 rounded-2xl border border-amber-400/30 bg-amber-950/40 px-4 py-3 text-sm text-amber-100">
+              {routeError}
+            </p>
+          )
+        }
+
+        <div class="mt-8 grid gap-4 md:grid-cols-2">
+          <div class="rounded-[1.5rem] border border-white/10 bg-slate-950/30 p-5">
+            <p class="text-sm font-semibold text-white">What happens here</p>
+            <p class="mt-3 text-sm leading-6 text-blue-100/70">
+              We will ask about your usual skin in the last 2-4 weeks, save the first profile, and keep product intake
+              for the next slice.
+            </p>
+          </div>
+          <div class="rounded-[1.5rem] border border-white/10 bg-slate-950/30 p-5">
+            <p class="text-sm font-semibold text-white">Current boundary</p>
+            <p class="mt-3 text-sm leading-6 text-blue-100/70">
+              <code>/dashboard</code> stays available as a debug surface, but it is no longer the intended first-run entry
+              point after sign-in.
+            </p>
+          </div>
+        </div>
+
+        <div class="mt-8 flex flex-wrap gap-3">
+          <a
+            href="/dashboard"
+            class="rounded-full border border-white/20 bg-white/8 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-white/16"
+          >
+            Open debug dashboard
+          </a>
+          <form method="POST" action="/api/auth/signout">
+            <button
+              type="submit"
+              class="rounded-full bg-cyan-300 px-5 py-2.5 text-sm font-semibold text-slate-950 transition-transform hover:-translate-y-0.5"
+            >
+              Sign out
+            </button>
+          </form>
+        </div>
+      </section>
+    </div>
+  </div>
+</Layout>

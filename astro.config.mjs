@@ -11,6 +11,9 @@ export default defineConfig({
   output: "server",
   integrations: [react(), sitemap()],
   vite: {
+    optimizeDeps: {
+      exclude: ["lucide-react"],
+    },
     plugins: [tailwindcss()],
   },
   adapter: cloudflare(),
