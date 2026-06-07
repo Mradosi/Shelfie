@@ -285,14 +285,14 @@ Plan nie zakłada żadnej migracji schematu. Persisted kontrakt `user_profiles` 
 
 #### Automated
 
-- [x] 1.1 Typy i routing dla nowych surface'ów przechodzą bez błędów
-- [x] 1.2 Lint przechodzi dla nowych redirectów auth i middleware
+- [x] 1.1 Typy i routing dla nowych surface'ów przechodzą bez błędów — 0d8e9a5
+- [x] 1.2 Lint przechodzi dla nowych redirectów auth i middleware — 0d8e9a5
 
 #### Manual
 
-- [ ] 1.3 Użytkownik bez persisted profilu po skutecznym sign-in trafia na onboarding zamiast na `/`
-- [ ] 1.4 Użytkownik z kompletnym profilem omija onboarding i przechodzi przez post-auth gate bez pętli redirectów
-- [ ] 1.5 Wejście na `/start`, `/onboarding/skin-profile` i route edycji bez sesji kończy się redirectem do `/auth/signin`
+- [x] 1.3 Użytkownik bez persisted profilu po skutecznym sign-in trafia na onboarding zamiast na `/` — 0d8e9a5
+- [x] 1.4 Użytkownik z kompletnym profilem omija onboarding i przechodzi przez post-auth gate bez pętli redirectów — 0d8e9a5
+- [x] 1.5 Wejście na `/start`, `/onboarding/skin-profile` i route edycji bez sesji kończy się redirectem do `/auth/signin` — 0d8e9a5
 
 ### Phase 2: Questionnaire model and persistence wiring
 
