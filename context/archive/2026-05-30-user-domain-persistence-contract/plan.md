@@ -19,6 +19,7 @@ Notatki architektoniczne dobrze rozdzielają shared product catalog, osobisty sh
 Po zakończeniu tego planu repo ma zawierać działającą migrację Supabase, która tworzy minimalny kontrakt danych dla domeny użytkownika: stub shared product identity, per-user skin profile, per-user shelf membership i per-user base routine configuration. Profil skóry ma przechowywać `skin_type`, strukturalne `skin_aspects`, swobodne `concerns` i `goals` oraz opcjonalne `notes`, zamiast mieszać cały stan skóry w pojedynczej liście concernów. Wszystkie user-owned tabele są chronione przez RLS oparte o `auth.uid()`, a aplikacja ma cienką, typowaną warstwę serwerową i chroniony smoke flow, który pozwala zapisać i ponownie odczytać ten kontrakt dla zalogowanego użytkownika.
 
 Weryfikacja końca stanu docelowego:
+
 - lokalny reset bazy i migracje przechodzą czysto;
 - zalogowany user może zapisać i odświeżyć persisted profile data;
 - niezalogowany user nadal nie ma dostępu do surface'u weryfikacyjnego;
