@@ -1,0 +1,124 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import { createClient } from "@/lib/supabase";
+import {
+  getMissingUserDomainContractMessage,
+  getUserProfile,
+  isMissingUserDomainContractError,
+  SKIN_ASPECT_KEYS,
+  SKIN_ASPECT_LABELS,
+  SKIN_ASPECT_LEVEL_LABELS,
+  SKIN_TYPE_LABELS,
+} from "@/lib/domain/user-domain";
+
+const user = Astro.locals.user;
+
+if (!user) {
+  return Astro.redirect("/auth/signin");
+}
+
+const supabase = createClient(Astro.request.headers, Astro.cookies);
+let routeError: string | null = null;
+let profile = null;
+
+if (!supabase) {
+  routeError = "Supabase is not configured.";
+} else {
+  try {
+    profile = await getUserProfile(supabase, user.id);
+
+    if (!profile?.skinType) {
+      return Astro.redirect("/onboarding/skin-profile");
+    }
+  } catch (error) {
+    routeError = isMissingUserDomainContractError(error)
+      ? getMissingUserDomainContractMessage()
+      : error instanceof Error
+        ? error.message
+        : "Could not load your saved profile.";
+  }
+}
+
+const skinAspectFields = profile
+  ? SKIN_ASPECT_KEYS.map((aspectKey) => ({
+      key: aspectKey,
+      label: SKIN_ASPECT_LABELS[aspectKey],
+      value: profile.skinAspects[aspectKey],
+    }))
+  : [];
+---
+
+<Layout title="Skin profile settings">
+  <div class="bg-cosmic min-h-screen p-4 text-white">
+    <div class="mx-auto flex min-h-screen w-full max-w-5xl items-center justify-center py-10">
+      <section class="w-full rounded-[2rem] border border-white/12 bg-white/10 p-8 backdrop-blur-xl">
+        <div class="flex flex-col gap-3 border-b border-white/10 pb-6 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p class="text-sm tracking-[0.24em] text-cyan-100/55 uppercase">Skin profile</p>
+            <h1 class="mt-2 text-3xl font-bold text-white">Your saved baseline</h1>
+            <p class="mt-3 max-w-2xl text-sm leading-6 text-blue-100/75">
+              This route now owns the post-onboarding profile area. Direct editing lands in the next phase, but the
+              authenticated navigation boundary is already separated from the debug dashboard.
+            </p>
+          </div>
+          <a
+            href="/dashboard"
+            class="rounded-full border border-white/20 bg-white/8 px-4 py-2 text-sm text-white transition-colors hover:bg-white/16"
+          >
+            Open debug dashboard
+          </a>
+        </div>
+
+        {
+          routeError ? (
+            <p class="mt-6 rounded-2xl border border-amber-400/30 bg-amber-950/40 px-4 py-3 text-sm text-amber-100">
+              {routeError}
+            </p>
+          ) : profile ? (
+            <div class="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              <div class="rounded-2xl border border-white/10 bg-slate-950/30 p-4">
+                <p class="text-sm text-blue-100/55">Skin type</p>
+                <p class="mt-2 text-lg font-semibold text-white">{SKIN_TYPE_LABELS[profile.skinType]}</p>
+              </div>
+
+              <div class="rounded-2xl border border-white/10 bg-slate-950/30 p-4 md:col-span-2 xl:col-span-2">
+                <p class="text-sm text-blue-100/55">Skin aspects</p>
+                <div class="mt-3 grid gap-3 sm:grid-cols-2">
+                  {skinAspectFields.map((aspect) => (
+                    <div class="flex items-center justify-between gap-4 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm">
+                      <span class="text-blue-100/70">{aspect.label}</span>
+                      <span class="font-medium text-white">{SKIN_ASPECT_LEVEL_LABELS[aspect.value]}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div class="rounded-2xl border border-white/10 bg-slate-950/30 p-4">
+                <p class="text-sm text-blue-100/55">Concerns</p>
+                <p class="mt-2 text-sm leading-6 text-white">
+                  {profile.concerns.length > 0 ? profile.concerns.join(", ") : "Not set"}
+                </p>
+              </div>
+
+              <div class="rounded-2xl border border-white/10 bg-slate-950/30 p-4">
+                <p class="text-sm text-blue-100/55">Goals</p>
+                <p class="mt-2 text-sm leading-6 text-white">
+                  {profile.goals.length > 0 ? profile.goals.join(", ") : "Not set"}
+                </p>
+              </div>
+
+              <div class="rounded-2xl border border-white/10 bg-slate-950/30 p-4">
+                <p class="text-sm text-blue-100/55">Notes</p>
+                <p class="mt-2 text-sm leading-6 text-white">{profile.notes ?? "Not set"}</p>
+              </div>
+            </div>
+          ) : (
+            <p class="mt-6 rounded-2xl border border-white/10 bg-slate-950/30 px-4 py-3 text-sm text-blue-100/70">
+              No saved profile yet. Start with onboarding first.
+            </p>
+          )
+        }
+      </section>
+    </div>
+  </div>
+</Layout>
