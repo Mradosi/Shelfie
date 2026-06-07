@@ -18,14 +18,14 @@ This repo already uses `@astrojs/cloudflare@13.5.0`, and Astro 6's current first
 
 ## Platform Comparison
 
-| Platform | CLI-first | Managed/Serverless | Agent-readable docs | Stable deploy API | MCP / Integration | Total |
-|---|---|---|---|---|---|---|
-| Cloudflare Workers | Pass | Pass | Pass | Pass | Pass | 5/5 |
-| Vercel | Pass | Pass | Pass | Pass | Pass | 5/5 |
-| Netlify | Pass | Pass | Pass | Partial | Pass | 4.5/5 |
-| Fly.io | Pass | Partial | Partial | Partial | Partial | 3/5 |
-| Railway | Pass | Partial | Pass | Partial | Pass | 4/5 |
-| Render | Partial | Partial | Partial | Partial | Partial | 2.5/5 |
+| Platform           | CLI-first | Managed/Serverless | Agent-readable docs | Stable deploy API | MCP / Integration | Total |
+| ------------------ | --------- | ------------------ | ------------------- | ----------------- | ----------------- | ----- |
+| Cloudflare Workers | Pass      | Pass               | Pass                | Pass              | Pass              | 5/5   |
+| Vercel             | Pass      | Pass               | Pass                | Pass              | Pass              | 5/5   |
+| Netlify            | Pass      | Pass               | Pass                | Partial           | Pass              | 4.5/5 |
+| Fly.io             | Pass      | Partial            | Partial             | Partial           | Partial           | 3/5   |
+| Railway            | Pass      | Partial            | Pass                | Partial           | Pass              | 4/5   |
+| Render             | Partial   | Partial            | Partial             | Partial           | Partial           | 2.5/5 |
 
 Cloudflare Workers scored best because the current codebase is already aligned to the supported Astro adapter, `wrangler` covers deploy, rollback, secrets, and logs well, the docs are unusually agent-friendly through GitHub-backed content and `llms.txt`, and the free tier is generous for a low-QPS MVP. The main caveat is that this is a Workers deployment, not Cloudflare Pages SSR, because Astro 6 removed Pages support from the current Cloudflare adapter.
 
@@ -85,16 +85,16 @@ The team shipped quickly on Cloudflare Workers and assumed that early success me
 
 ## Risk Register
 
-| Risk | Source | Likelihood | Impact | Mitigation |
-|---|---|---|---|---|
-| Team follows outdated Cloudflare Pages guidance instead of the current Workers path | Research finding | M | H | Standardize docs and scripts around `@astrojs/cloudflare` Workers deployment only, and remove Pages wording from internal notes. |
-| A future dependency requires full Node.js APIs not available in Workers | Devil's advocate | M | H | Add runtime-compatibility checks before adopting new libraries, and prefer web-standard or Worker-compatible packages for upload and AI flows. |
-| Edge hosting hides latency from external Supabase or OpenRouter calls | Unknown unknowns | H | M | Benchmark the slowest user flows early, choose the closest practical Supabase region, and cache or batch external requests where possible. |
-| Rollback restores code but not Supabase schema or bad writes | Devil's advocate | M | H | Treat database changes as separate deploy units, require reversible migrations where possible, and gate destructive changes behind manual approval. |
-| Platform-specific bindings create future migration cost | Devil's advocate | M | M | Keep core product data in Supabase and isolate Cloudflare-specific services behind small adapters instead of spreading them through app code. |
-| Secret values drift between local, CI, and Cloudflare environments | Unknown unknowns | M | M | Define one documented secret workflow now, with environment checklists for local, preview, and production. |
-| Git-based preview behavior differs from direct CLI deploy expectations | Unknown unknowns | M | M | Pick one primary deployment path first, document it, and test preview behavior before relying on it for review or QA. |
-| Team overestimates edge value for a mostly single-region user base | Pre-mortem | M | M | Revisit the hosting decision after real usage data, and avoid deep lock-in until traffic patterns are proven. |
+| Risk                                                                                | Source           | Likelihood | Impact | Mitigation                                                                                                                                          |
+| ----------------------------------------------------------------------------------- | ---------------- | ---------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Team follows outdated Cloudflare Pages guidance instead of the current Workers path | Research finding | M          | H      | Standardize docs and scripts around `@astrojs/cloudflare` Workers deployment only, and remove Pages wording from internal notes.                    |
+| A future dependency requires full Node.js APIs not available in Workers             | Devil's advocate | M          | H      | Add runtime-compatibility checks before adopting new libraries, and prefer web-standard or Worker-compatible packages for upload and AI flows.      |
+| Edge hosting hides latency from external Supabase or OpenRouter calls               | Unknown unknowns | H          | M      | Benchmark the slowest user flows early, choose the closest practical Supabase region, and cache or batch external requests where possible.          |
+| Rollback restores code but not Supabase schema or bad writes                        | Devil's advocate | M          | H      | Treat database changes as separate deploy units, require reversible migrations where possible, and gate destructive changes behind manual approval. |
+| Platform-specific bindings create future migration cost                             | Devil's advocate | M          | M      | Keep core product data in Supabase and isolate Cloudflare-specific services behind small adapters instead of spreading them through app code.       |
+| Secret values drift between local, CI, and Cloudflare environments                  | Unknown unknowns | M          | M      | Define one documented secret workflow now, with environment checklists for local, preview, and production.                                          |
+| Git-based preview behavior differs from direct CLI deploy expectations              | Unknown unknowns | M          | M      | Pick one primary deployment path first, document it, and test preview behavior before relying on it for review or QA.                               |
+| Team overestimates edge value for a mostly single-region user base                  | Pre-mortem       | M          | M      | Revisit the hosting decision after real usage data, and avoid deep lock-in until traffic patterns are proven.                                       |
 
 ## Getting Started
 
@@ -107,6 +107,7 @@ The team shipped quickly on Cloudflare Workers and assumed that early success me
 ## Out of Scope
 
 The following were not evaluated in this research:
+
 - Docker image configuration
 - CI/CD pipeline setup
 - Production-scale architecture (multi-region, HA, DR)

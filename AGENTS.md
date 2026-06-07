@@ -49,17 +49,17 @@ The lesson focus is distinguishing internal from external research and using evi
 
 ### Task Router - Where to start
 
-| Skill | Use it when |
-| --- | --- |
-| **Internal research (lesson focus)** | |
-| `/10x-research <change-id>` | You need evidence from the existing codebase — patterns, conventions, integration points, or existing implementations. Runs parallel sub-agents over the repo and writes structured findings to `research.md`. |
-| **External research (lesson focus)** | |
-| exa.ai | You need AI-native web search for library comparisons, best practices, or ecosystem context that the codebase cannot answer. |
-| Context7 (`resolve-library-id` → `get-library-docs`) | You need live, current documentation for a specific library or framework. Resolves a library ID first, then fetches relevant doc pages. |
-| **Framing spare wheel** | |
-| `/10x-frame <change-id>` | The plan won't converge, the plan doesn't deliver expected results, or persistent drift keeps breaking the implementation. Use as an escape hatch on a separate problem (demonstrated on Space Explorers example), not as pre-research ritual. |
-| **Planning and execution** | |
-| `/10x-plan <change-id>` / `/10x-implement <change-id> phase <n>` | Use the same planning and execution chain from Lesson 2, now with upstream research evidence feeding the plan. |
+| Skill                                                            | Use it when                                                                                                                                                                                                                                    |
+| ---------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Internal research (lesson focus)**                             |                                                                                                                                                                                                                                                |
+| `/10x-research <change-id>`                                      | You need evidence from the existing codebase — patterns, conventions, integration points, or existing implementations. Runs parallel sub-agents over the repo and writes structured findings to `research.md`.                                 |
+| **External research (lesson focus)**                             |                                                                                                                                                                                                                                                |
+| exa.ai                                                           | You need AI-native web search for library comparisons, best practices, or ecosystem context that the codebase cannot answer.                                                                                                                   |
+| Context7 (`resolve-library-id` → `get-library-docs`)             | You need live, current documentation for a specific library or framework. Resolves a library ID first, then fetches relevant doc pages.                                                                                                        |
+| **Framing spare wheel**                                          |                                                                                                                                                                                                                                                |
+| `/10x-frame <change-id>`                                         | The plan won't converge, the plan doesn't deliver expected results, or persistent drift keeps breaking the implementation. Use as an escape hatch on a separate problem (demonstrated on Space Explorers example), not as pre-research ritual. |
+| **Planning and execution**                                       |                                                                                                                                                                                                                                                |
+| `/10x-plan <change-id>` / `/10x-implement <change-id> phase <n>` | Use the same planning and execution chain from Lesson 2, now with upstream research evidence feeding the plan.                                                                                                                                 |
 
 ### Research discipline
 
@@ -71,6 +71,7 @@ The lesson focus is distinguishing internal from external research and using evi
 ### `/10x-frame` as spare wheel
 
 Three triggers for reaching for `/10x-frame`:
+
 1. The plan won't converge — research keeps opening more questions instead of narrowing to a contract.
 2. The plan doesn't deliver — implementation repeatedly fails to meet success criteria.
 3. Persistent drift — the implementation keeps diverging from the plan in ways that suggest the problem was mis-framed.

@@ -16,19 +16,20 @@ Po wdrożeniu planu projekt ma mieć migrację tworzącą minimalne tabele domen
 
 ## Key Decisions Made
 
-| Decision | Choice | Why (1 sentence) |
-| --- | --- | --- |
-| Granica F-01 | Schema + RLS + typed server helpers + smoke path, bez pełnych feature flow | To jest najmniejszy zakres, który daje stabilny fundament dla kolejnych slice'ów i jednocześnie da się zweryfikować end-to-end. |
-| Profil użytkownika | Osobna tabela `user_profiles` 1:1 z `auth.users` | Domena skincare ma własny kontrakt i nie powinna mieszać się z warstwą auth. |
-| Styk z F-02 | Minimalny stub `products` już w F-01 | Prawdziwy FK od początku zmniejsza ryzyko późniejszej bolesnej migracji relacji shelf -> shared product. |
-| Model bazowej rutyny | Jeden per-user `schedule jsonb` | To upraszcza MVP i pozostaje zgodne z PRD oraz z product-centric modelem rutyny. |
-| Daily overrides | Poza F-01 | `Use only today` ma osobny lifecycle i nie powinno zanieczyszczać bazowej rutyny na etapie fundacji. |
-| Ownership enforcement | Pełne RLS od pierwszej migracji | Prywatność per-user jest wymaganiem produktu i nie powinna zależeć wyłącznie od filtrów aplikacyjnych. |
-| Smoke verification | Minimalny write/read flow dla profilu w chronionym dashboardzie | Pozwala sprawdzić realną integrację z auth i RLS bez budowania finalnego onboardingu. |
+| Decision              | Choice                                                                     | Why (1 sentence)                                                                                                                |
+| --------------------- | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| Granica F-01          | Schema + RLS + typed server helpers + smoke path, bez pełnych feature flow | To jest najmniejszy zakres, który daje stabilny fundament dla kolejnych slice'ów i jednocześnie da się zweryfikować end-to-end. |
+| Profil użytkownika    | Osobna tabela `user_profiles` 1:1 z `auth.users`                           | Domena skincare ma własny kontrakt i nie powinna mieszać się z warstwą auth.                                                    |
+| Styk z F-02           | Minimalny stub `products` już w F-01                                       | Prawdziwy FK od początku zmniejsza ryzyko późniejszej bolesnej migracji relacji shelf -> shared product.                        |
+| Model bazowej rutyny  | Jeden per-user `schedule jsonb`                                            | To upraszcza MVP i pozostaje zgodne z PRD oraz z product-centric modelem rutyny.                                                |
+| Daily overrides       | Poza F-01                                                                  | `Use only today` ma osobny lifecycle i nie powinno zanieczyszczać bazowej rutyny na etapie fundacji.                            |
+| Ownership enforcement | Pełne RLS od pierwszej migracji                                            | Prywatność per-user jest wymaganiem produktu i nie powinna zależeć wyłącznie od filtrów aplikacyjnych.                          |
+| Smoke verification    | Minimalny write/read flow dla profilu w chronionym dashboardzie            | Pozwala sprawdzić realną integrację z auth i RLS bez budowania finalnego onboardingu.                                           |
 
 ## Scope
 
 **In scope:**
+
 - migracja Supabase z minimalnymi tabelami domenowymi i constraints
 - RLS dla wszystkich tabel user-owned
 - typed helper layer po stronie serwera
@@ -36,6 +37,7 @@ Po wdrożeniu planu projekt ma mieć migrację tworzącą minimalne tabele domen
 - aktualizacja README pod nowy stan repo
 
 **Out of scope:**
+
 - shared product metadata i provenance contract z `F-02`
 - AI interpretation cache, warnings, fit score, notes
 - product intake flows i finalny onboarding UX
@@ -47,11 +49,11 @@ Podejście jest DB-first z cienką warstwą aplikacyjną. Kontrakt danych powsta
 
 ## Phases at a Glance
 
-| Phase | What it delivers | Key risk |
-| --- | --- | --- |
-| 1. Database contract and ownership boundaries | Tabele, FKs, constraints, RLS i seed/reset compatibility | Rozlanie zakresu F-01 na pełny shared product model |
-| 2. Typed server contract | Moduł helperów domenowych i minimalny write path dla profilu | Rozproszenie logiki dostępu do tabel po route'ach zamiast jednego kontraktu |
-| 3. Verification surface and developer handoff | Smoke flow na dashboardzie, finalna walidacja i aktualny README | Placeholder verification UI może zacząć udawać finalny feature surface |
+| Phase                                         | What it delivers                                                | Key risk                                                                    |
+| --------------------------------------------- | --------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| 1. Database contract and ownership boundaries | Tabele, FKs, constraints, RLS i seed/reset compatibility        | Rozlanie zakresu F-01 na pełny shared product model                         |
+| 2. Typed server contract                      | Moduł helperów domenowych i minimalny write path dla profilu    | Rozproszenie logiki dostępu do tabel po route'ach zamiast jednego kontraktu |
+| 3. Verification surface and developer handoff | Smoke flow na dashboardzie, finalna walidacja i aktualny README | Placeholder verification UI może zacząć udawać finalny feature surface      |
 
 **Prerequisites:** działający lokalny Supabase stack, env z `SUPABASE_URL` i `SUPABASE_KEY`, istniejąca ścieżka auth
 **Estimated effort:** ~2-3 sesje pracy przez 3 fazy

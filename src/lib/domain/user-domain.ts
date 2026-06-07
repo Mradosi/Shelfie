@@ -1,6 +1,6 @@
-import { createClient } from "@/lib/supabase";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
-type UserDomainClient = NonNullable<ReturnType<typeof createClient>>;
+type UserDomainClient = SupabaseClient;
 
 const USER_PROFILE_COLUMNS = "user_id, skin_type, skin_aspects, concerns, goals, notes, created_at, updated_at";
 const USER_SHELF_ITEM_COLUMNS = "id, user_id, product_id, created_at, updated_at";
@@ -15,27 +15,27 @@ export type SkinAspectKey = (typeof SKIN_ASPECT_KEYS)[number];
 export type SkinAspectLevel = (typeof SKIN_ASPECT_LEVELS)[number];
 
 export const SKIN_TYPE_LABELS: Record<SkinType, string> = {
-  dry: "Dry",
-  oily: "Oily",
-  combination: "Combination",
-  normal: "Normal",
-  balanced: "Balanced",
-  not_sure: "Not sure",
+  dry: "Sucha",
+  oily: "Tłusta",
+  combination: "Mieszana",
+  normal: "Normalna",
+  balanced: "Zrównoważona",
+  not_sure: "Nie mam pewności",
 };
 
 export const SKIN_ASPECT_LABELS: Record<SkinAspectKey, string> = {
-  sensitivity: "Sensitivity",
-  pigmentation: "Tone / pigmentation",
-  firmness: "Elasticity / firmness / lines",
-  breakouts: "Breakouts / congestion",
-  texture: "Texture",
+  sensitivity: "Wrażliwość",
+  pigmentation: "Koloryt / przebarwienia",
+  firmness: "Jędrność / sprężystość / linie",
+  breakouts: "Niedoskonałości / zapychanie",
+  texture: "Tekstura",
 };
 
 export const SKIN_ASPECT_LEVEL_LABELS: Record<SkinAspectLevel, string> = {
-  none: "None",
-  low: "Low",
-  medium: "Medium",
-  high: "High",
+  none: "Brak",
+  low: "Niskie",
+  medium: "Średnie",
+  high: "Wysokie",
 };
 
 interface UserProfileRow {
@@ -140,6 +140,14 @@ export function createEmptyUserProfile(): UserProfileInput {
     goals: [],
     notes: null,
   };
+}
+
+export function isUserProfileComplete(profile: Pick<UserProfile, "skinType" | "skinAspects"> | null) {
+  if (!profile?.skinType) {
+    return false;
+  }
+
+  return SKIN_ASPECT_KEYS.every((aspectKey) => isSkinAspectLevel(profile.skinAspects[aspectKey]));
 }
 
 function isSkinType(value: unknown): value is SkinType {
@@ -266,7 +274,7 @@ export function isMissingUserDomainContractError(error: unknown) {
 }
 
 export function getMissingUserDomainContractMessage() {
-  return "User domain tables are not available yet. Run `supabase db reset` or apply the latest migrations, then reload the dashboard.";
+  return "Tabele domeny użytkownika nie są jeszcze dostępne. Uruchom `supabase db reset` albo zastosuj najnowsze migracje i odśwież panel.";
 }
 
 export async function getUserProfile(supabase: UserDomainClient, userId: string) {
@@ -277,7 +285,7 @@ export async function getUserProfile(supabase: UserDomainClient, userId: string)
     .maybeSingle();
 
   if (error) {
-    throw new Error(`Could not load user profile: ${error.message}`);
+    throw new Error(`Nie udało się wczytać profilu użytkownika: ${error.message}`);
   }
 
   return data ? mapUserProfile(data) : null;
@@ -300,7 +308,7 @@ export async function upsertUserProfile(supabase: UserDomainClient, userId: stri
     .single();
 
   if (error) {
-    throw new Error(`Could not save user profile: ${error.message}`);
+    throw new Error(`Nie udało się zapisać profilu użytkownika: ${error.message}`);
   }
 
   return mapUserProfile(data);
@@ -314,7 +322,7 @@ export async function listUserShelfItems(supabase: UserDomainClient, userId: str
     .order("created_at", { ascending: true });
 
   if (error) {
-    throw new Error(`Could not load shelf items: ${error.message}`);
+    throw new Error(`Nie udało się wczytać produktów na półce: ${error.message}`);
   }
 
   return data.map((row) => mapUserShelfItem(row));
@@ -331,7 +339,7 @@ export async function addUserShelfItem(supabase: UserDomainClient, userId: strin
     .single();
 
   if (error) {
-    throw new Error(`Could not add shelf item: ${error.message}`);
+    throw new Error(`Nie udało się dodać produktu na półkę: ${error.message}`);
   }
 
   return mapUserShelfItem(data);
@@ -347,7 +355,7 @@ export async function removeUserShelfItem(supabase: UserDomainClient, userId: st
     .maybeSingle();
 
   if (error) {
-    throw new Error(`Could not remove shelf item: ${error.message}`);
+    throw new Error(`Nie udało się usunąć produktu z półki: ${error.message}`);
   }
 
   return data ? mapUserShelfItem(data) : null;
@@ -361,7 +369,7 @@ export async function getUserRoutineConfig(supabase: UserDomainClient, userId: s
     .maybeSingle();
 
   if (error) {
-    throw new Error(`Could not load routine config: ${error.message}`);
+    throw new Error(`Nie udało się wczytać konfiguracji rutyny: ${error.message}`);
   }
 
   return data ? mapUserRoutineConfig(data) : null;
@@ -383,7 +391,7 @@ export async function upsertUserRoutineConfig(supabase: UserDomainClient, userId
     .single();
 
   if (error) {
-    throw new Error(`Could not save routine config: ${error.message}`);
+    throw new Error(`Nie udało się zapisać konfiguracji rutyny: ${error.message}`);
   }
 
   return mapUserRoutineConfig(data);

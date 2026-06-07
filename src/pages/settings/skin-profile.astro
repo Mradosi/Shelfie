@@ -5,6 +5,7 @@ import {
   getMissingUserDomainContractMessage,
   getUserProfile,
   isMissingUserDomainContractError,
+  isUserProfileComplete,
   SKIN_ASPECT_KEYS,
   SKIN_ASPECT_LABELS,
   SKIN_ASPECT_LEVEL_LABELS,
@@ -22,12 +23,12 @@ let routeError: string | null = null;
 let profile = null;
 
 if (!supabase) {
-  routeError = "Supabase is not configured.";
+  routeError = "Supabase nie jest skonfigurowane.";
 } else {
   try {
     profile = await getUserProfile(supabase, user.id);
 
-    if (!profile?.skinType) {
+    if (!isUserProfileComplete(profile)) {
       return Astro.redirect("/onboarding/skin-profile");
     }
   } catch (error) {
@@ -35,7 +36,7 @@ if (!supabase) {
       ? getMissingUserDomainContractMessage()
       : error instanceof Error
         ? error.message
-        : "Could not load your saved profile.";
+        : "Nie udało się wczytać zapisanego profilu.";
   }
 }
 
@@ -48,24 +49,24 @@ const skinAspectFields = profile
   : [];
 ---
 
-<Layout title="Skin profile settings">
+<Layout title="Ustawienia profilu skóry">
   <div class="bg-cosmic min-h-screen p-4 text-white">
     <div class="mx-auto flex min-h-screen w-full max-w-5xl items-center justify-center py-10">
       <section class="w-full rounded-[2rem] border border-white/12 bg-white/10 p-8 backdrop-blur-xl">
         <div class="flex flex-col gap-3 border-b border-white/10 pb-6 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p class="text-sm tracking-[0.24em] text-cyan-100/55 uppercase">Skin profile</p>
-            <h1 class="mt-2 text-3xl font-bold text-white">Your saved baseline</h1>
+            <p class="text-sm tracking-[0.24em] text-cyan-100/55 uppercase">Profil skóry</p>
+            <h1 class="mt-2 text-3xl font-bold text-white">Twój zapisany profil bazowy</h1>
             <p class="mt-3 max-w-2xl text-sm leading-6 text-blue-100/75">
-              This route now owns the post-onboarding profile area. Direct editing lands in the next phase, but the
-              authenticated navigation boundary is already separated from the debug dashboard.
+              Ten ekran jest miejscem dla profilu po onboardingu. Właściwa edycja pojawi się w kolejnym etapie, ale
+              granica względem debugowego panelu jest już rozdzielona.
             </p>
           </div>
           <a
             href="/dashboard"
             class="rounded-full border border-white/20 bg-white/8 px-4 py-2 text-sm text-white transition-colors hover:bg-white/16"
           >
-            Open debug dashboard
+            Otwórz panel debugowy
           </a>
         </div>
 
@@ -77,12 +78,12 @@ const skinAspectFields = profile
           ) : profile ? (
             <div class="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               <div class="rounded-2xl border border-white/10 bg-slate-950/30 p-4">
-                <p class="text-sm text-blue-100/55">Skin type</p>
+                <p class="text-sm text-blue-100/55">Typ skóry</p>
                 <p class="mt-2 text-lg font-semibold text-white">{SKIN_TYPE_LABELS[profile.skinType]}</p>
               </div>
 
               <div class="rounded-2xl border border-white/10 bg-slate-950/30 p-4 md:col-span-2 xl:col-span-2">
-                <p class="text-sm text-blue-100/55">Skin aspects</p>
+                <p class="text-sm text-blue-100/55">Obszary skóry</p>
                 <div class="mt-3 grid gap-3 sm:grid-cols-2">
                   {skinAspectFields.map((aspect) => (
                     <div class="flex items-center justify-between gap-4 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm">
@@ -94,27 +95,27 @@ const skinAspectFields = profile
               </div>
 
               <div class="rounded-2xl border border-white/10 bg-slate-950/30 p-4">
-                <p class="text-sm text-blue-100/55">Concerns</p>
+                <p class="text-sm text-blue-100/55">Potrzeby skóry</p>
                 <p class="mt-2 text-sm leading-6 text-white">
-                  {profile.concerns.length > 0 ? profile.concerns.join(", ") : "Not set"}
+                  {profile.concerns.length > 0 ? profile.concerns.join(", ") : "Brak"}
                 </p>
               </div>
 
               <div class="rounded-2xl border border-white/10 bg-slate-950/30 p-4">
-                <p class="text-sm text-blue-100/55">Goals</p>
+                <p class="text-sm text-blue-100/55">Cele</p>
                 <p class="mt-2 text-sm leading-6 text-white">
-                  {profile.goals.length > 0 ? profile.goals.join(", ") : "Not set"}
+                  {profile.goals.length > 0 ? profile.goals.join(", ") : "Brak"}
                 </p>
               </div>
 
               <div class="rounded-2xl border border-white/10 bg-slate-950/30 p-4">
-                <p class="text-sm text-blue-100/55">Notes</p>
-                <p class="mt-2 text-sm leading-6 text-white">{profile.notes ?? "Not set"}</p>
+                <p class="text-sm text-blue-100/55">Notatki</p>
+                <p class="mt-2 text-sm leading-6 text-white">{profile.notes ?? "Brak"}</p>
               </div>
             </div>
           ) : (
             <p class="mt-6 rounded-2xl border border-white/10 bg-slate-950/30 px-4 py-3 text-sm text-blue-100/70">
-              No saved profile yet. Start with onboarding first.
+              Nie ma jeszcze zapisanego profilu. Zacznij od onboardingu.
             </p>
           )
         }

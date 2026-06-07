@@ -78,16 +78,16 @@ Read project files to identify the stack. The detection is file-driven — read 
 
 **Detection sources by language family:**
 
-| Language family | Marker files | What to extract |
-|---|---|---|
-| JS/TS | `package.json`, `tsconfig.json`, `next.config.*`, `astro.config.*`, `vite.config.*`, `svelte.config.*`, `nuxt.config.*`, `angular.json`, `.eslintrc*`, `prettier.config.*`, `jest.config.*`, `vitest.config.*`, `playwright.config.*` | Language (JS vs TS — presence of `tsconfig.json`), framework, build tool, test runner, linter, formatter, package manager (from lockfile: `package-lock.json` → npm, `yarn.lock` → yarn, `pnpm-lock.yaml` → pnpm, `bun.lockb` → bun) |
-| Python | `pyproject.toml`, `setup.py`, `setup.cfg`, `requirements.txt`, `Pipfile`, `poetry.lock`, `uv.lock` | Framework (Django, FastAPI, Flask — from deps), type checking (mypy/pyright in deps or config), test runner (pytest/unittest), package manager |
-| Rust | `Cargo.toml` | Edition, dependencies for web framework (Actix, Axum, Rocket), test framework |
-| Go | `go.mod` | Go version, web framework (Gin, Echo, Fiber, Chi, stdlib), test framework |
-| Ruby | `Gemfile` | Framework (Rails, Sinatra), Ruby version, type checking (Sorbet/RBS), test framework (RSpec, Minitest) |
-| PHP | `composer.json` | Framework (Laravel, Symfony), PHP version, type checking (PHPStan/Psalm), test framework (PHPUnit, Pest) |
-| .NET | `*.csproj`, `*.sln` | Framework (.NET version, ASP.NET), language (C#/F#), test framework (xUnit, NUnit) |
-| Dart | `pubspec.yaml` | Framework (Flutter, Dart server), test framework |
+| Language family | Marker files                                                                                                                                                                                                                          | What to extract                                                                                                                                                                                                                      |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| JS/TS           | `package.json`, `tsconfig.json`, `next.config.*`, `astro.config.*`, `vite.config.*`, `svelte.config.*`, `nuxt.config.*`, `angular.json`, `.eslintrc*`, `prettier.config.*`, `jest.config.*`, `vitest.config.*`, `playwright.config.*` | Language (JS vs TS — presence of `tsconfig.json`), framework, build tool, test runner, linter, formatter, package manager (from lockfile: `package-lock.json` → npm, `yarn.lock` → yarn, `pnpm-lock.yaml` → pnpm, `bun.lockb` → bun) |
+| Python          | `pyproject.toml`, `setup.py`, `setup.cfg`, `requirements.txt`, `Pipfile`, `poetry.lock`, `uv.lock`                                                                                                                                    | Framework (Django, FastAPI, Flask — from deps), type checking (mypy/pyright in deps or config), test runner (pytest/unittest), package manager                                                                                       |
+| Rust            | `Cargo.toml`                                                                                                                                                                                                                          | Edition, dependencies for web framework (Actix, Axum, Rocket), test framework                                                                                                                                                        |
+| Go              | `go.mod`                                                                                                                                                                                                                              | Go version, web framework (Gin, Echo, Fiber, Chi, stdlib), test framework                                                                                                                                                            |
+| Ruby            | `Gemfile`                                                                                                                                                                                                                             | Framework (Rails, Sinatra), Ruby version, type checking (Sorbet/RBS), test framework (RSpec, Minitest)                                                                                                                               |
+| PHP             | `composer.json`                                                                                                                                                                                                                       | Framework (Laravel, Symfony), PHP version, type checking (PHPStan/Psalm), test framework (PHPUnit, Pest)                                                                                                                             |
+| .NET            | `*.csproj`, `*.sln`                                                                                                                                                                                                                   | Framework (.NET version, ASP.NET), language (C#/F#), test framework (xUnit, NUnit)                                                                                                                                                   |
+| Dart            | `pubspec.yaml`                                                                                                                                                                                                                        | Framework (Flutter, Dart server), test framework                                                                                                                                                                                     |
 
 **Additional signals to check:**
 
@@ -111,6 +111,7 @@ Detected stack:
 ```
 
 Ask the user:
+
 - question: "Is this detection accurate? Anything missing or wrong?"
   header: "Stack"
   options:
@@ -118,7 +119,7 @@ Ask the user:
     description: "Continue with this detected stack."
   - label: "Correct something"
     description: "I'll fix the detection before scoring."
-  multiSelect: false
+    multiSelect: false
 
 If "Correct something": ask which component to correct, apply the override in memory, proceed.
 
@@ -178,24 +179,28 @@ For each failed gate, produce a concrete compensation strategy. Compensation mea
 **Compensation templates by gate failure:**
 
 **Typed: fail** →
+
 - Add explicit type annotations convention to CLAUDE.md ("All new code must include type annotations at function boundaries")
 - Add validation-at-boundaries rule ("Use Zod/Pydantic/JSON Schema at API boundaries")
 - If Python: add mypy configuration recommendation
 - If JS: add TypeScript migration path or JSDoc type hints
 
 **Convention-based: fail** →
+
 - Document folder structure conventions in CLAUDE.md ("Routes live in src/routes/, middleware in src/middleware/, ...")
 - Document naming conventions ("Files: kebab-case, exports: PascalCase for components, camelCase for functions")
 - Document middleware/plugin registration order
 - Document error handling pattern
 
 **Popular in training data: fail** →
+
 - Add framework-specific idiom examples to CLAUDE.md
 - Link to official docs in instruction file
 - Add "prefer X pattern over Y" rules for framework-specific choices
 - Note that the agent may need more steering for this framework
 
 **Well-documented: fail** →
+
 - Pin framework version in instruction file
 - Add links to the best available docs
 - Include inline examples of common patterns
@@ -218,6 +223,7 @@ The verdict is informational, not blocking. Even `significant-friction` doesn't 
 Check for collision by attempting to read `context/foundation/stack-assessment.md`.
 
 If the file exists, ask the user:
+
 - question: "context/foundation/stack-assessment.md already exists. How would you like to proceed?"
   header: "Collision"
   options:
@@ -227,7 +233,7 @@ If the file exists, ask the user:
     description: "Preserve history. New assessment lands at the next available version slot."
   - label: "Abort"
     description: "Exit without writing. The conversation assessment is preserved in chat only."
-  multiSelect: false
+    multiSelect: false
 
 Build the output file:
 

@@ -90,26 +90,26 @@ Jeden rekord na produkt, niezależnie ilu userów go posiada. Tworzona raz, przy
 
 Pola:
 
-* `id`
-* `name`, `brand`, `category`
-* `inci_list` – lista składników INCI
-* `ingredient_groups` – tagi grup składnikowych wynikające z INCI, np. `retinoids`, `AHAs`, `niacinamide`, `high_alcohol`, `fragrance`
-* `concern_tags` – tagi problemów skórnych które produkt adresuje, np. `['acne', 'hydration', 'brightening']`
-* `image_url` – link do zdjęcia opakowania
-* `inci_source` – źródło składu: `open_beauty_facts`, `photo_vision`, `manual`, `ai_web_search`
-* `inci_confidence` – poziom pewności danych: `high`, `medium`
-* `inci_updated_at` – timestamp ostatniej aktualizacji składu
+- `id`
+- `name`, `brand`, `category`
+- `inci_list` – lista składników INCI
+- `ingredient_groups` – tagi grup składnikowych wynikające z INCI, np. `retinoids`, `AHAs`, `niacinamide`, `high_alcohol`, `fragrance`
+- `concern_tags` – tagi problemów skórnych które produkt adresuje, np. `['acne', 'hydration', 'brightening']`
+- `image_url` – link do zdjęcia opakowania
+- `inci_source` – źródło składu: `open_beauty_facts`, `photo_vision`, `manual`, `ai_web_search`
+- `inci_confidence` – poziom pewności danych: `high`, `medium`
+- `inci_updated_at` – timestamp ostatniej aktualizacji składu
 
 ### Tabela `users` – profil skóry
 
 Pola:
 
-* `id`
-* `email`
-* `skin_type`
-* `concerns`
-* `goals`
-* `sensitivity`
+- `id`
+- `email`
+- `skin_type`
+- `concerns`
+- `goals`
+- `sensitivity`
 
 ### Tabela `user_products` – interpretacja per user
 
@@ -117,17 +117,17 @@ Pola:
 
 Pola:
 
-* `id`
-* `user_id`
-* `product_id`
-* `fit_score`
-* `compatibility`
-* `warnings`
-* `personalized_notes`
-* `user_notes`
-* `user_reactions`
-* `interpretation_valid`
-* `added_at`
+- `id`
+- `user_id`
+- `product_id`
+- `fit_score`
+- `compatibility`
+- `warnings`
+- `personalized_notes`
+- `user_notes`
+- `user_reactions`
+- `interpretation_valid`
+- `added_at`
 
 ---
 
@@ -141,9 +141,9 @@ Shelf i routine są oddzielnymi konceptami produktu.
 
 Shelf reprezentuje:
 
-* produkty które user posiada,
-* produkty które chce obserwować,
-* produkty które potencjalnie chce wykorzystać w rutynie.
+- produkty które user posiada,
+- produkty które chce obserwować,
+- produkty które potencjalnie chce wykorzystać w rutynie.
 
 Produkt może istnieć na shelf bez bycia aktywnie używanym w rutynie.
 
@@ -151,16 +151,16 @@ Produkt może istnieć na shelf bez bycia aktywnie używanym w rutynie.
 
 Routine:
 
-* wykorzystuje wybrane produkty z shelf,
-* definiuje sposób ich użycia.
+- wykorzystuje wybrane produkty z shelf,
+- definiuje sposób ich użycia.
 
 Routine configuration określa:
 
-* routine role,
-* AM/PM,
-* weekdays,
-* frequency,
-* order.
+- routine role,
+- AM/PM,
+- weekdays,
+- frequency,
+- order.
 
 ### AI routine generation
 
@@ -168,9 +168,9 @@ AI routine generation działa wyłącznie na produktach obecnych na shelf usera.
 
 AI:
 
-* analizuje produkty ze shelf,
-* analizuje profil skóry,
-* generuje suggested routine.
+- analizuje produkty ze shelf,
+- analizuje profil skóry,
+- generuje suggested routine.
 
 Generated routine wykorzystuje dokładnie ten sam model danych i UX co manual routine editing.
 
@@ -198,17 +198,17 @@ Interpretacja jest generowana jednorazowo per para `(user, product)` i zapisywan
 
 AI dostaje:
 
-* listę INCI
-* ingredient groups
-* concern tags
-* profil skóry usera
+- listę INCI
+- ingredient groups
+- concern tags
+- profil skóry usera
 
 Na tej podstawie generuje:
 
-* fit score
-* compatibility
-* warnings
-* contextual notes
+- fit score
+- compatibility
+- warnings
+- contextual notes
 
 Jeśli profil skóry usera się zmieni, interpretacja może zostać zinwalidowana i przeliczona ponownie.
 
@@ -220,21 +220,21 @@ Frontend dostaje w jednym response:
 
 ### Shared product data
 
-* nazwa
-* marka
-* zdjęcie
-* category
-* INCI
-* ingredient groups
-* concern tags
+- nazwa
+- marka
+- zdjęcie
+- category
+- INCI
+- ingredient groups
+- concern tags
 
 ### User-specific interpretation
 
-* fit score
-* compatibility
-* warnings
-* personal notes
-* reactions
+- fit score
+- compatibility
+- warnings
+- personal notes
+- reactions
 
 Jeśli interpretacja nie istnieje lub jest nieaktualna, backend może zwrócić dane produktu od razu, a interpretację wygenerować asynchronicznie w tle.
 
@@ -244,9 +244,9 @@ Jeśli interpretacja nie istnieje lub jest nieaktualna, backend może zwrócić 
 
 Przy każdym produkcie zapisujemy:
 
-* `inci_source`
-* `inci_confidence`
-* `inci_updated_at`
+- `inci_source`
+- `inci_confidence`
+- `inci_updated_at`
 
 Mapowanie:
 
@@ -259,9 +259,9 @@ Mapowanie:
 
 Dzięki temu:
 
-* można wyświetlać disclaimery,
-* różnicować wagę warningów,
-* łatwiej utrzymywać bazę.
+- można wyświetlać disclaimery,
+- różnicować wagę warningów,
+- łatwiej utrzymywać bazę.
 
 ---
 
@@ -277,19 +277,19 @@ Nie jest to personalizacja użytkownika ani concern tag, tylko semantyczna funkc
 
 Controlled vocabulary na MVP:
 
-* `cleanser`
-* `makeup_remover`
-* `toner`
-* `essence`
-* `serum`
-* `treatment`
-* `exfoliant`
-* `moisturizer`
-* `spf`
-* `eye_care`
-* `mask`
-* `spot_treatment`
-* `oil`
+- `cleanser`
+- `makeup_remover`
+- `toner`
+- `essence`
+- `serum`
+- `treatment`
+- `exfoliant`
+- `moisturizer`
+- `spf`
+- `eye_care`
+- `mask`
+- `spot_treatment`
+- `oil`
 
 Jeden produkt może mieć kilka ról.
 
@@ -305,10 +305,10 @@ Przykład:
 
 Role są generowane automatycznie przez AI podczas tworzenia produktu na podstawie:
 
-* category,
-* product name,
-* ingredient groups,
-* INCI.
+- category,
+- product name,
+- ingredient groups,
+- INCI.
 
 User może je ewentualnie poprawić.
 
@@ -316,12 +316,12 @@ User może je ewentualnie poprawić.
 
 Routine roles pozwalają deterministycznie:
 
-* budować strukturę rutyny,
-* sprawdzać brakujące kroki,
-* filtrować produkty,
-* grupować produkty w UI,
-* wspierać recommendation engine,
-* generować bardziej stabilne prompty dla AI.
+- budować strukturę rutyny,
+- sprawdzać brakujące kroki,
+- filtrować produkty,
+- grupować produkty w UI,
+- wspierać recommendation engine,
+- generować bardziej stabilne prompty dla AI.
 
 ### Relationship do innych metadata
 
@@ -333,9 +333,9 @@ Co produkt zawiera.
 
 Np:
 
-* `retinoids`
-* `AHAs`
-* `niacinamide`
+- `retinoids`
+- `AHAs`
+- `niacinamide`
 
 #### Concern tags
 
@@ -343,9 +343,9 @@ Jakie problemy adresuje.
 
 Np:
 
-* `acne`
-* `hydration`
-* `anti_aging`
+- `acne`
+- `hydration`
+- `anti_aging`
 
 #### Personalized interpretation
 
@@ -353,9 +353,9 @@ Czy produkt pasuje do konkretnego usera.
 
 Np:
 
-* too irritating for sensitive skin,
-* good for barrier repair,
-* may worsen dryness.
+- too irritating for sensitive skin,
+- good for barrier repair,
+- may worsen dryness.
 
 ---
 
@@ -367,25 +367,25 @@ Np:
 
 Obiektywne tagi wynikające bezpośrednio z INCI:
 
-* `retinoids`
-* `AHAs`
-* `BHAs`
-* `niacinamide`
-* `vitamin_c`
-* `fragrance`
-* `high_alcohol`
-* `occlusive`
+- `retinoids`
+- `AHAs`
+- `BHAs`
+- `niacinamide`
+- `vitamin_c`
+- `fragrance`
+- `high_alcohol`
+- `occlusive`
 
 #### Concern tags
 
 Pół-deterministyczne tagi problemów skórnych:
 
-* `acne`
-* `hydration`
-* `brightening`
-* `anti_aging`
-* `barrier_support`
-* `sensitivity`
+- `acne`
+- `hydration`
+- `brightening`
+- `anti_aging`
+- `barrier_support`
+- `sensitivity`
 
 Są generowane przez AI jednorazowo przy tworzeniu produktu.
 
@@ -393,8 +393,8 @@ Są generowane przez AI jednorazowo przy tworzeniu produktu.
 
 Nie zapisujemy:
 
-* `suitable_for_oily_skin`
-* `good_for_sensitive_skin`
+- `suitable_for_oily_skin`
+- `good_for_sensitive_skin`
 
 na poziomie produktu.
 
@@ -404,12 +404,12 @@ To jest interpretacja zależna od konkretnego usera i jego skóry.
 
 Pozwalają robić deterministycznie:
 
-* filtrowanie produktów,
-* porównanie produktów,
-* shelf audit,
-* recommendation ranking,
-* conflict detection,
-* listy produktów na konkretny problem.
+- filtrowanie produktów,
+- porównanie produktów,
+- shelf audit,
+- recommendation ranking,
+- conflict detection,
+- listy produktów na konkretny problem.
 
 Bez dodatkowych AI calli.
 
@@ -419,15 +419,15 @@ Deterministyczne tagi są triggerem i kontekstem.
 
 AI:
 
-* interpretuje,
-* wyjaśnia,
-* personalizuje.
+- interpretuje,
+- wyjaśnia,
+- personalizuje.
 
 Deterministic layer:
 
-* wykrywa obvious conflicts,
-* umożliwia filtrowanie,
-* pozwala budować recommendation logic.
+- wykrywa obvious conflicts,
+- umożliwia filtrowanie,
+- pozwala budować recommendation logic.
 
 ---
 
@@ -442,12 +442,12 @@ Zamiast tego dodaje produkty do rutyny i konfiguruje sposób ich użycia.
 
 Każdy produkt w rutynie posiada:
 
-* routine role,
-* AM/PM,
-* frequency,
-* selected weekdays,
-* order index,
-* opcjonalne instrukcje aplikacji.
+- routine role,
+- AM/PM,
+- frequency,
+- selected weekdays,
+- order index,
+- opcjonalne instrukcje aplikacji.
 
 ### Dlaczego nie model per-day
 
@@ -461,11 +461,11 @@ Wednesday → ...
 
 Ponieważ:
 
-* powoduje ogromną redundancję,
-* wymaga przeklikiwania całego tygodnia,
-* utrudnia edycję,
-* słabo skaluje się dla bardziej zaawansowanych rutyn,
-* utrudnia generowanie i utrzymanie rutyn przez AI.
+- powoduje ogromną redundancję,
+- wymaga przeklikiwania całego tygodnia,
+- utrudnia edycję,
+- słabo skaluje się dla bardziej zaawansowanych rutyn,
+- utrudnia generowanie i utrzymanie rutyn przez AI.
 
 ### Model konfiguracji produktu
 
@@ -473,39 +473,39 @@ Flow wygląda następująco:
 
 1. User dodaje produkt do rutyny.
 2. Konfiguruje:
+   - routine role,
+   - porę użycia,
+   - częstotliwość,
+   - dni tygodnia,
+   - kolejność w rutynie.
 
-   * routine role,
-   * porę użycia,
-   * częstotliwość,
-   * dni tygodnia,
-   * kolejność w rutynie.
 3. System dynamicznie generuje widoki dzienne i tygodniowe.
 
 ### Routine role vs product type
 
 Routine role:
 
-* określa funkcję produktu w rutynie,
-* należy do konfiguracji użycia produktu.
+- określa funkcję produktu w rutynie,
+- należy do konfiguracji użycia produktu.
 
 Np:
 
-* cleanser,
-* treatment,
-* moisturizer,
-* SPF.
+- cleanser,
+- treatment,
+- moisturizer,
+- SPF.
 
 Product type:
 
-* należy do metadata produktu,
-* opisuje formę produktu.
+- należy do metadata produktu,
+- opisuje formę produktu.
 
 Np:
 
-* serum,
-* cream,
-* gel,
-* oil.
+- serum,
+- cream,
+- gel,
+- oil.
 
 ### Dynamiczny widok dzisiejszej rutyny
 
@@ -519,8 +519,8 @@ Today's Routine
 
 System dynamicznie wylicza produkty przypisane do:
 
-* aktualnego dnia tygodnia,
-* AM lub PM.
+- aktualnego dnia tygodnia,
+- AM lub PM.
 
 Przykład:
 
@@ -558,19 +558,18 @@ Flow:
 
 1. User klika `Add product`.
 2. System pyta:
-
-   * `Add to routine`
-   * `Use only today`
+   - `Add to routine`
+   - `Use only today`
 
 ### Add to routine
 
 User przechodzi do pełnej konfiguracji produktu w routine editor:
 
-* routine role,
-* AM/PM,
-* frequency,
-* weekdays,
-* order.
+- routine role,
+- AM/PM,
+- frequency,
+- weekdays,
+- order.
 
 Produkt staje się częścią bazowej rutyny.
 
@@ -580,15 +579,15 @@ User dodaje produkt jako jednorazowe lub okazjonalne użycie.
 
 Produkt:
 
-* pojawia się wyłącznie w dzisiejszym widoku,
-* nie modyfikuje weekly schedule,
-* nie przebudowuje rutyny.
+- pojawia się wyłącznie w dzisiejszym widoku,
+- nie modyfikuje weekly schedule,
+- nie przebudowuje rutyny.
 
 Może zawierać:
 
-* AM/PM,
-* optional order,
-* optional note.
+- AM/PM,
+- optional order,
+- optional note.
 
 ### Dlaczego to jest ważne
 
@@ -596,12 +595,12 @@ Skincare nie jest wyłącznie sztywną rutyną.
 
 User może okazjonalnie używać:
 
-* masek,
-* sheet masks,
-* peelingów,
-* produktów testowych,
-* produktów zabiegowych,
-* dodatkowych treatmentów.
+- masek,
+- sheet masks,
+- peelingów,
+- produktów testowych,
+- produktów zabiegowych,
+- dodatkowych treatmentów.
 
 Bez potrzeby przebudowywania całego harmonogramu.
 
@@ -611,43 +610,43 @@ Occasional products nadal przechodzą przez warning system.
 
 Przykład:
 
-* user dodaje dziś BHA peel,
-* system widzi że dzisiejsza rutyna zawiera retinoid,
-* wyświetlany jest soft warning.
+- user dodaje dziś BHA peel,
+- system widzi że dzisiejsza rutyna zawiera retinoid,
+- wyświetlany jest soft warning.
 
 ### Suggested architecture
 
 Scheduled routine products:
 
-* `routine_products`
+- `routine_products`
 
 Ephemeral one-time additions:
 
-* `daily_usage_events`
-* lub `routine_overrides`
+- `daily_usage_events`
+- lub `routine_overrides`
 
 ---
 
 ### Korzyści modelu
 
-* mniej redundancji danych,
-* prostszy UX,
-* bardziej naturalne myślenie o skincare,
-* lepsza współpraca z AI,
-* łatwiejsze temporary overlays,
-* łatwiejsze walidacje konfliktów,
-* bardziej skalowalna architektura.
+- mniej redundancji danych,
+- prostszy UX,
+- bardziej naturalne myślenie o skincare,
+- lepsza współpraca z AI,
+- łatwiejsze temporary overlays,
+- łatwiejsze walidacje konfliktów,
+- bardziej skalowalna architektura.
 
 ### Suggested naming
 
 Preferowane nazwy modelu:
 
-* `routine_product`
-* `routine_item`
+- `routine_product`
+- `routine_item`
 
 Zamiast:
 
-* `routine_step`
+- `routine_step`
 
 Ponieważ krok wynika z konfiguracji użycia produktu.
 
@@ -659,9 +658,9 @@ Nie tworzymy osobnych encji dla morning routine i evening routine.
 
 Rutyna jest pojedynczym rekordem który zawiera:
 
-* dni tygodnia,
-* sekcję poranną,
-* sekcję wieczorną.
+- dni tygodnia,
+- sekcję poranną,
+- sekcję wieczorną.
 
 Model ma odpowiadać temu jak użytkownicy realnie myślą o skincare — jako o rutynie tygodniowej z różnymi aktywami w różne dni.
 
@@ -669,11 +668,11 @@ Model ma odpowiadać temu jak użytkownicy realnie myślą o skincare — jako o
 
 To lepiej wspiera:
 
-* retinol cycling,
-* recovery nights,
-* alternating acids,
-* temporary routines,
-* weekly planning.
+- retinol cycling,
+- recovery nights,
+- alternating acids,
+- temporary routines,
+- weekly planning.
 
 ### MVP implementation recommendation
 
@@ -684,37 +683,29 @@ Przykład:
 ```json
 {
   "monday": {
-    "morning": [
-      "cleanser",
-      "vitamin c",
-      "spf"
-    ],
-    "evening": [
-      "cleanser",
-      "retinol",
-      "moisturizer"
-    ]
+    "morning": ["cleanser", "vitamin c", "spf"],
+    "evening": ["cleanser", "retinol", "moisturizer"]
   }
 }
 ```
 
 ### Dlaczego JSON na MVP
 
-* AI naturalnie generuje JSON
-* mniej tabel i state managementu
-* szybszy development
-* łatwiejsze iteracje produktu
-* prostszy temporary routine flow
+- AI naturalnie generuje JSON
+- mniej tabel i state managementu
+- szybszy development
+- łatwiejsze iteracje produktu
+- prostszy temporary routine flow
 
 ### Future scaling
 
 Jeśli później pojawi się potrzeba:
 
-* analytics,
-* sharing,
-* advanced editing,
-* versioning,
-* collaborative flows,
+- analytics,
+- sharing,
+- advanced editing,
+- versioning,
+- collaborative flows,
 
 model może zostać bardziej znormalizowany.
 
@@ -726,16 +717,16 @@ AI jest używane głównie w dwóch miejscach:
 
 ### Product acquisition
 
-* AI web search
-* vision extraction
-* tag generation
+- AI web search
+- vision extraction
+- tag generation
 
 Jednorazowo na produkt.
 
 ### Personalized interpretation
 
-* per `(user, product)`
-* cache’owane w bazie
-* nie generowane przy każdym wejściu
+- per `(user, product)`
+- cache’owane w bazie
+- nie generowane przy każdym wejściu
 
 Koszty maleją wraz ze wzrostem shared product database.

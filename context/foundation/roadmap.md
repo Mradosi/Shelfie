@@ -27,29 +27,29 @@ Shelfie ma pomóc użytkownikowi uporządkować pielęgnację na bazie jego real
 
 ## At a glance
 
-| ID | Change ID | Outcome (user can …) | Prerequisites | PRD refs | Status |
-|---|---|---|---|---|---|
-| F-01 | user-domain-persistence-contract | (foundation) minimal persistence contract for skin profile, shelf items, product schedules, and routine configuration is in place | — | Business Logic, Access Control, Non-Functional Requirements (privacy, persistence) | done |
-| F-02 | shared-product-provenance-contract | (foundation) shared product and provenance contract is in place for confirmed product reuse | — | FR-004, Non-Functional Requirements (inci_source, inci_confidence) | ready |
-| S-01 | first-skin-profile | user can sign in, provide skin context, and finish onboarding with an empty shelf ready for products | F-01 | US-01, FR-001, FR-002 | proposed |
-| S-02 | first-product-intake | user can add the first product to their shelf from shared sources or AI/manual fallback and confirm it before save | F-01, F-02, S-01 | US-01, FR-003, FR-004, FR-005, FR-016, FR-017 | proposed |
-| S-03 | first-manual-routine-management | user can create, edit, and delete the first base routine from owned products and assigned routine roles | S-01, S-02 | US-01, FR-008, FR-009, FR-010 | proposed |
-| S-04 | ai-routine-draft-and-review | user can ask AI for a base-routine draft or improvement suggestions, then review and edit the result before save | F-02, S-03 | US-01, FR-008, FR-010 | proposed |
-| S-05 | todays-routine-consumption | user can view today's AM/PM routine from the saved base configuration and make lightweight one-off usage edits from routine screens | S-03 | US-01, FR-009 | proposed |
-| S-06 | routine-warnings-and-guidance | user can review soft warnings about conflicts or overuse, plus product-role and missing-step guidance while adjusting routine usage | S-04, S-05 | US-01, FR-010, FR-011 | proposed |
-| S-07 | shelf-notes-and-skin-checkins | user can manage the shelf with notes/reactions and log a quick skin check-in for later guidance | S-05 | US-01, FR-006, FR-007, FR-012 | proposed |
-| S-08 | mobile-first-pwa-flow | user can use the core shelf and routine flow comfortably on mobile and as a PWA | S-05 | FR-015 | proposed |
+| ID   | Change ID                          | Outcome (user can …)                                                                                                                | Prerequisites    | PRD refs                                                                           | Status   |
+| ---- | ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- | ---------------- | ---------------------------------------------------------------------------------- | -------- |
+| F-01 | user-domain-persistence-contract   | (foundation) minimal persistence contract for skin profile, shelf items, product schedules, and routine configuration is in place   | —                | Business Logic, Access Control, Non-Functional Requirements (privacy, persistence) | done     |
+| F-02 | shared-product-provenance-contract | (foundation) shared product and provenance contract is in place for confirmed product reuse                                         | —                | FR-004, Non-Functional Requirements (inci_source, inci_confidence)                 | ready    |
+| S-01 | first-skin-profile                 | user can sign in, provide skin context, and finish onboarding with an empty shelf ready for products                                | F-01             | US-01, FR-001, FR-002                                                              | proposed |
+| S-02 | first-product-intake               | user can add the first product to their shelf from shared sources or AI/manual fallback and confirm it before save                  | F-01, F-02, S-01 | US-01, FR-003, FR-004, FR-005, FR-016, FR-017                                      | proposed |
+| S-03 | first-manual-routine-management    | user can create, edit, and delete the first base routine from owned products and assigned routine roles                             | S-01, S-02       | US-01, FR-008, FR-009, FR-010                                                      | proposed |
+| S-04 | ai-routine-draft-and-review        | user can ask AI for a base-routine draft or improvement suggestions, then review and edit the result before save                    | F-02, S-03       | US-01, FR-008, FR-010                                                              | proposed |
+| S-05 | todays-routine-consumption         | user can view today's AM/PM routine from the saved base configuration and make lightweight one-off usage edits from routine screens | S-03             | US-01, FR-009                                                                      | proposed |
+| S-06 | routine-warnings-and-guidance      | user can review soft warnings about conflicts or overuse, plus product-role and missing-step guidance while adjusting routine usage | S-04, S-05       | US-01, FR-010, FR-011                                                              | proposed |
+| S-07 | shelf-notes-and-skin-checkins      | user can manage the shelf with notes/reactions and log a quick skin check-in for later guidance                                     | S-05             | US-01, FR-006, FR-007, FR-012                                                      | proposed |
+| S-08 | mobile-first-pwa-flow              | user can use the core shelf and routine flow comfortably on mobile and as a PWA                                                     | S-05             | FR-015                                                                             | proposed |
 
 ## Streams
 
 Navigation aid — groups items that share a Prerequisites chain. Canonical ordering still lives in the dependency graph below; this table is the proposed reading order across parallel tracks.
 
-| Stream | Theme | Chain | Note |
-|---|---|---|---|
-| A | Core routine loop | `F-01` → `S-01` → `S-02` → `S-03` → `S-05` | This is the main market-feedback path; `S-05` is the first daily-consumption checkpoint after the user proves they can manage a base routine without AI. |
-| B | AI assistance layer | `F-02` → `S-04` → `S-06` | This stream joins the core loop after `S-03` and tests whether AI improves a routine the user can already manage manually. |
-| C | Post-routine adaptation | `S-07` | This slice branches after `S-05` and keeps lightweight feedback separate from the core routine-validation path. |
-| D | Mobile shell | `S-08` | This slice also branches after `S-05`, so mobile/PWA polish follows a proven daily-use loop. |
+| Stream | Theme                   | Chain                                      | Note                                                                                                                                                     |
+| ------ | ----------------------- | ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A      | Core routine loop       | `F-01` → `S-01` → `S-02` → `S-03` → `S-05` | This is the main market-feedback path; `S-05` is the first daily-consumption checkpoint after the user proves they can manage a base routine without AI. |
+| B      | AI assistance layer     | `F-02` → `S-04` → `S-06`                   | This stream joins the core loop after `S-03` and tests whether AI improves a routine the user can already manage manually.                               |
+| C      | Post-routine adaptation | `S-07`                                     | This slice branches after `S-05` and keeps lightweight feedback separate from the core routine-validation path.                                          |
+| D      | Mobile shell            | `S-08`                                     | This slice also branches after `S-05`, so mobile/PWA polish follows a proven daily-use loop.                                                             |
 
 ## Baseline
 
@@ -193,18 +193,18 @@ Foundations below assume these are present and do NOT re-scaffold them.
 
 ## Backlog Handoff
 
-| Roadmap ID | Change ID | Suggested issue title | Ready for `/10x-plan` | Notes |
-|---|---|---|---|---|
-| F-01 | user-domain-persistence-contract | Define minimal user-domain persistence contract | yes | Smallest cross-cutting enabler for profile, shelf, and routine persistence. |
-| F-02 | shared-product-provenance-contract | Define shared product provenance contract | yes | Can run in parallel with F-01; keep scope to reusable product intake contracts. |
-| S-01 | first-skin-profile | Save initial skin profile and empty-shelf onboarding state | no | Wait for F-01. |
-| S-02 | first-product-intake | Ship first confirmed product intake flow onto the shelf | no | Wait for F-01, F-02, and S-01. |
-| S-03 | first-manual-routine-management | Ship first manual base-routine management flow from owned products | no | Wait for S-01 and S-02; clarify the boundary of manual routine management in US-01 before planning. |
-| S-04 | ai-routine-draft-and-review | Add AI draft and review flow on top of the manual base-routine model | no | Wait for F-02 and S-03; this should accelerate, not replace, manual routine management. |
-| S-05 | todays-routine-consumption | Ship today's AM/PM routine consumption flow from the saved base routine | no | Wait for S-03; this is the first daily-use slice. |
-| S-06 | routine-warnings-and-guidance | Add soft routine warnings and guidance during routine use | no | Wait for S-04 and S-05. |
-| S-07 | shelf-notes-and-skin-checkins | Add shelf notes, reactions, and lightweight skin check-ins | no | Wait for S-05. |
-| S-08 | mobile-first-pwa-flow | Polish the core flow for mobile and PWA use | no | Wait for S-05 so polish follows proven behavior. |
+| Roadmap ID | Change ID                          | Suggested issue title                                                   | Ready for `/10x-plan` | Notes                                                                                               |
+| ---------- | ---------------------------------- | ----------------------------------------------------------------------- | --------------------- | --------------------------------------------------------------------------------------------------- |
+| F-01       | user-domain-persistence-contract   | Define minimal user-domain persistence contract                         | yes                   | Smallest cross-cutting enabler for profile, shelf, and routine persistence.                         |
+| F-02       | shared-product-provenance-contract | Define shared product provenance contract                               | yes                   | Can run in parallel with F-01; keep scope to reusable product intake contracts.                     |
+| S-01       | first-skin-profile                 | Save initial skin profile and empty-shelf onboarding state              | no                    | Wait for F-01.                                                                                      |
+| S-02       | first-product-intake               | Ship first confirmed product intake flow onto the shelf                 | no                    | Wait for F-01, F-02, and S-01.                                                                      |
+| S-03       | first-manual-routine-management    | Ship first manual base-routine management flow from owned products      | no                    | Wait for S-01 and S-02; clarify the boundary of manual routine management in US-01 before planning. |
+| S-04       | ai-routine-draft-and-review        | Add AI draft and review flow on top of the manual base-routine model    | no                    | Wait for F-02 and S-03; this should accelerate, not replace, manual routine management.             |
+| S-05       | todays-routine-consumption         | Ship today's AM/PM routine consumption flow from the saved base routine | no                    | Wait for S-03; this is the first daily-use slice.                                                   |
+| S-06       | routine-warnings-and-guidance      | Add soft routine warnings and guidance during routine use               | no                    | Wait for S-04 and S-05.                                                                             |
+| S-07       | shelf-notes-and-skin-checkins      | Add shelf notes, reactions, and lightweight skin check-ins              | no                    | Wait for S-05.                                                                                      |
+| S-08       | mobile-first-pwa-flow              | Polish the core flow for mobile and PWA use                             | no                    | Wait for S-05 so polish follows proven behavior.                                                    |
 
 ## Open Roadmap Questions
 
