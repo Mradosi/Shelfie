@@ -38,6 +38,43 @@ export const SKIN_ASPECT_LEVEL_LABELS: Record<SkinAspectLevel, string> = {
   high: "Wysokie",
 };
 
+export const SKIN_ASPECT_LEVEL_LABELS_BY_ASPECT: Record<SkinAspectKey, Record<SkinAspectLevel, string>> = {
+  sensitivity: {
+    none: "Brak wrażliwości",
+    low: "Lekka wrażliwość",
+    medium: "Wyraźna wrażliwość",
+    high: "Bardzo wysoka wrażliwość",
+  },
+  pigmentation: {
+    none: "Brak widocznego problemu",
+    low: "Lekkie przebarwienia",
+    medium: "Wyraźne przebarwienia",
+    high: "Bardzo widoczne przebarwienia",
+  },
+  firmness: {
+    none: "Skóra wygląda na jędrną",
+    low: "Lekko widoczne oznaki",
+    medium: "Wyraźnie widoczne oznaki",
+    high: "Bardzo widoczne oznaki",
+  },
+  breakouts: {
+    none: "Brak problemu",
+    low: "Pojedyncze zmiany",
+    medium: "Częste niedoskonałości",
+    high: "Duże nasilenie zmian",
+  },
+  texture: {
+    none: "Gładka powierzchnia",
+    low: "Lekko nierówna tekstura",
+    medium: "Wyraźnie nierówna tekstura",
+    high: "Mocno nierówna tekstura",
+  },
+};
+
+export function getSkinAspectLevelLabel(aspectKey: SkinAspectKey, level: SkinAspectLevel) {
+  return SKIN_ASPECT_LEVEL_LABELS_BY_ASPECT[aspectKey][level];
+}
+
 interface UserProfileRow {
   user_id: string;
   skin_type: string | null;

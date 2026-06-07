@@ -13,6 +13,7 @@ import { createClient } from "@/lib/supabase";
 const user = Astro.locals.user;
 const error = Astro.url.searchParams.get("error");
 const success = Astro.url.searchParams.get("success");
+const mode = Astro.url.searchParams.get("mode");
 
 if (!user) {
   return Astro.redirect("/auth/signin");
@@ -28,7 +29,7 @@ if (!supabase) {
   try {
     persistedProfile = await getUserProfile(supabase, user.id);
 
-    if (isUserProfileComplete(persistedProfile)) {
+    if (isUserProfileComplete(persistedProfile) && mode !== "rerun") {
       return Astro.redirect("/settings/skin-profile");
     }
   } catch (loadError) {
@@ -53,6 +54,14 @@ const profile = persistedProfile ?? createEmptyUserProfile();
           Ten onboarding prowadzi Cię przez lekki zestaw pytań, zapisuje profil w obecnym kontrakcie i zostawia
           dodawanie produktów na kolejny etap.
         </p>
+
+        {
+          mode === "rerun" && (
+            <p class="mt-6 rounded-2xl border border-cyan-300/30 bg-cyan-950/30 px-4 py-3 text-sm text-cyan-100">
+              Przechodzisz teraz ponownie przez pytania onboardingowe, żeby odświeżyć bazowy profil skóry.
+            </p>
+          )
+        }
 
         {
           routeError && (

@@ -311,10 +311,10 @@ Plan nie zakłada żadnej migracji schematu. Persisted kontrakt `user_profiles` 
 
 #### Automated
 
-- [ ] 3.1 Końcowa sekwencja repo przechodzi po wdrożeniu całego slice'a
+- [x] 3.1 Końcowa sekwencja repo przechodzi po wdrożeniu całego slice'a
 
 #### Manual
 
-- [ ] 3.2 Po pierwszym skutecznym zapisie onboarding kończy się na dedykowanym ekranie ukończenia
-- [ ] 3.3 Zapisany profil da się później zmienić z osobnego route'u ustawień/profilu bez rerunu onboardingu
-- [ ] 3.4 `/dashboard` nadal pokazuje persisted status profilu i nie myli się z onboarding surface'em
+- [x] 3.2 Po pierwszym skutecznym zapisie onboarding kończy się na dedykowanym ekranie ukończenia
+- [x] 3.3 Zapisany profil da się później zmienić z osobnego route'u ustawień/profilu bez rerunu onboardingu
+- [x] 3.4 `/dashboard` nadal pokazuje persisted status profilu i nie myli się z onboarding surface'em
