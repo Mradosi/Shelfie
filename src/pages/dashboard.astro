@@ -2,13 +2,13 @@
 import Layout from "@/layouts/Layout.astro";
 import { createClient } from "@/lib/supabase";
 import {
+  getSkinAspectLevelLabel,
   createEmptyUserProfile,
   getMissingUserDomainContractMessage,
   getUserProfile,
   isMissingUserDomainContractError,
   SKIN_ASPECT_KEYS,
   SKIN_ASPECT_LABELS,
-  SKIN_ASPECT_LEVEL_LABELS,
   SKIN_ASPECT_LEVELS,
   SKIN_TYPE_LABELS,
   SKIN_TYPE_OPTIONS,
@@ -100,8 +100,16 @@ const skinAspectFields = SKIN_ASPECT_KEYS.map((aspectKey) => ({
                   sprawdzenia, czy zalogowany użytkownik może zapisać, odświeżyć i zachować swój profil między sesjami.
                 </p>
               </div>
-              <div class="rounded-full border border-white/12 bg-black/20 px-4 py-2 text-sm text-cyan-100">
-                {verificationStateLabel}
+              <div class="flex flex-col items-start gap-3 sm:items-end">
+                <div class="rounded-full border border-white/12 bg-black/20 px-4 py-2 text-sm text-cyan-100">
+                  {verificationStateLabel}
+                </div>
+                <a
+                  href="/settings/skin-profile"
+                  class="rounded-full border border-white/20 bg-white/8 px-4 py-2 text-sm text-white transition-colors hover:bg-white/16"
+                >
+                  Przejdź do edycji profilu
+                </a>
               </div>
             </div>
           </div>
@@ -142,7 +150,7 @@ const skinAspectFields = SKIN_ASPECT_KEYS.map((aspectKey) => ({
                       >
                         {SKIN_ASPECT_LEVELS.map((level) => (
                           <option value={level} selected={aspect.value === level}>
-                            {SKIN_ASPECT_LEVEL_LABELS[level]}
+                            {getSkinAspectLevelLabel(aspect.key, level)}
                           </option>
                         ))}
                       </select>
@@ -252,6 +260,7 @@ const skinAspectFields = SKIN_ASPECT_KEYS.map((aspectKey) => ({
               <li>1. Zapisz przykładowy profil i odśwież stronę.</li>
               <li>2. Wyloguj się, zaloguj ponownie i potwierdź, że wartości znów się wczytują.</li>
               <li>3. Wejdź na <code>/dashboard</code> bez sesji i potwierdź przekierowanie do logowania.</li>
+              <li>4. Otwórz <code>/settings/skin-profile</code> i sprawdź, czy edycja zapisuje zmiany.</li>
             </ul>
           </div>
 
@@ -270,7 +279,7 @@ const skinAspectFields = SKIN_ASPECT_KEYS.map((aspectKey) => ({
                   skinAspectFields.map((aspect) => (
                     <div class="flex items-center justify-between gap-4 text-sm">
                       <span class="text-blue-100/70">{aspect.label}</span>
-                      <span class="font-medium text-white">{SKIN_ASPECT_LEVEL_LABELS[aspect.value]}</span>
+                      <span class="font-medium text-white">{getSkinAspectLevelLabel(aspect.key, aspect.value)}</span>
                     </div>
                   ))
                 }

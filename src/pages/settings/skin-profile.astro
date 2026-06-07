@@ -1,18 +1,18 @@
 ---
+import SkinProfileEditForm from "@/components/profile/SkinProfileEditForm";
 import Layout from "@/layouts/Layout.astro";
 import { createClient } from "@/lib/supabase";
 import {
+  createEmptyUserProfile,
   getMissingUserDomainContractMessage,
   getUserProfile,
   isMissingUserDomainContractError,
   isUserProfileComplete,
-  SKIN_ASPECT_KEYS,
-  SKIN_ASPECT_LABELS,
-  SKIN_ASPECT_LEVEL_LABELS,
-  SKIN_TYPE_LABELS,
 } from "@/lib/domain/user-domain";
 
 const user = Astro.locals.user;
+const error = Astro.url.searchParams.get("error");
+const success = Astro.url.searchParams.get("success");
 
 if (!user) {
   return Astro.redirect("/auth/signin");
@@ -20,33 +20,27 @@ if (!user) {
 
 const supabase = createClient(Astro.request.headers, Astro.cookies);
 let routeError: string | null = null;
-let profile = null;
+let persistedProfile = null;
 
 if (!supabase) {
   routeError = "Supabase nie jest skonfigurowane.";
 } else {
   try {
-    profile = await getUserProfile(supabase, user.id);
+    persistedProfile = await getUserProfile(supabase, user.id);
 
-    if (!isUserProfileComplete(profile)) {
+    if (!isUserProfileComplete(persistedProfile)) {
       return Astro.redirect("/onboarding/skin-profile");
     }
-  } catch (error) {
-    routeError = isMissingUserDomainContractError(error)
+  } catch (loadError) {
+    routeError = isMissingUserDomainContractError(loadError)
       ? getMissingUserDomainContractMessage()
-      : error instanceof Error
-        ? error.message
+      : loadError instanceof Error
+        ? loadError.message
         : "Nie udało się wczytać zapisanego profilu.";
   }
 }
 
-const skinAspectFields = profile
-  ? SKIN_ASPECT_KEYS.map((aspectKey) => ({
-      key: aspectKey,
-      label: SKIN_ASPECT_LABELS[aspectKey],
-      value: profile.skinAspects[aspectKey],
-    }))
-  : [];
+const profile = persistedProfile ?? createEmptyUserProfile();
 ---
 
 <Layout title="Ustawienia profilu skóry">
@@ -56,10 +50,10 @@ const skinAspectFields = profile
         <div class="flex flex-col gap-3 border-b border-white/10 pb-6 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p class="text-sm tracking-[0.24em] text-cyan-100/55 uppercase">Profil skóry</p>
-            <h1 class="mt-2 text-3xl font-bold text-white">Twój zapisany profil bazowy</h1>
+            <h1 class="mt-2 text-3xl font-bold text-white">Edytuj zapisany profil</h1>
             <p class="mt-3 max-w-2xl text-sm leading-6 text-blue-100/75">
-              Ten ekran jest miejscem dla profilu po onboardingu. Właściwa edycja pojawi się w kolejnym etapie, ale
-              granica względem debugowego panelu jest już rozdzielona.
+              Tutaj możesz zmienić zapisane poziomy obszarów skóry, problemy, cele i dodatkowe notatki bez wracania do
+              onboardingowego quizu.
             </p>
           </div>
           <a
@@ -71,52 +65,32 @@ const skinAspectFields = profile
         </div>
 
         {
-          routeError ? (
+          routeError && (
             <p class="mt-6 rounded-2xl border border-amber-400/30 bg-amber-950/40 px-4 py-3 text-sm text-amber-100">
               {routeError}
             </p>
-          ) : profile ? (
-            <div class="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              <div class="rounded-2xl border border-white/10 bg-slate-950/30 p-4">
-                <p class="text-sm text-blue-100/55">Typ skóry</p>
-                <p class="mt-2 text-lg font-semibold text-white">{SKIN_TYPE_LABELS[profile.skinType]}</p>
-              </div>
+          )
+        }
 
-              <div class="rounded-2xl border border-white/10 bg-slate-950/30 p-4 md:col-span-2 xl:col-span-2">
-                <p class="text-sm text-blue-100/55">Obszary skóry</p>
-                <div class="mt-3 grid gap-3 sm:grid-cols-2">
-                  {skinAspectFields.map((aspect) => (
-                    <div class="flex items-center justify-between gap-4 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm">
-                      <span class="text-blue-100/70">{aspect.label}</span>
-                      <span class="font-medium text-white">{SKIN_ASPECT_LEVEL_LABELS[aspect.value]}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div class="rounded-2xl border border-white/10 bg-slate-950/30 p-4">
-                <p class="text-sm text-blue-100/55">Potrzeby skóry</p>
-                <p class="mt-2 text-sm leading-6 text-white">
-                  {profile.concerns.length > 0 ? profile.concerns.join(", ") : "Brak"}
-                </p>
-              </div>
-
-              <div class="rounded-2xl border border-white/10 bg-slate-950/30 p-4">
-                <p class="text-sm text-blue-100/55">Cele</p>
-                <p class="mt-2 text-sm leading-6 text-white">
-                  {profile.goals.length > 0 ? profile.goals.join(", ") : "Brak"}
-                </p>
-              </div>
-
-              <div class="rounded-2xl border border-white/10 bg-slate-950/30 p-4">
-                <p class="text-sm text-blue-100/55">Notatki</p>
-                <p class="mt-2 text-sm leading-6 text-white">{profile.notes ?? "Brak"}</p>
-              </div>
-            </div>
-          ) : (
-            <p class="mt-6 rounded-2xl border border-white/10 bg-slate-950/30 px-4 py-3 text-sm text-blue-100/70">
-              Nie ma jeszcze zapisanego profilu. Zacznij od onboardingu.
+        {
+          success && (
+            <p class="mt-6 rounded-2xl border border-emerald-400/30 bg-emerald-950/40 px-4 py-3 text-sm text-emerald-200">
+              {success}
             </p>
+          )
+        }
+
+        {
+          !routeError && isUserProfileComplete(persistedProfile) && (
+            <SkinProfileEditForm
+              client:load
+              serverError={error}
+              initialSkinType={profile.skinType}
+              initialSkinAspects={profile.skinAspects}
+              initialConcerns={profile.concerns}
+              initialGoals={profile.goals}
+              initialNotes={profile.notes}
+            />
           )
         }
       </section>

@@ -241,5 +241,7 @@ export const POST: APIRoute = async (context) => {
     return context.redirect(encodeMessage(errorRedirectTo, "error", message));
   }
 
-  return context.redirect(encodeMessage(successRedirectTo, "success", "Profil został zapisany"));
+  const successMessage =
+    successRedirectTo === "/onboarding/skin-profile/complete" ? "Profil został zapisany" : "Zmiany zostały zapisane";
+  return context.redirect(encodeMessage(successRedirectTo, "success", successMessage));
 };
