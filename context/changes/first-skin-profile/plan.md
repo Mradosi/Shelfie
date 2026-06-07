@@ -298,14 +298,14 @@ Plan nie zakłada żadnej migracji schematu. Persisted kontrakt `user_profiles` 
 
 #### Automated
 
-- [x] 2.1 Moduł questionnaire i jego integracja z route'ami przechodzą lint bez błędów
-- [x] 2.2 Produkcyjny build przechodzi z nowym wizardem i payload mappingiem
+- [x] 2.1 Moduł questionnaire i jego integracja z route'ami przechodzą lint bez błędów — b98653a
+- [x] 2.2 Produkcyjny build przechodzi z nowym wizardem i payload mappingiem — b98653a
 
 #### Manual
 
-- [x] 2.3 Wizard działa jako 3 kroki z poprawnym stanem progresu, walidacją i nawigacją wstecz
-- [x] 2.4 Odpowiedzi obserwowalne zapisują się jako poprawne `skin_aspects` w istniejącym kontrakcie
-- [x] 2.5 Suggested chips i własne wpisy dla `concerns`/`goals` kończą jako oczekiwane wartości w persisted `string[]`
+- [x] 2.3 Wizard działa jako 3 kroki z poprawnym stanem progresu, walidacją i nawigacją wstecz — b98653a
+- [x] 2.4 Odpowiedzi obserwowalne zapisują się jako poprawne `skin_aspects` w istniejącym kontrakcie — b98653a
+- [x] 2.5 Suggested chips i własne wpisy dla `concerns`/`goals` kończą jako oczekiwane wartości w persisted `string[]` — b98653a
 
 ### Phase 3: Completion, edit surface, and verification boundary
 
