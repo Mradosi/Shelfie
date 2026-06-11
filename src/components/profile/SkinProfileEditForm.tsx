@@ -10,6 +10,7 @@ import {
   type SkinAspectLevel,
   type SkinType,
 } from "@/lib/domain/user-domain";
+import { SKIN_PROFILE_SUGGESTED_CONCERNS, SKIN_PROFILE_SUGGESTED_GOALS } from "@/lib/domain/skin-profile-questionnaire";
 
 interface SkinProfileEditFormProps {
   serverError?: string | null;
@@ -68,28 +69,6 @@ export default function SkinProfileEditForm({
   const [customGoal, setCustomGoal] = useState("");
   const concernInputId = useId();
   const goalInputId = useId();
-
-  const suggestedConcerns = [
-    "Zaczerwienienie",
-    "Wrażliwość",
-    "Niedoskonałości",
-    "Zapchane pory",
-    "Przebarwienia",
-    "Nierówny koloryt",
-    "Odwodnienie",
-    "Szorstka tekstura",
-  ];
-
-  const suggestedGoals = [
-    "Spokojniejsza skóra",
-    "Mniej niedoskonałości",
-    "Gładsza tekstura",
-    "Bardziej równy koloryt",
-    "Jaśniejsza skóra",
-    "Lepsze nawilżenie",
-    "Silniejsza bariera",
-    "Lepsza jędrność",
-  ];
 
   function toggleItem(currentItems: string[], item: string, setter: (items: string[]) => void) {
     setter(
@@ -223,7 +202,7 @@ export default function SkinProfileEditForm({
           )}
 
           <div className="mt-4 flex flex-wrap gap-2">
-            {suggestedConcerns.map((concern) => (
+            {SKIN_PROFILE_SUGGESTED_CONCERNS.map((concern) => (
               <SelectableBadge
                 key={concern}
                 label={concern}
@@ -283,7 +262,7 @@ export default function SkinProfileEditForm({
           )}
 
           <div className="mt-4 flex flex-wrap gap-2">
-            {suggestedGoals.map((goal) => (
+            {SKIN_PROFILE_SUGGESTED_GOALS.map((goal) => (
               <SelectableBadge
                 key={goal}
                 label={goal}
