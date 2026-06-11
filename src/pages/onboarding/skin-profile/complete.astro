@@ -9,6 +9,7 @@ import {
 } from "@/lib/domain/user-domain";
 
 const user = Astro.locals.user;
+const source = Astro.url.searchParams.get("source");
 
 if (!user) {
   return Astro.redirect("/auth/signin");
@@ -25,6 +26,10 @@ if (!supabase) {
 
     if (!isUserProfileComplete(profile)) {
       return Astro.redirect("/onboarding/skin-profile");
+    }
+
+    if (source !== "save") {
+      return Astro.redirect("/settings/skin-profile");
     }
   } catch (error) {
     routeError = isMissingUserDomainContractError(error)

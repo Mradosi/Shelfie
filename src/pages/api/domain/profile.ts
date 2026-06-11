@@ -108,7 +108,7 @@ function parseRedirectPath(value: FormDataEntryValue | null, fallback: string) {
   return trimmed;
 }
 
-function parseList(values: FormDataEntryValue[], fieldName: string) {
+function parseList(values: FormDataEntryValue[], fieldName: string, options?: { splitCommas?: boolean }) {
   if (values.length === 0) {
     return [];
   }
@@ -118,10 +118,7 @@ function parseList(values: FormDataEntryValue[], fieldName: string) {
       throw new Error(`${fieldName} musi być tekstem`);
     }
 
-    return entry
-      .split(",")
-      .map((item) => item.trim())
-      .filter(Boolean);
+    return (options?.splitCommas ? entry.split(",") : [entry]).map((item) => item.trim()).filter(Boolean);
   });
 
   if (entries.length > MAX_LIST_ITEMS) {
@@ -170,6 +167,7 @@ function parseQuestionnaireAnswers(form: FormData) {
 function parseProfileForm(form: FormData): UserProfileInput {
   const mode = form.get("mode");
   const submittedAspectKeys = SKIN_ASPECT_KEYS.filter((aspectKey) => form.has(`skinAspect_${aspectKey}`));
+  const shouldSplitCommaSeparatedLists = mode !== "onboarding" && mode !== "edit";
 
   const skinAspects =
     mode === "onboarding"
@@ -183,8 +181,8 @@ function parseProfileForm(form: FormData): UserProfileInput {
   return {
     skinType: parseSkinType(form.get("skinType")),
     skinAspects,
-    concerns: parseList(form.getAll("concerns"), "Potrzeby skóry"),
-    goals: parseList(form.getAll("goals"), "Cele"),
+    concerns: parseList(form.getAll("concerns"), "Potrzeby skóry", { splitCommas: shouldSplitCommaSeparatedLists }),
+    goals: parseList(form.getAll("goals"), "Cele", { splitCommas: shouldSplitCommaSeparatedLists }),
     notes: parseNotes(form.get("notes")),
   };
 }

@@ -1,18 +1,18 @@
 import React, { useId, useState } from "react";
 import {
+  SKIN_PROFILE_SUGGESTED_CONCERNS,
+  SKIN_PROFILE_SUGGESTED_GOALS,
   getSkinProfileOptions,
   getSkinProfileQuestionIds,
   isSkinProfileAnswerValue,
   mapQuestionnaireAnswersToSkinAspects,
   SKIN_PROFILE_QUESTION_GROUPS,
   SKIN_PROFILE_SKIN_TYPE_OPTIONS,
-  SKIN_PROFILE_SUGGESTED_CONCERNS,
-  SKIN_PROFILE_SUGGESTED_GOALS,
   SKIN_PROFILE_TIMEFRAME_COPY,
   type SkinProfileAnswerValue,
   type SkinProfileQuestionId,
 } from "@/lib/domain/skin-profile-questionnaire";
-import { SKIN_ASPECT_LABELS, SKIN_ASPECT_LEVEL_LABELS, type SkinType } from "@/lib/domain/user-domain";
+import { getSkinAspectLevelLabel, SKIN_ASPECT_LABELS, type SkinType } from "@/lib/domain/user-domain";
 
 interface SkinProfileWizardProps {
   serverError?: string | null;
@@ -176,7 +176,7 @@ export default function SkinProfileWizard({
   return (
     <form method="POST" action="/api/domain/profile" className="mt-8 space-y-8" onSubmit={handleSubmit}>
       <input type="hidden" name="mode" value="onboarding" />
-      <input type="hidden" name="successRedirectTo" value="/dashboard" />
+      <input type="hidden" name="successRedirectTo" value="/onboarding/skin-profile/complete?source=save" />
       <input type="hidden" name="errorRedirectTo" value="/onboarding/skin-profile" />
       <input type="hidden" name="questionnaireAnswers" value={JSON.stringify(questionAnswers)} />
 
@@ -302,7 +302,7 @@ export default function SkinProfileWizard({
               {selectedSkinAspects && (
                 <span className="rounded-full border border-white/12 bg-white/5 px-3 py-1 text-xs text-blue-100/75">
                   {SKIN_ASPECT_LABELS[currentAspectGroup.aspect]}:{" "}
-                  {SKIN_ASPECT_LEVEL_LABELS[selectedSkinAspects[currentAspectGroup.aspect]]}
+                  {getSkinAspectLevelLabel(currentAspectGroup.aspect, selectedSkinAspects[currentAspectGroup.aspect])}
                 </span>
               )}
             </div>
@@ -399,7 +399,7 @@ export default function SkinProfileWizard({
                   onChange={(event) => {
                     setCustomConcernInput(event.target.value);
                   }}
-                  placeholder="Dodaj własną potrzebę"
+                  placeholder="Dodaj własny problem"
                   className="w-full rounded-2xl border border-white/12 bg-white/5 px-4 py-3 text-white placeholder:text-blue-100/35 focus:border-cyan-300/60 focus:outline-none"
                 />
                 <button
