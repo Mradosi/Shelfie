@@ -3,7 +3,7 @@ project: Shelfie
 version: 1
 status: draft
 created: 2026-05-28
-updated: 2026-05-31
+updated: 2026-06-11
 prd_version: 1
 main_goal: market-feedback
 top_blocker: decisions
@@ -31,7 +31,7 @@ Shelfie ma pomóc użytkownikowi uporządkować pielęgnację na bazie jego real
 | ---- | ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- | ---------------- | ---------------------------------------------------------------------------------- | -------- |
 | F-01 | user-domain-persistence-contract   | (foundation) minimal persistence contract for skin profile, shelf items, product schedules, and routine configuration is in place   | —                | Business Logic, Access Control, Non-Functional Requirements (privacy, persistence) | done     |
 | F-02 | shared-product-provenance-contract | (foundation) shared product and provenance contract is in place for confirmed product reuse                                         | —                | FR-004, Non-Functional Requirements (inci_source, inci_confidence)                 | ready    |
-| S-01 | first-skin-profile                 | user can sign in, provide skin context, and finish onboarding with an empty shelf ready for products                                | F-01             | US-01, FR-001, FR-002                                                              | proposed |
+| S-01 | first-skin-profile                 | user can sign in, provide skin context, and finish onboarding with an empty shelf ready for products                                | F-01             | US-01, FR-001, FR-002                                                              | done     |
 | S-02 | first-product-intake               | user can add the first product to their shelf from shared sources or AI/manual fallback and confirm it before save                  | F-01, F-02, S-01 | US-01, FR-003, FR-004, FR-005, FR-016, FR-017                                      | proposed |
 | S-03 | first-manual-routine-management    | user can create, edit, and delete the first base routine from owned products and assigned routine roles                             | S-01, S-02       | US-01, FR-008, FR-009, FR-010                                                      | proposed |
 | S-04 | ai-routine-draft-and-review        | user can ask AI for a base-routine draft or improvement suggestions, then review and edit the result before save                    | F-02, S-03       | US-01, FR-008, FR-010                                                              | proposed |
@@ -103,7 +103,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Blockers:** —
 - **Unknowns:** —
 - **Risk:** If this slice starts carrying product intake responsibilities, the onboarding boundary stops being clean and `S-02` loses its role as the first true product-domain slice.
-- **Status:** proposed
+- **Status:** done
 
 ### S-02: First product intake
 
@@ -227,3 +227,4 @@ Foundations below assume these are present and do NOT re-scaffold them.
 (Empty on first generation. `/10x-archive` appends an entry here — and flips that item's `Status` to `done` — when a change whose `Change ID` matches the item is archived.)
 
 - **F-01: (foundation) A minimal persistence contract exists for per-user skin context, shelf items, product schedules, and routine configuration, with ownership boundaries that match the authenticated single-user model. This is explicitly a shared domain contract for downstream slices, not a full backend buildout.** — Archived 2026-05-31 → `context/archive/2026-05-30-user-domain-persistence-contract/`. Lesson: —.
+- **S-01: user can sign in, provide basic skin context, and finish onboarding with a saved profile and an empty shelf ready for product intake.** — Archived 2026-06-11 → `context/archive/2026-05-31-first-skin-profile/`. Lesson: —.

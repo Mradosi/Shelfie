@@ -1,10 +1,10 @@
 ---
 change_id: first-skin-profile
 title: First skin profile
-status: implemented
+status: archived
 created: 2026-05-31
-updated: 2026-06-07
-archived_at: null
+updated: 2026-06-11
+archived_at: 2026-06-11T15:58:49Z
 ---
 
 ## Notes
