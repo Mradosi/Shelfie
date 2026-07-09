@@ -1,9 +1,9 @@
 ---
 change_id: first-product-intake
 title: First product intake
-status: implementing
+status: implemented
 created: 2026-06-11
-updated: 2026-06-28
+updated: 2026-07-09
 archived_at: null
 ---
 

@@ -59,6 +59,10 @@ Intake nie może pisać do `user_shelf_items` zanim nie rozstrzygnie canonical s
 
 Review step jest obowiązkowy nawet dla czystych OBF hitów. To nie jest opcjonalna korekta po błędzie, tylko stały guardrail z PRD i plan nie powinien dopuszczać shortcutu "auto-save on exact match".
 
+### AI fallback contract
+
+`AI web search` w tym change oznacza realny server-side flow oparty o OpenRouter, a nie ręczny draft podszywający się pod AI. Użytkownik może podać nazwę, markę, kategorię i ewentualnie barcode, ale nie powinien być zmuszany do wpisywania INCI przed wejściem na review screen; to backend ma spróbować znaleźć i zsyntetyzować draft składu, a gdy to się nie uda, dopiero wtedy UI prowadzi do `photo extraction` albo `manual entry`.
+
 ## Phase 1: Shared product contract and server-side orchestration
 
 ### Overview
@@ -146,9 +150,25 @@ Ta faza dostarcza właściwy product-facing flow `S-02`: search-first entry, bar
 
 **Intent**: Uporządkować branch logic dla AI web search, photo extraction i manual entry tak, by nie kodować każdej ścieżki ad hoc w komponencie UI.
 
-**Contract**: Moduł definiuje wspólny result shape dla fallbacków oraz granice ich odpowiedzialności. `ai_web_search` i `photo_vision` mogą dostarczyć prefilled draft do review, ale nigdy nie zapisują produktu bezpośrednio. `manual` pozostaje pełnoprawnym final fallbackiem i zawsze może uzupełnić brakujące pola minimalnego contractu. Photo branch może korzystać z placeholder/trusted boundary na poziomie integracji, ale UX i kontrakt review/save muszą być pełne już w tym slice'ie.
+**Contract**: Moduł definiuje wspólny result shape dla fallbacków oraz granice ich odpowiedzialności. `ai_web_search` musi być zasilane przez realny server-side provider flow i zwracać albo prefilled draft do review, albo stan `ambiguous`, gdy query jest zbyt szerokie lub prowadzi do kilku sensownych wariantów tego samego kosmetyku. W stanie `ambiguous` UI pokazuje maksymalnie 3-5 najlepszych wariantów oraz pole do własnego doprecyzowania tekstem, zamiast wymuszać wybór z pełnej listy wszystkich trafień. Ten branch może korzystać z OpenRoutera oraz zewnętrznych źródeł pomocniczych takich jak INCIDecoder, ale kontrakt użytkowy pozostaje AI-first i nie może arbitralnie wybierać „pierwszego lepszego” wariantu przy braku rozróżnienia. `photo_vision` również ma zwracać draft do review, choć technicznie może pozostać lżejszą integracją MVP. `manual` pozostaje pełnoprawnym final fallbackiem i zawsze może uzupełnić brakujące pola minimalnego contractu.
 
-#### 4. Review and result routes
+#### 4. OpenRouter-backed AI web search integration
+
+**File**: `src/lib/integrations/openrouter.ts`
+
+**Intent**: Dodać jednoznaczną, server-side integrację z modelem AI używanym do fallbacku `AI web search`, tak aby implementacja nie zastępowała AI ręcznym formularzem ani heurystycznym scraperem udającym model.
+
+**Contract**: Moduł czyta `OPENROUTER_API_KEY` wyłącznie po stronie serwera, wysyła do OpenRoutera prompt z danymi wejściowymi produktu (`name`, `brand`, `category`, opcjonalnie `barcode`) i zwraca jeden z dwóch stanów użytkowych: `resolved` z ustrukturyzowanym draftem zawierającym co najmniej `name`, `brand`, `category`, `inciText`, `imageUrl?`, `source=ai_web_search`, `confidence=medium`, albo `ambiguous`, gdy model widzi kilka prawdopodobnych wariantów i query nie zawiera wystarczającego discriminatora. W stanie `ambiguous` model zwraca krótkie pytanie doprecyzowujące oraz maksymalnie 3-5 wariantów z cechami rozróżniającymi; przy bardzo szerokich zapytaniach typu `krem CeraVe` ma zawęzić listę do kilku najbardziej prawdopodobnych opcji i pozwolić użytkownikowi wpisać dokładniejszą nazwę samodzielnie. Moduł nie może arbitralnie wybierać jednego wariantu tylko dlatego, że był pierwszy w searchu. Awaria OpenRoutera albo brak wiarygodnego wyniku nie może wywracać całego flow; endpoint ma zwrócić kontrolowany błąd prowadzący użytkownika do `photo extraction` lub `manual entry`.
+
+#### 5. AI fallback API route
+
+**File**: `src/pages/api/domain/products/ai-web-search.ts`
+
+**Intent**: Wystawić cienki endpoint serwerowy dla `AI web search`, żeby UI wysyłało jedynie minimalny kontekst produktu, a nie próbowało samo budować draftu składu.
+
+**Contract**: Route wymaga zalogowanego użytkownika, przyjmuje payload z nazwą produktu i dodatkowymi polami kontekstowymi, deleguje wyszukiwanie do integracji OpenRoutera i zwraca albo draft gotowy do review, albo stan `ambiguous` z listą wariantów i komunikatem doprecyzowującym. Route nie zapisuje nic do `products` ani `user_shelf_items`; kończy się na przygotowaniu review payloadu, stanie doprecyzowania wariantu albo na kontrolowanym błędzie, który uruchamia kolejny fallback branch.
+
+#### 6. Review and result routes
 
 **File**: `src/pages/products/intake/complete.astro`
 
@@ -163,11 +183,14 @@ Ta faza dostarcza właściwy product-facing flow `S-02`: search-first entry, bar
 - Typy i routing dla intake surface'ów przechodzą bez błędów: `npx astro sync`
 - Lint przechodzi dla nowego flow UI i fallback branch handlingu: `npm run lint`
 - Produkcyjny build przechodzi z nowymi protected product routes: `npm run build`
+- Konfiguracja środowiskowa obejmuje server-side sekret dla OpenRoutera i nie eksponuje go do klienta
 
 #### Manual Verification:
 
 - Użytkownik może rozpocząć intake po nazwie albo barcode i przejść przez obowiązkowy review przed zapisem
 - Brak danych z OBF prowadzi do działających fallbacków AI web search, photo extraction i manual entry zamiast ślepego końca flow
+- `AI web search` sam próbuje znaleźć draft INCI na podstawie nazwy/marki/kategorii i nie wymaga ręcznego wpisania składu przed review
+- Dla zapytań wieloznacznych albo zbyt szerokich `AI web search` nie wybiera arbitralnie jednego wariantu, tylko pokazuje maksymalnie kilka najlepszych opcji oraz pozwala doprecyzować własnym tekstem
 - Użytkownik może poprawić nazwę, markę, INCI lub źródło na review screenie przed finalnym save
 
 **Implementation Note**: After completing this phase and all automated verification passes, pause here for manual confirmation from the human that the manual testing was successful before proceeding to the next phase. Phase blocks use plain bullets — the corresponding `- [ ]` checkboxes for these items live in the `## Progress` section at the bottom of the plan.
@@ -232,16 +255,19 @@ Ta faza wpina intake w istniejący lifecycle aplikacji i domyka change jako real
 - `supabase db reset` z nową migracją shared products i local validation write pathu do `products`
 - End-to-end flow: sign-in -> `/start` -> product intake -> review -> save -> result route -> persisted `user_shelf_items`
 - Re-run intake dla tego samego produktu z potwierdzeniem, że shared product reuse działa przez barcode albo fallback normalization
+- Server-side AI fallback flow: input product context -> OpenRouter draft -> review payload albo controlled fallback error
 
 ### Manual Testing Steps:
 
 1. Zalogować nowego użytkownika z kompletnym profilem i potwierdzić, że `/start` kieruje do product intake.
 2. Wyszukać produkt po nazwie, wybrać OBF hit, sprawdzić review screen i zapisać pierwszy produkt.
 3. Powtórzyć flow po barcode dla produktu z jednoznacznym trafieniem i potwierdzić poprawny save.
-4. Wymusić przypadek niepełnego OBF i przejść każdą z gałęzi fallbackowych: AI web search, photo extraction i manual entry.
-5. Na review screenie ręcznie poprawić co najmniej jedną wartość produktu i potwierdzić, że zapis respektuje korektę użytkownika.
-6. Spróbować dodać ten sam produkt drugi raz i potwierdzić, że reuse shared product nie tworzy duplikatu w `products`.
-7. Otworzyć nowe product routes bez sesji i potwierdzić redirect do `/auth/signin`.
+4. Wymusić przypadek niepełnego OBF i potwierdzić, że `AI web search` zwraca draft do review bez ręcznego wpisywania INCI przed review.
+5. Wysłać wieloznaczne zapytanie AI, np. produkt z kilkoma stężeniami lub szeroką rodziną wariantów, i potwierdzić, że UI pokazuje maksymalnie kilka propozycji oraz pole do własnego doprecyzowania zamiast arbitralnie wybierać pierwszy wynik.
+6. Jeśli AI web search nie znajdzie wiarygodnego draftu, potwierdzić kontrolowane przejście do `photo extraction` albo `manual entry` zamiast martwego końca flow.
+7. Na review screenie ręcznie poprawić co najmniej jedną wartość produktu i potwierdzić, że zapis respektuje korektę użytkownika.
+8. Spróbować dodać ten sam produkt drugi raz i potwierdzić, że reuse shared product nie tworzy duplikatu w `products`.
+9. Otworzyć nowe product routes bez sesji i potwierdzić redirect do `/auth/signin`.
 
 ## Performance Considerations
 
@@ -264,6 +290,7 @@ Barcode dedupe i fallback `normalized_brand + normalized_name` będą decyzją k
 - PRD intake cascade and shared-source search: `context/foundation/prd.md:71`
 - Architecture intake flow and provenance contract: `context/foundation/architecture-notes.md:57`
 - Architecture shared product fields: `context/foundation/architecture-notes.md:87`
+- Infrastructure note about OpenRouter as external server-side dependency: `context/foundation/infrastructure.md:17`
 - Current `products` stub and read-only access: `supabase/migrations/20260530090000_user_domain_persistence_contract.sql:13`
 - Existing shelf attach helpers: `src/lib/domain/user-domain.ts:354`
 - Existing auth/start gate: `src/pages/start.astro:29`
@@ -280,37 +307,38 @@ Barcode dedupe i fallback `normalized_brand + normalized_name` będą decyzją k
 
 #### Automated
 
-- [x] 1.1 Shared-product migracja i polityki aplikują się czysto
-- [x] 1.2 Astro typy odświeżają się dla nowego modułu domenowego i route'u intake
-- [x] 1.3 Lint przechodzi dla schema helpers, product-domain module i provider adaptera
+- [x] 1.1 Shared-product migracja i polityki aplikują się czysto — c019f34
+- [x] 1.2 Astro typy odświeżają się dla nowego modułu domenowego i route'u intake — c019f34
+- [x] 1.3 Lint przechodzi dla schema helpers, product-domain module i provider adaptera — c019f34
 
 #### Manual
 
-- [x] 1.4 W Supabase Studio `products` ma nowe pola shared contractu i wspiera lookup po barcode oraz fallback po znormalizowanej nazwie/brandzie
-- [x] 1.5 Zwykły authenticated client nadal nie ma bezpośredniego write access do `products`, a confirmed save działa tylko przez server-side route
+- [x] 1.4 W Supabase Studio `products` ma nowe pola shared contractu i wspiera lookup po barcode oraz fallback po znormalizowanej nazwie/brandzie — c019f34
+- [x] 1.5 Zwykły authenticated client nadal nie ma bezpośredniego write access do `products`, a confirmed save działa tylko przez server-side route — c019f34
 
 ### Phase 2: Intake UX, fallback branches, and review flow
 
 #### Automated
 
-- [ ] 2.1 Typy i routing dla intake surface'ów przechodzą bez błędów
-- [ ] 2.2 Lint przechodzi dla nowego flow UI i fallback branch handlingu
-- [ ] 2.3 Produkcyjny build przechodzi z nowymi protected product routes
+- [x] 2.1 Typy i routing dla intake surface'ów przechodzą bez błędów — e44a88b
+- [x] 2.2 Lint przechodzi dla nowego flow UI i fallback branch handlingu — e44a88b
+- [x] 2.3 Produkcyjny build przechodzi z nowymi protected product routes — e44a88b
 
 #### Manual
 
-- [ ] 2.4 Użytkownik może rozpocząć intake po nazwie albo barcode i przejść przez obowiązkowy review przed zapisem
-- [ ] 2.5 Brak danych z OBF prowadzi do działających fallbacków AI web search, photo extraction i manual entry zamiast ślepego końca flow
-- [ ] 2.6 Użytkownik może poprawić nazwę, markę, INCI lub źródło na review screenie przed finalnym save
+- [x] 2.4 Użytkownik może rozpocząć intake po nazwie albo barcode i przejść przez obowiązkowy review przed zapisem — e44a88b
+- [x] 2.5 Brak danych z OBF prowadzi do działających fallbacków AI web search, photo extraction i manual entry zamiast ślepego końca flow — e44a88b
+- [x] 2.6 `AI web search` sam próbuje znaleźć draft INCI na podstawie nazwy/marki/kategorii i nie wymaga ręcznego wpisania składu przed review — e44a88b
+- [x] 2.7 Użytkownik może poprawić nazwę, markę, INCI lub źródło na review screenie przed finalnym save — e44a88b
 
 ### Phase 3: App integration, reuse verification, and developer handoff
 
 #### Automated
 
-- [ ] 3.1 Repo przechodzi końcową sekwencję jakości dla całego slice'a
+- [x] 3.1 Repo przechodzi końcową sekwencję jakości dla całego slice'a — e44a88b
 
 #### Manual
 
-- [ ] 3.2 Nowy użytkownik po ukończeniu profilu trafia do product intake zamiast na techniczny dead-end
-- [ ] 3.3 Powtórne dodanie tego samego produktu reuse'uje istniejący shared record zamiast tworzyć duplikat
-- [ ] 3.4 Smoke test obejmuje clean name search, clean barcode flow, incomplete OBF fallback, review edits i auth protection nowych route'ów
+- [x] 3.2 Nowy użytkownik po ukończeniu profilu trafia do product intake zamiast na techniczny dead-end — e44a88b
+- [x] 3.3 Powtórne dodanie tego samego produktu reuse'uje istniejący shared record zamiast tworzyć duplikat — e44a88b
+- [x] 3.4 Smoke test obejmuje clean name search, clean barcode flow, incomplete OBF fallback, review edits i auth protection nowych route'ów — e44a88b
