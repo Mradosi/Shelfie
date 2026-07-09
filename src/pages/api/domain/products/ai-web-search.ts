@@ -1,0 +1,77 @@
+import type { APIRoute } from "astro";
+import { resolveAiWebSearchDraft } from "@/lib/integrations/openrouter";
+import { createClient } from "@/lib/supabase";
+
+function toJsonError(message: string, status = 400) {
+  return new Response(JSON.stringify({ error: message }), {
+    status,
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+}
+
+function parseOptionalText(value: unknown) {
+  return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
+function logAiWebSearchRoute(message: string, payload: Record<string, unknown>) {
+  // eslint-disable-next-line no-console -- deliberate server-side trace for AI fallback debugging
+  console.error(`[ai-web-search-route] ${message}`, payload);
+}
+
+export const POST: APIRoute = async (context) => {
+  const supabase = createClient(context.request.headers, context.cookies);
+  if (!supabase) {
+    return toJsonError("Supabase nie jest skonfigurowane", 500);
+  }
+
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError) {
+    return toJsonError(authError.message, 401);
+  }
+
+  if (!user) {
+    return toJsonError("Musisz być zalogowany, żeby użyć AI web search", 401);
+  }
+
+  let payload: unknown;
+  try {
+    payload = await context.request.json();
+  } catch {
+    return toJsonError("Nieprawidłowy payload AI web search");
+  }
+
+  const record = typeof payload === "object" && payload !== null ? payload : {};
+  const name = parseOptionalText((record as Record<string, unknown>).name);
+  const brand = parseOptionalText((record as Record<string, unknown>).brand);
+  const category = parseOptionalText((record as Record<string, unknown>).category);
+  const barcode = parseOptionalText((record as Record<string, unknown>).barcode);
+
+  if (!name) {
+    return toJsonError("Podaj nazwę produktu, żeby uruchomić AI web search");
+  }
+
+  try {
+    const result = await resolveAiWebSearchDraft({
+      name,
+      brand,
+      category,
+      barcode,
+    });
+
+    return Response.json(result);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "AI web search nie powiódł się";
+    logAiWebSearchRoute("Route failed", {
+      input: { name, brand, category, barcode },
+      message,
+      error,
+    });
+    return toJsonError(message, 500);
+  }
+};

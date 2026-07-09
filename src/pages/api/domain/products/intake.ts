@@ -1,8 +1,11 @@
 import type { APIRoute } from "astro";
 import {
+  PRODUCT_CATEGORY_OPTIONS,
   PRODUCT_CONFIDENCE_LEVELS,
   PRODUCT_SOURCES,
+  isProductCategory,
   saveConfirmedSharedProduct,
+  type ProductCategory,
   type ConfirmedProductInput,
   type ProductConfidence,
   type ProductSource,
@@ -12,11 +15,27 @@ import { createClient } from "@/lib/supabase";
 
 const MAX_TEXT_LENGTH = 160;
 const MAX_LIST_ITEMS = 256;
+const MAX_IMAGE_URL_LENGTH = 2000;
 
 function encodeMessage(path: string, key: "error" | "success", message: string) {
   const url = new URL(path, "https://shelfie.local");
   url.searchParams.set(key, message);
   return `${url.pathname}${url.search}`;
+}
+
+function expectsJson(request: Request) {
+  const accept = request.headers.get("Accept") ?? "";
+  const requestedWith = request.headers.get("X-Shelfie-Request") ?? "";
+  return accept.includes("application/json") || requestedWith === "product-intake";
+}
+
+function jsonError(message: string, status = 400) {
+  return new Response(JSON.stringify({ error: message }), {
+    status,
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
 }
 
 function parseRedirectPath(value: FormDataEntryValue | null, fallback: string) {
@@ -70,6 +89,36 @@ function parseOptionalText(value: FormDataEntryValue | null, fieldName: string) 
   return trimmed;
 }
 
+function parseImageUrl(value: FormDataEntryValue | null, fieldName: string) {
+  if (value === null) {
+    return null;
+  }
+
+  if (typeof value !== "string") {
+    throw new Error(`${fieldName} musi być tekstem`);
+  }
+
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  if (trimmed.length > MAX_IMAGE_URL_LENGTH) {
+    throw new Error(`${fieldName} musi mieć maksymalnie ${MAX_IMAGE_URL_LENGTH} znaków`);
+  }
+
+  try {
+    const parsedUrl = new URL(trimmed);
+    if (!parsedUrl.protocol.startsWith("http")) {
+      throw new Error(`${fieldName} musi być poprawnym adresem HTTP lub HTTPS`);
+    }
+  } catch {
+    throw new Error(`${fieldName} musi być poprawnym adresem HTTP lub HTTPS`);
+  }
+
+  return trimmed;
+}
+
 function parseProductSource(value: FormDataEntryValue | null): ProductSource {
   if (typeof value !== "string" || !(PRODUCT_SOURCES as readonly string[]).includes(value)) {
     throw new Error("Źródło składu musi być jedną z obsługiwanych opcji");
@@ -84,6 +133,14 @@ function parseProductConfidence(value: FormDataEntryValue | null): ProductConfid
   }
 
   return value as ProductConfidence;
+}
+
+function parseProductCategory(value: FormDataEntryValue | null): ProductCategory {
+  if (typeof value !== "string" || !isProductCategory(value)) {
+    throw new Error(`Kategoria musi być jedną z dostępnych opcji: ${PRODUCT_CATEGORY_OPTIONS.join(", ")}`);
+  }
+
+  return value;
 }
 
 function parseInciList(form: FormData) {
@@ -139,10 +196,11 @@ function parseConfirmedProductForm(form: FormData): ConfirmedProductInput {
   return {
     name: parseRequiredText(form.get("name"), "Nazwa produktu"),
     brand: parseOptionalText(form.get("brand"), "Marka"),
-    category: parseOptionalText(form.get("category"), "Kategoria"),
+    category: parseProductCategory(form.get("category")),
     barcode: parseOptionalText(form.get("barcode"), "Barcode"),
     inciList: parseInciList(form),
-    imageUrl: parseOptionalText(form.get("imageUrl"), "Zdjęcie produktu"),
+    sourceImageUrl: parseImageUrl(form.get("sourceImageUrl"), "Źródłowe zdjęcie produktu"),
+    storedImageUrl: parseImageUrl(form.get("storedImageUrl"), "Zapisane zdjęcie produktu"),
     inciSource: parseProductSource(form.get("inciSource")),
     inciConfidence: parseProductConfidence(form.get("inciConfidence")),
     inciUpdatedAt: parseOptionalText(form.get("inciUpdatedAt"), "Data aktualizacji INCI"),
@@ -160,20 +218,9 @@ async function ensureShelfItem(supabase: ReturnType<typeof createClient>, userId
   return { shelfItem, alreadyExisted: false };
 }
 
-function buildSuccessMessage(productName: string, reusedExistingProduct: boolean, shelfItemAlreadyExisted: boolean) {
-  if (shelfItemAlreadyExisted) {
-    return `${productName} jest już na Twojej półce.`;
-  }
-
-  if (reusedExistingProduct) {
-    return `${productName} został dodany z istniejącej bazy produktów.`;
-  }
-
-  return `${productName} został zapisany jako nowy produkt współdzielony i dodany na półkę.`;
-}
-
 export const POST: APIRoute = async (context) => {
   const form = await context.request.formData();
+  const wantsJson = expectsJson(context.request);
 
   let successRedirectTo = "/dashboard";
   let errorRedirectTo = "/dashboard";
@@ -183,11 +230,19 @@ export const POST: APIRoute = async (context) => {
     errorRedirectTo = parseRedirectPath(form.get("errorRedirectTo"), errorRedirectTo);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Nieprawidłowa ścieżka przekierowania";
+    if (wantsJson) {
+      return jsonError(message);
+    }
+
     return context.redirect(encodeMessage("/dashboard", "error", message));
   }
 
   const supabase = createClient(context.request.headers, context.cookies);
   if (!supabase) {
+    if (wantsJson) {
+      return jsonError("Supabase nie jest skonfigurowane", 500);
+    }
+
     return context.redirect(encodeMessage(errorRedirectTo, "error", "Supabase nie jest skonfigurowane"));
   }
 
@@ -197,10 +252,18 @@ export const POST: APIRoute = async (context) => {
   } = await supabase.auth.getUser();
 
   if (authError) {
+    if (wantsJson) {
+      return jsonError(authError.message, 401);
+    }
+
     return context.redirect(encodeMessage(errorRedirectTo, "error", authError.message));
   }
 
   if (!user) {
+    if (wantsJson) {
+      return jsonError("Musisz być zalogowany, żeby zapisać produkt", 401);
+    }
+
     return context.redirect("/auth/signin");
   }
 
@@ -210,6 +273,10 @@ export const POST: APIRoute = async (context) => {
     confirmedProduct = parseConfirmedProductForm(form);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Nieprawidłowe dane produktu";
+    if (wantsJson) {
+      return jsonError(message);
+    }
+
     return context.redirect(encodeMessage(errorRedirectTo, "error", message));
   }
 
@@ -222,11 +289,23 @@ export const POST: APIRoute = async (context) => {
     successUrl.searchParams.set("shelfItemId", shelfItem.id);
     successUrl.searchParams.set("reusedProduct", reusedExistingProduct ? "1" : "0");
     successUrl.searchParams.set("existingShelfItem", alreadyExisted ? "1" : "0");
-    successUrl.searchParams.set("success", buildSuccessMessage(product.name, reusedExistingProduct, alreadyExisted));
+
+    if (wantsJson) {
+      return new Response(JSON.stringify({ redirectTo: `${successUrl.pathname}${successUrl.search}` }), {
+        status: 200,
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+    }
 
     return context.redirect(`${successUrl.pathname}${successUrl.search}`);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Nie udało się zapisać produktu";
+    if (wantsJson) {
+      return jsonError(message, 500);
+    }
+
     return context.redirect(encodeMessage(errorRedirectTo, "error", message));
   }
 };

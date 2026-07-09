@@ -26,6 +26,7 @@ Po wdrożeniu użytkownik z kompletnym profilem trafia do chronionego flow intak
 | Save boundary | Dedicated product-domain module + thin route | Pasuje do obecnego wzorca `user-domain.ts` i zostawia route bez ciężkiej logiki domenowej | Plan |
 | Review behavior | Mandatory review before every save | To twardy guardrail z PRD i najważniejsze zabezpieczenie jakości danych | Research |
 | Fallback scope | AI web search + photo extraction + manual all ship in first flow | Użytkownik wyraźnie wybrał pełną drabinkę fallbacków już w `S-02` | Plan |
+| AI fallback contract | `AI web search` is real OpenRouter server-side flow | Ta ścieżka ma sama budować draft INCI do review, a nie zmuszać usera do ręcznego wpisania składu | Plan |
 
 ## Scope
 
@@ -35,14 +36,14 @@ Po wdrożeniu użytkownik z kompletnym profilem trafia do chronionego flow intak
 
 ## Architecture / Approach
 
-Plan ma trzy warstwy: najpierw minimalny shared-product contract i serwerowy moduł produktowy, potem właściwy intake UX z search-first flow i obowiązkowym review, a na końcu integrację z istniejącym lifecycle aplikacji. Save path ma stałą kolejność: local/shared lookup -> external/fallback resolution -> review-confirmed payload -> canonical shared product reuse/create -> attach to `user_shelf_items`.
+Plan ma trzy warstwy: najpierw minimalny shared-product contract i serwerowy moduł produktowy, potem właściwy intake UX z search-first flow i obowiązkowym review, a na końcu integrację z istniejącym lifecycle aplikacji. Save path ma stałą kolejność: local/shared lookup -> external/fallback resolution -> review-confirmed payload -> canonical shared product reuse/create -> attach to `user_shelf_items`, przy czym `AI web search` jest osobnym server-side flow opartym o OpenRouter.
 
 ## Phases at a Glance
 
 | Phase | What it delivers | Key risk |
 | --- | --- | --- |
 | 1. Shared product contract and server-side orchestration | Real shared `products` schema, provenance contract, OBF adapter i trusted save path | Rozrost foundation ponad minimalny intake contract |
-| 2. Intake UX, fallback branches, and review flow | Search-first UI z barcode, OBF, AI/photo/manual fallback i mandatory review | Zbyt duża złożoność UI/state przy wielu branchach fallbackowych |
+| 2. Intake UX, fallback branches, and review flow | Search-first UI z barcode, OBF, OpenRouter-backed AI/photo/manual fallback i mandatory review | Zbyt duża złożoność UI/state przy wielu branchach fallbackowych |
 | 3. App integration, reuse verification, and developer handoff | Start/onboarding handoff, navigation updates i end-to-end smoke path | Niespójny lifecycle między onboardingiem, intake i debug surfaces |
 
 **Prerequisites:** istniejący `S-01` onboarding profilu; dostęp do OBF; zgoda, że ten change absorbuje minimalny brakujący foundation `F-02`
@@ -51,6 +52,7 @@ Plan ma trzy warstwy: najpierw minimalny shared-product contract i serwerowy mod
 ## Open Risks & Assumptions
 
 - Plan zakłada, że minimalny shared product foundation może wylądować w tym samym streamie co `S-02`, bo bez niego intake nie ma gdzie zapisać confirmed product.
+- `AI web search` wymaga realnej konfiguracji `OPENROUTER_API_KEY` i server-side wywołania modelu; bez tego ta gałąź nie spełnia kontraktu produktu.
 - Photo extraction wchodzi do pierwszego flow, ale może wymagać lżejszej integracji technicznej niż docelowe, bogatsze przetwarzanie obrazu.
 - OBF coverage dla części produktów może być słabe, więc UX fallbacków i manual correction jest równie ważny jak sam happy path lookup.
 

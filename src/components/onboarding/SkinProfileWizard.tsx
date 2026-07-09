@@ -179,6 +179,7 @@ export default function SkinProfileWizard({
       <input type="hidden" name="successRedirectTo" value="/onboarding/skin-profile/complete?source=save" />
       <input type="hidden" name="errorRedirectTo" value="/onboarding/skin-profile" />
       <input type="hidden" name="questionnaireAnswers" value={JSON.stringify(questionAnswers)} />
+      <input type="hidden" name="skinType" value={skinType} />
 
       {normalizeItems(selectedConcerns).map((concern) => (
         <input key={concern} type="hidden" name="concerns" value={concern} />

@@ -1,0 +1,172 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import { getSharedProductById } from "@/lib/domain/product-domain";
+import { createClient } from "@/lib/supabase";
+import {
+  getMissingUserDomainContractMessage,
+  getUserProfile,
+  isMissingUserDomainContractError,
+  isUserProfileComplete,
+} from "@/lib/domain/user-domain";
+
+const user = Astro.locals.user;
+const error = Astro.url.searchParams.get("error");
+const productId = Astro.url.searchParams.get("productId");
+
+if (!user) {
+  return Astro.redirect("/auth/signin");
+}
+
+const supabase = createClient(Astro.request.headers, Astro.cookies);
+let routeError: string | null = null;
+let product = null;
+let productMeta = "";
+
+if (!supabase) {
+  routeError = "Supabase nie jest skonfigurowane.";
+} else {
+  try {
+    const profile = await getUserProfile(supabase, user.id);
+    if (!isUserProfileComplete(profile)) {
+      return Astro.redirect("/onboarding/skin-profile");
+    }
+
+    if (!productId) {
+      return Astro.redirect("/products/intake");
+    }
+
+    product = await getSharedProductById(supabase, productId);
+    if (!product) {
+      routeError = "Nie udało się odnaleźć produktu w shared bazie.";
+    } else {
+      productMeta = [product.brand, product.category].filter(Boolean).join(" · ");
+    }
+  } catch (loadError) {
+    routeError = isMissingUserDomainContractError(loadError)
+      ? getMissingUserDomainContractMessage()
+      : loadError instanceof Error
+        ? loadError.message
+        : "Nie udało się przygotować potwierdzenia produktu.";
+  }
+}
+---
+
+<Layout title="Dodaj istniejący produkt">
+  <div class="bg-cosmic min-h-screen p-4 text-white">
+    <div class="mx-auto flex min-h-screen w-full max-w-6xl items-center justify-center py-10">
+      <section class="w-full rounded-[2rem] border border-white/12 bg-white/10 p-8 backdrop-blur-xl">
+        <div class="flex flex-col gap-3 border-b border-white/10 pb-6 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p class="text-sm tracking-[0.24em] text-cyan-100/55 uppercase">Shared product</p>
+            <h1 class="mt-2 text-3xl font-bold text-white">Potwierdź dodanie produktu do swojej półki</h1>
+            <p class="mt-3 max-w-3xl text-sm leading-6 text-blue-100/75">
+              Ten produkt już istnieje w bazie Shelfie. Na tym ekranie nie edytujesz shared danych, tylko potwierdzasz
+              dodanie istniejącego rekordu do swojej półki.
+            </p>
+          </div>
+        </div>
+
+        {
+          (routeError ?? error) && (
+            <p class="mt-6 rounded-2xl border border-amber-400/30 bg-amber-950/40 px-4 py-3 text-sm text-amber-100">
+              {routeError ?? error}
+            </p>
+          )
+        }
+
+        {
+          product && (
+            <div class="mt-8 space-y-6">
+              <div class="grid gap-6 lg:grid-cols-[20rem_minmax(0,1fr)]">
+                <div class="space-y-4">
+                  <div class="rounded-2xl border border-white/10 bg-white/5 p-4">
+                    <p class="text-xs tracking-[0.18em] text-blue-100/45 uppercase">Podgląd zdjęcia</p>
+                    {product.imageUrl ? (
+                      <img
+                        src={product.imageUrl}
+                        alt={`Podgląd produktu ${product.name}`}
+                        class="mt-3 max-h-80 w-full rounded-2xl border border-white/10 object-contain"
+                      />
+                    ) : (
+                      <p class="mt-3 text-sm text-blue-100/60">Brak zdjęcia produktu.</p>
+                    )}
+                  </div>
+                </div>
+
+                <div class="space-y-4">
+                  <div>
+                    <p class="text-xs tracking-[0.18em] text-cyan-100/55 uppercase">Produkt z shared bazy</p>
+                    <h2 class="mt-2 text-2xl font-semibold text-white">{product.name}</h2>
+                    <p class="mt-2 text-sm text-blue-100/70">
+                      {productMeta ? productMeta : "Brak dodatkowych metadanych"}
+                    </p>
+                  </div>
+
+                  <div class="grid gap-4 md:grid-cols-2">
+                    <div class="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-blue-100/70">
+                      <p>
+                        <span class="text-blue-100/45">Barcode:</span> {product.barcode ?? "brak"}
+                      </p>
+                      <p class="mt-2">
+                        <span class="text-blue-100/45">INCI source:</span> {product.inciSource ?? "brak"}
+                      </p>
+                      <p class="mt-2">
+                        <span class="text-blue-100/45">Confidence:</span> {product.inciConfidence ?? "brak"}
+                      </p>
+                    </div>
+
+                    <div class="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-blue-100/70">
+                      <p>
+                        <span class="text-blue-100/45">Shared product id:</span> {product.id}
+                      </p>
+                      <p class="mt-2">
+                        <span class="text-blue-100/45">Ostatnia aktualizacja:</span> {product.updatedAt}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div class="rounded-2xl border border-white/10 bg-white/5 p-4">
+                    <p class="text-xs tracking-[0.18em] text-blue-100/45 uppercase">INCI</p>
+                    <div class="mt-3 flex flex-wrap gap-2 text-sm text-white/90">
+                      {product.inciList.length > 0 ? (
+                        product.inciList.map((ingredient) => (
+                          <span class="rounded-full border border-white/10 bg-slate-950/40 px-3 py-1">
+                            {ingredient}
+                          </span>
+                        ))
+                      ) : (
+                        <span class="text-blue-100/60">Brak listy INCI.</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <form method="POST" action="/api/domain/products/add-existing" class="flex flex-wrap justify-end gap-3">
+                <input type="hidden" name="productId" value={product.id} />
+                <input type="hidden" name="successRedirectTo" value="/products/intake/complete" />
+                <input
+                  type="hidden"
+                  name="errorRedirectTo"
+                  value={`/products/intake/review/shared?productId=${product.id}`}
+                />
+                <a
+                  href="/products/intake"
+                  class="rounded-full border border-white/15 bg-white/5 px-4 py-2 text-sm text-white transition-colors hover:bg-white/12"
+                >
+                  Wróć do intake
+                </a>
+                <button
+                  type="submit"
+                  class="rounded-full bg-cyan-300 px-5 py-2.5 text-sm font-semibold text-slate-950 transition-transform hover:-translate-y-0.5"
+                >
+                  Dodaj ten produkt do półki
+                </button>
+              </form>
+            </div>
+          )
+        }
+      </section>
+    </div>
+  </div>
+</Layout>
