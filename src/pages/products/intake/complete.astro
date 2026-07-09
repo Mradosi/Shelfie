@@ -1,0 +1,130 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import { createClient } from "@/lib/supabase";
+import { getSharedProductById } from "@/lib/domain/product-domain";
+import {
+  getMissingUserDomainContractMessage,
+  getUserProfile,
+  isMissingUserDomainContractError,
+  isUserProfileComplete,
+} from "@/lib/domain/user-domain";
+
+const user = Astro.locals.user;
+const productId = Astro.url.searchParams.get("productId");
+const reusedProduct = Astro.url.searchParams.get("reusedProduct") === "1";
+const existingShelfItem = Astro.url.searchParams.get("existingShelfItem") === "1";
+
+if (!user) {
+  return Astro.redirect("/auth/signin");
+}
+
+const supabase = createClient(Astro.request.headers, Astro.cookies);
+let routeError: string | null = null;
+let product = null;
+
+if (!supabase) {
+  routeError = "Supabase nie jest skonfigurowane.";
+} else {
+  try {
+    const profile = await getUserProfile(supabase, user.id);
+    if (!isUserProfileComplete(profile)) {
+      return Astro.redirect("/onboarding/skin-profile");
+    }
+
+    if (!productId) {
+      return Astro.redirect("/products/intake");
+    }
+
+    product = await getSharedProductById(supabase, productId);
+    if (!product) {
+      routeError = "Nie udało się odnaleźć zapisanego produktu w bazie współdzielonej.";
+    }
+  } catch (loadError) {
+    routeError = isMissingUserDomainContractError(loadError)
+      ? getMissingUserDomainContractMessage()
+      : loadError instanceof Error
+        ? loadError.message
+        : "Nie udało się wczytać wyniku dodawania produktu.";
+  }
+}
+
+const successMessage = product
+  ? existingShelfItem
+    ? `${product.name} jest już na Twojej półce.`
+    : reusedProduct
+      ? `${product.name} został dodany z istniejącej bazy produktów.`
+      : `${product.name} został zapisany jako nowy produkt współdzielony i dodany na półkę.`
+  : "Flow dodawania produktu zakończył się poprawnie.";
+
+const successHeading = product
+  ? existingShelfItem
+    ? `${product.name} jest już na Twojej półce.`
+    : reusedProduct
+      ? `${product.name} został dodany do Twojej półki.`
+      : `${product.name} został zapisany na Twojej półce.`
+  : "Produkt został obsłużony.";
+---
+
+<Layout title="Produkt dodany">
+  <div class="bg-cosmic min-h-screen p-4 text-white">
+    <div class="mx-auto flex min-h-screen w-full max-w-5xl items-center justify-center py-10">
+      <section class="w-full rounded-[2rem] border border-white/12 bg-white/10 p-8 backdrop-blur-xl">
+        <p class="text-sm tracking-[0.24em] text-cyan-100/55 uppercase">Produkt zapisany</p>
+        <h1 class="mt-3 text-3xl font-bold text-white">{successHeading}</h1>
+        <p class="mt-4 max-w-2xl text-sm leading-6 text-blue-100/75">{successMessage}</p>
+
+        {
+          routeError && (
+            <p class="mt-6 rounded-2xl border border-amber-400/30 bg-amber-950/40 px-4 py-3 text-sm text-amber-100">
+              {routeError}
+            </p>
+          )
+        }
+
+        {
+          product && (
+            <div class="mt-8 grid gap-4 md:grid-cols-3">
+              <div class="rounded-[1.5rem] border border-white/10 bg-slate-950/30 p-5">
+                <p class="text-sm font-semibold text-white">Źródło współdzielonego produktu</p>
+                <p class="mt-3 text-sm leading-6 text-blue-100/70">
+                  {reusedProduct
+                    ? "Wykorzystaliśmy istniejący rekord z shared bazy."
+                    : "Utworzyliśmy nowy rekord w shared bazie produktów."}
+                </p>
+              </div>
+              <div class="rounded-[1.5rem] border border-white/10 bg-slate-950/30 p-5">
+                <p class="text-sm font-semibold text-white">Stan półki</p>
+                <p class="mt-3 text-sm leading-6 text-blue-100/70">
+                  {existingShelfItem
+                    ? "Ten produkt był już wcześniej na Twojej półce."
+                    : "Produkt został właśnie dodany do Twojej półki."}
+                </p>
+              </div>
+              <div class="rounded-[1.5rem] border border-white/10 bg-slate-950/30 p-5">
+                <p class="text-sm font-semibold text-white">Dane do dalszych slice'ów</p>
+                <p class="mt-3 text-sm leading-6 text-blue-100/70">
+                  INCI source: {product.inciSource ?? "brak"} · confidence: {product.inciConfidence ?? "brak"}
+                </p>
+              </div>
+            </div>
+          )
+        }
+
+        <div class="mt-8 flex flex-wrap gap-3">
+          <a
+            href="/products/intake"
+            class="rounded-full bg-cyan-300 px-5 py-2.5 text-sm font-semibold text-slate-950 transition-transform hover:-translate-y-0.5"
+          >
+            Dodaj kolejny produkt
+          </a>
+          <a
+            href="/dashboard"
+            class="rounded-full border border-white/20 bg-white/8 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-white/16"
+          >
+            Wróć do panelu debugowego
+          </a>
+        </div>
+      </section>
+    </div>
+  </div>
+</Layout>
