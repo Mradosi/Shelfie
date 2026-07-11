@@ -3,7 +3,7 @@ project: Shelfie
 version: 1
 status: draft
 created: 2026-05-28
-updated: 2026-07-09
+updated: 2026-07-11
 prd_version: 1
 main_goal: market-feedback
 top_blocker: decisions
@@ -33,9 +33,11 @@ Shelfie ma pomóc użytkownikowi uporządkować pielęgnację na bazie jego real
 | F-02 | shared-product-provenance-contract | (foundation) shared product and provenance contract is in place for confirmed product reuse                                         | —                | FR-004, Non-Functional Requirements (inci_source, inci_confidence)                 | ready    |
 | S-01 | first-skin-profile                 | user can sign in, provide skin context, and finish onboarding with an empty shelf ready for products                                | F-01             | US-01, FR-001, FR-002                                                              | done     |
 | S-02 | first-product-intake               | user can add the first product to their shelf from shared sources or AI/manual fallback and confirm it before save                  | F-01, F-02, S-01 | US-01, FR-003, FR-004, FR-005, FR-016, FR-017                                      | done     |
-| S-03 | first-manual-routine-management    | user can create, edit, and delete the first base routine from owned products and assigned routine roles                             | S-01, S-02       | US-01, FR-008, FR-009, FR-010                                                      | proposed |
+| S-10 | ai-web-search-source-self-healing  | user can rely on AI web search fallback to retry dead product URLs automatically instead of failing on the first broken source      | S-02             | FR-004, FR-016, FR-017                                                              | proposed |
+| S-03 | first-manual-routine-management    | user can create, edit, and delete the first base AM/PM routine from owned products and assigned routine roles                      | S-01, S-02       | US-01, FR-008, FR-009, FR-010                                                      | proposed |
 | S-04 | ai-routine-draft-and-review        | user can ask AI for a base-routine draft or improvement suggestions, then review and edit the result before save                    | F-02, S-03       | US-01, FR-008, FR-010                                                              | proposed |
 | S-05 | todays-routine-consumption         | user can view today's AM/PM routine from the saved base configuration and make lightweight one-off usage edits from routine screens | S-03             | US-01, FR-009                                                                      | proposed |
+| S-09 | day-specific-routine-overrides     | user can override selected weekdays without rebuilding the shared base AM/PM routine                                                | S-05             | US-01, FR-009                                                                      | proposed |
 | S-06 | routine-warnings-and-guidance      | user can review soft warnings about conflicts or overuse, plus product-role and missing-step guidance while adjusting routine usage | S-04, S-05       | US-01, FR-010, FR-011                                                              | proposed |
 | S-07 | shelf-notes-and-skin-checkins      | user can manage the shelf with notes/reactions and log a quick skin check-in for later guidance                                     | S-05             | US-01, FR-006, FR-007, FR-012                                                      | proposed |
 | S-08 | mobile-first-pwa-flow              | user can use the core shelf and routine flow comfortably on mobile and as a PWA                                                     | S-05             | FR-015                                                                             | proposed |
@@ -48,8 +50,10 @@ Navigation aid — groups items that share a Prerequisites chain. Canonical orde
 | ------ | ----------------------- | ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | A      | Core routine loop       | `F-01` → `S-01` → `S-02` → `S-03` → `S-05` | This is the main market-feedback path; `S-05` is the first daily-consumption checkpoint after the user proves they can manage a base routine without AI. |
 | B      | AI assistance layer     | `F-02` → `S-04` → `S-06`                   | This stream joins the core loop after `S-03` and tests whether AI improves a routine the user can already manage manually.                               |
-| C      | Post-routine adaptation | `S-07`                                     | This slice branches after `S-05` and keeps lightweight feedback separate from the core routine-validation path.                                          |
-| D      | Mobile shell            | `S-08`                                     | This slice also branches after `S-05`, so mobile/PWA polish follows a proven daily-use loop.                                                             |
+| F      | Intake resilience       | `S-02` → `S-10`                            | This slice hardens the existing AI web search fallback so broken source URLs trigger bounded self-healing retries instead of user-visible dead-end errors. |
+| C      | Weekly overrides        | `S-05` → `S-09`                            | This extension adds selected-day flexibility only after the base routine and today's routine have already proved their value.                             |
+| D      | Post-routine adaptation | `S-07`                                     | This slice branches after `S-05` and keeps lightweight feedback separate from the core routine-validation path.                                          |
+| E      | Mobile shell            | `S-08`                                     | This slice also branches after `S-05`, so mobile/PWA polish follows a proven daily-use loop.                                                             |
 
 ## Baseline
 
@@ -119,14 +123,27 @@ Foundations below assume these are present and do NOT re-scaffold them.
 
 ### S-03: First manual routine management
 
-- **Outcome:** user can manually create the first base routine from owned products and their assigned routine roles, edit that routine later, and delete it when they want to rebuild from scratch.
+- **Outcome:** user can manually create the first base AM/PM routine from owned products and their assigned routine roles, edit that routine later, and delete it when they want to rebuild from scratch, without authoring seven separate weekday plans.
 - **Change ID:** first-manual-routine-management
 - **PRD refs:** US-01, FR-008, FR-009, FR-010
 - **Prerequisites:** S-01, S-02
 - **Parallel with:** —
 - **Blockers:** —
 - **Unknowns:** —
-- **Risk:** This slice has to stay focused on proving the user can manage a useful base routine without AI; if it absorbs AI assistance or daily-consumption UX, the main validation signal gets blurred. The manual routine model must also stay compatible with later AI-created or AI-edited drafts, so `S-03` cannot introduce a manual-only structure that turns `S-04` into a migration problem instead of an additive slice.
+- **Risk:** This slice has to stay focused on proving the user can manage a useful base routine without AI; if it absorbs AI assistance, selected-day overrides, or daily-consumption UX, the main validation signal gets blurred. The manual routine model must also stay compatible with later AI-created or AI-edited drafts, so `S-03` cannot introduce a manual-only structure that turns `S-04` or `S-09` into migration problems instead of additive slices.
+- **Status:** proposed
+
+### S-10: AI web-search source self-healing
+
+- **Outcome:** user can complete AI web-search-assisted product intake even when the first AI-proposed source URL is dead, because the backend validates the candidate source, feeds structured retry context back into AI, and retries with a bounded number of alternate live sources before surfacing a fallback error.
+- **Change ID:** ai-web-search-source-self-healing
+- **PRD refs:** FR-004, FR-016, FR-017
+- **Prerequisites:** S-02
+- **Parallel with:** S-03
+- **Blockers:** —
+- **Unknowns:**
+  - Which non-success responses should count as retryable source failures in MVP (`404`, `403`, redirect loops, DNS errors, timeout, content mismatch)? — Owner: team. Block: no.
+- **Risk:** If this slice turns into a general crawler, unrestricted agent loop, or full source-ranking engine, it will sprawl far beyond the narrow goal of making AI web search fallback resilient to the first broken URL. The implementation should stay bounded: candidate URL -> backend validation -> structured retry prompt -> limited retry count -> graceful fallback.
 - **Status:** proposed
 
 ### S-04: AI routine draft and review
@@ -152,6 +169,18 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Blockers:** —
 - **Unknowns:** —
 - **Risk:** Without a separate consumption slice, the MVP can organize a routine on paper but still fail the daily-use test that the product depends on.
+- **Status:** proposed
+
+### S-09: Day-specific routine overrides
+
+- **Outcome:** user can keep one shared base AM/PM routine for the full week, then override selected weekdays when a specific day should differ from the baseline without rebuilding the whole routine.
+- **Change ID:** day-specific-routine-overrides
+- **PRD refs:** US-01, FR-009
+- **Prerequisites:** S-05
+- **Parallel with:** S-06, S-07, S-08
+- **Blockers:** —
+- **Unknowns:** —
+- **Risk:** If this slice grows into a general overlay engine, routine version history, or temporary-protocol framework, it will absorb complexity that the MVP explicitly tries to postpone.
 - **Status:** proposed
 
 ### S-06: Routine warnings and guidance
@@ -199,9 +228,11 @@ Foundations below assume these are present and do NOT re-scaffold them.
 | F-02       | shared-product-provenance-contract | Define shared product provenance contract                               | yes                   | Can run in parallel with F-01; keep scope to reusable product intake contracts.                     |
 | S-01       | first-skin-profile                 | Save initial skin profile and empty-shelf onboarding state              | no                    | Wait for F-01.                                                                                      |
 | S-02       | first-product-intake               | Ship first confirmed product intake flow onto the shelf                 | no                    | Wait for F-01, F-02, and S-01.                                                                      |
-| S-03       | first-manual-routine-management    | Ship first manual base-routine management flow from owned products      | no                    | Wait for S-01 and S-02; clarify the boundary of manual routine management in US-01 before planning. |
+| S-10       | ai-web-search-source-self-healing  | Add bounded retry + source validation for AI web-search product intake  | yes                   | Extends `S-02` by retrying dead AI-proposed URLs instead of failing immediately; keep scope to self-healing of the existing fallback path. |
+| S-03       | first-manual-routine-management    | Ship first manual base-routine management flow from owned products      | yes                   | Manual scope settled: one base AM/PM routine applies across the week; selected-day overrides stay in a later slice. |
 | S-04       | ai-routine-draft-and-review        | Add AI draft and review flow on top of the manual base-routine model    | no                    | Wait for F-02 and S-03; this should accelerate, not replace, manual routine management.             |
 | S-05       | todays-routine-consumption         | Ship today's AM/PM routine consumption flow from the saved base routine | no                    | Wait for S-03; this is the first daily-use slice.                                                   |
+| S-09       | day-specific-routine-overrides     | Add selected-day overrides on top of the shared base AM/PM routine      | no                    | Wait for S-05 so overrides extend a proven base-and-today flow instead of expanding S-03.          |
 | S-06       | routine-warnings-and-guidance      | Add soft routine warnings and guidance during routine use               | no                    | Wait for S-04 and S-05.                                                                             |
 | S-07       | shelf-notes-and-skin-checkins      | Add shelf notes, reactions, and lightweight skin check-ins              | no                    | Wait for S-05.                                                                                      |
 | S-08       | mobile-first-pwa-flow              | Polish the core flow for mobile and PWA use                             | no                    | Wait for S-05 so polish follows proven behavior.                                                    |
@@ -209,7 +240,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 ## Open Roadmap Questions
 
 1. **How should conflict detection be split between deterministic rules and AI explanations?** — Owner: team. Block: S-06.
-2. **What are the acceptance criteria for US-01, especially where manual routine management ends and AI assistance begins?** — Owner: user. Block: S-03, S-04.
+2. **How should AI-assisted routine editing and later selected-day overrides interact with the shared base AM/PM model?** — Owner: team. Block: S-04, S-09.
 
 ## Parked
 

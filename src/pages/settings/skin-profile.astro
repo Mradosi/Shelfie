@@ -1,5 +1,6 @@
 ---
 import SkinProfileEditForm from "@/components/profile/SkinProfileEditForm";
+import Topbar from "@/components/Topbar.astro";
 import Layout from "@/layouts/Layout.astro";
 import { createClient } from "@/lib/supabase";
 import {
@@ -45,6 +46,10 @@ const profile = persistedProfile ?? createEmptyUserProfile();
 
 <Layout title="Ustawienia profilu skóry">
   <div class="bg-cosmic min-h-screen p-4 text-white">
+    <div class="relative z-10">
+      <Topbar />
+    </div>
+
     <div class="mx-auto flex min-h-screen w-full max-w-5xl items-center justify-center py-10">
       <section class="w-full rounded-[2rem] border border-white/12 bg-white/10 p-8 backdrop-blur-xl">
         <div class="flex flex-col gap-3 border-b border-white/10 pb-6 sm:flex-row sm:items-end sm:justify-between">

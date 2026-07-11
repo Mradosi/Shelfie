@@ -5,6 +5,7 @@ const PROTECTED_ROUTES = [
   "/dashboard",
   "/debug/products",
   "/products",
+  "/routine",
   "/start",
   "/onboarding/skin-profile",
   "/settings/skin-profile",
