@@ -1,9 +1,17 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import {
+  normalizeRoutineSchedule,
+  type RoutineRole,
+  type RoutineSchedule,
+  type RoutineScheduleEntry,
+} from "@/lib/domain/routine-schedule";
 
 type UserDomainClient = SupabaseClient;
 
 const USER_PROFILE_COLUMNS = "user_id, skin_type, skin_aspects, concerns, goals, notes, created_at, updated_at";
 const USER_SHELF_ITEM_COLUMNS = "id, user_id, product_id, created_at, updated_at";
+const USER_SHELF_CATALOG_COLUMNS =
+  "id, user_id, product_id, created_at, updated_at, product:products!user_shelf_items_product_id_fkey(id, name, brand, category, source_image_url, stored_image_url)";
 const USER_ROUTINE_CONFIG_COLUMNS = "user_id, schedule, created_at, updated_at";
 
 export const SKIN_TYPE_OPTIONS = ["dry", "oily", "combination", "normal", "balanced", "not_sure"] as const;
@@ -101,6 +109,19 @@ interface UserRoutineConfigRow {
   updated_at: string;
 }
 
+interface UserShelfCatalogProductRow {
+  id: string;
+  name: string;
+  brand: string | null;
+  category: string | null;
+  source_image_url: string | null;
+  stored_image_url: string | null;
+}
+
+interface UserShelfCatalogRow extends UserShelfItemRow {
+  product: UserShelfCatalogProductRow | UserShelfCatalogProductRow[] | null;
+}
+
 export interface SkinAspects {
   sensitivity: SkinAspectLevel;
   pigmentation: SkinAspectLevel;
@@ -136,12 +157,17 @@ export interface UserShelfItem {
   updatedAt: string;
 }
 
-export interface RoutineScheduleEntry {
-  shelf_item_id: string;
+export interface UserShelfCatalogProduct {
+  id: string;
+  name: string;
+  brand: string | null;
+  category: string | null;
+  imageUrl: string | null;
 }
 
-export type RoutineScheduleSection = Record<string, RoutineScheduleEntry[]>;
-export type RoutineSchedule = Record<string, RoutineScheduleSection>;
+export interface UserShelfCatalogItem extends UserShelfItem {
+  product: UserShelfCatalogProduct;
+}
 
 export interface UserRoutineConfig {
   userId: string;
@@ -235,40 +261,6 @@ function normalizeSkinAspects(value: unknown): SkinAspects {
   };
 }
 
-function normalizeRoutineSchedule(schedule: unknown): RoutineSchedule {
-  if (!isRecord(schedule)) {
-    return {};
-  }
-
-  const normalized: RoutineSchedule = {};
-
-  for (const [dayKey, dayValue] of Object.entries(schedule)) {
-    if (!isRecord(dayValue)) {
-      continue;
-    }
-
-    const sections: RoutineScheduleSection = {};
-
-    for (const [sectionKey, sectionValue] of Object.entries(dayValue)) {
-      if (!Array.isArray(sectionValue)) {
-        continue;
-      }
-
-      sections[sectionKey] = sectionValue.flatMap((item) => {
-        if (!isRecord(item) || typeof item.shelf_item_id !== "string" || !item.shelf_item_id.trim()) {
-          return [];
-        }
-
-        return [{ shelf_item_id: item.shelf_item_id }];
-      });
-    }
-
-    normalized[dayKey] = sections;
-  }
-
-  return normalized;
-}
-
 function mapUserProfile(row: UserProfileRow): UserProfile {
   return {
     userId: row.user_id,
@@ -289,6 +281,43 @@ function mapUserShelfItem(row: UserShelfItemRow): UserShelfItem {
     productId: row.product_id,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+  };
+}
+
+function mapRoutineScheduleEntry(entry: RoutineScheduleEntry): RoutineScheduleEntry {
+  return {
+    shelf_item_id: entry.shelf_item_id,
+    routine_role: entry.routine_role,
+  };
+}
+
+export function createRoutineScheduleEntry(shelfItemId: string, routineRole: RoutineRole): RoutineScheduleEntry {
+  return mapRoutineScheduleEntry({
+    shelf_item_id: shelfItemId,
+    routine_role: routineRole,
+  });
+}
+
+function mapUserShelfCatalogProduct(row: UserShelfCatalogProductRow): UserShelfCatalogProduct {
+  return {
+    id: row.id,
+    name: row.name,
+    brand: normalizeOptionalText(row.brand),
+    category: normalizeOptionalText(row.category),
+    imageUrl: normalizeOptionalText(row.stored_image_url) ?? normalizeOptionalText(row.source_image_url),
+  };
+}
+
+function mapUserShelfCatalogItem(row: UserShelfCatalogRow): UserShelfCatalogItem {
+  const productRow = Array.isArray(row.product) ? row.product[0] : row.product;
+
+  if (!productRow || typeof productRow.id !== "string" || typeof productRow.name !== "string") {
+    throw new Error(`Nie udało się wczytać danych produktu dla shelf itemu ${row.id}`);
+  }
+
+  return {
+    ...mapUserShelfItem(row),
+    product: mapUserShelfCatalogProduct(productRow),
   };
 }
 
@@ -363,6 +392,20 @@ export async function listUserShelfItems(supabase: UserDomainClient, userId: str
   }
 
   return data.map((row) => mapUserShelfItem(row));
+}
+
+export async function listUserShelfCatalog(supabase: UserDomainClient, userId: string) {
+  const { data, error } = await supabase
+    .from("user_shelf_items")
+    .select(USER_SHELF_CATALOG_COLUMNS)
+    .eq("user_id", userId)
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    throw new Error(`Nie udało się wczytać katalogu produktów na półce: ${error.message}`);
+  }
+
+  return data.map((row) => mapUserShelfCatalogItem(row as UserShelfCatalogRow));
 }
 
 export async function addUserShelfItem(supabase: UserDomainClient, userId: string, productId: string) {

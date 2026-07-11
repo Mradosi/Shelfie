@@ -1,0 +1,174 @@
+---
+import Topbar from "@/components/Topbar.astro";
+import ManualRoutineEditor from "@/components/routine/ManualRoutineEditor";
+import Layout from "@/layouts/Layout.astro";
+import {
+  collapseWeeklyScheduleToBaseRoutine,
+  createEmptyBaseRoutine,
+  hasNonEmptyBaseRoutine,
+} from "@/lib/domain/routine-schedule";
+import { createClient } from "@/lib/supabase";
+import {
+  getMissingUserDomainContractMessage,
+  getUserProfile,
+  getUserRoutineConfig,
+  isMissingUserDomainContractError,
+  isUserProfileComplete,
+  listUserShelfCatalog,
+} from "@/lib/domain/user-domain";
+
+const user = Astro.locals.user;
+const error = Astro.url.searchParams.get("error");
+const success = Astro.url.searchParams.get("success");
+
+if (!user) {
+  return Astro.redirect("/auth/signin");
+}
+
+const supabase = createClient(Astro.request.headers, Astro.cookies);
+let routeError: string | null = null;
+let persistedRoutineLabel = "Gotowe do ułożenia pierwszej rutyny";
+let initialDraft = createEmptyBaseRoutine();
+let shelfCatalog = [];
+
+if (!supabase) {
+  routeError = "Supabase nie jest skonfigurowane.";
+} else {
+  try {
+    const profile = await getUserProfile(supabase, user.id);
+    if (!isUserProfileComplete(profile)) {
+      return Astro.redirect("/onboarding/skin-profile");
+    }
+
+    const [ownedShelfCatalog, routineConfig] = await Promise.all([
+      listUserShelfCatalog(supabase, user.id),
+      getUserRoutineConfig(supabase, user.id),
+    ]);
+
+    shelfCatalog = ownedShelfCatalog;
+
+    if (routineConfig) {
+      initialDraft = collapseWeeklyScheduleToBaseRoutine(routineConfig.schedule);
+    }
+
+    if (hasNonEmptyBaseRoutine(initialDraft)) {
+      persistedRoutineLabel = "Wczytano zapisaną rutynę";
+    } else if (shelfCatalog.length === 0) {
+      persistedRoutineLabel = "Najpierw dodaj produkty do półki";
+    }
+  } catch (loadError) {
+    routeError = isMissingUserDomainContractError(loadError)
+      ? getMissingUserDomainContractMessage()
+      : loadError instanceof Error
+        ? loadError.message
+        : "Nie udało się przygotować edytora rutyny.";
+  }
+}
+
+const shelfCount = shelfCatalog.length;
+const hasVeryFewProducts = shelfCount > 0 && shelfCount < 2;
+---
+
+<Layout title="Moja rutyna">
+  <div class="bg-cosmic min-h-screen p-4 text-white">
+    <div class="relative z-10">
+      <Topbar />
+    </div>
+
+    <div class="mx-auto flex w-full max-w-7xl flex-col gap-6 py-6 sm:py-10">
+      <section class="rounded-[2rem] border border-white/12 bg-white/10 p-8 backdrop-blur-xl">
+        <div class="flex flex-col gap-4 border-b border-white/10 pb-6 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <p class="text-sm tracking-[0.24em] text-cyan-100/55 uppercase">Manual routine management</p>
+            <h1 class="mt-2 text-3xl font-bold text-white">Ułóż swoją bazową rutynę AM/PM</h1>
+            <p class="mt-3 max-w-3xl text-sm leading-6 text-blue-100/75">
+              Ten widok służy do ręcznego zbudowania porannej i wieczornej bazy z produktów, które już są na Twojej
+              półce. Każdy wpis dostaje własny krok rutyny, a zapis trafia do wspólnego weekly schedule bez rozbijania
+              flow na osobne dni tygodnia.
+            </p>
+          </div>
+
+          <div class="flex flex-wrap gap-3">
+            <div class="rounded-full border border-white/12 bg-black/15 px-4 py-2 text-sm text-blue-100/80">
+              {persistedRoutineLabel}
+            </div>
+            <a
+              href="/products/intake"
+              class="rounded-full border border-white/20 bg-white/8 px-4 py-2 text-sm text-white transition-colors hover:bg-white/16"
+            >
+              Dodaj produkt do półki
+            </a>
+          </div>
+        </div>
+
+        {
+          routeError && (
+            <p class="mt-6 rounded-2xl border border-amber-400/30 bg-amber-950/40 px-4 py-3 text-sm text-amber-100">
+              {routeError}
+            </p>
+          )
+        }
+
+        {
+          success && (
+            <p class="mt-6 rounded-2xl border border-emerald-400/30 bg-emerald-950/40 px-4 py-3 text-sm text-emerald-200">
+              {success}
+            </p>
+          )
+        }
+
+        {
+          error && (
+            <p class="mt-6 rounded-2xl border border-red-400/30 bg-red-950/40 px-4 py-3 text-sm text-red-200">
+              {error}
+            </p>
+          )
+        }
+
+        {
+          !routeError && (
+            <>
+              <div class="mt-6 grid gap-4 md:grid-cols-3">
+                <div class="rounded-[1.5rem] border border-white/10 bg-slate-950/30 p-5">
+                  <p class="text-sm font-semibold text-white">Produkty na półce</p>
+                  <p class="mt-3 text-sm leading-6 text-blue-100/70">
+                    {shelfCount === 0
+                      ? "Nie masz jeszcze żadnych produktów na półce."
+                      : `Masz obecnie ${shelfCount} ${shelfCount === 1 ? "produkt" : "produkty"} gotowe do użycia w rutynie.`}
+                  </p>
+                </div>
+
+                <div class="rounded-[1.5rem] border border-white/10 bg-slate-950/30 p-5">
+                  <p class="text-sm font-semibold text-white">Zakres tego etapu</p>
+                  <p class="mt-3 text-sm leading-6 text-blue-100/70">
+                    W tej fazie ustawiasz tylko sekcję `AM/PM`, role produktów i kolejność kroków. Harmonogramy typu
+                    weekday albo custom interval wrócą później.
+                  </p>
+                </div>
+
+                <div class="rounded-[1.5rem] border border-white/10 bg-slate-950/30 p-5">
+                  <p class="text-sm font-semibold text-white">Semantyka zapisu</p>
+                  <p class="mt-3 text-sm leading-6 text-blue-100/70">
+                    Ta sama pozycja z półki może wystąpić wielokrotnie. Reset czyści tylko rutynę, nie usuwa produktów z
+                    półki.
+                  </p>
+                </div>
+              </div>
+
+              {hasVeryFewProducts && (
+                <p class="mt-6 rounded-2xl border border-cyan-300/20 bg-cyan-300/8 px-4 py-3 text-sm text-blue-100/80">
+                  Masz na półce tylko jeden produkt. Widok rutyny pozostaje dostępny, ale dla sensownego układu porannej
+                  i wieczornej bazy prawdopodobnie będziesz chcieć dodać jeszcze kilka pozycji.
+                </p>
+              )}
+
+              <div class="mt-8">
+                <ManualRoutineEditor client:load initialDraft={initialDraft} shelfCatalog={shelfCatalog} />
+              </div>
+            </>
+          )
+        }
+      </section>
+    </div>
+  </div>
+</Layout>
