@@ -1,10 +1,10 @@
 ---
 change_id: first-manual-routine-management
 title: First manual routine management
-status: implemented
+status: archived
 created: 2026-07-09
 updated: 2026-07-12
-archived_at: null
+archived_at: 2026-07-12T14:25:33Z
 ---
 
 ## Notes
