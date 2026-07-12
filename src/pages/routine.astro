@@ -19,6 +19,7 @@ import {
 
 const user = Astro.locals.user;
 const error = Astro.url.searchParams.get("error");
+const routineFlow = Astro.url.searchParams.get("routineFlow");
 const success = Astro.url.searchParams.get("success");
 
 if (!user) {
@@ -27,7 +28,6 @@ if (!user) {
 
 const supabase = createClient(Astro.request.headers, Astro.cookies);
 let routeError: string | null = null;
-let persistedRoutineLabel = "Gotowe do ułożenia pierwszej rutyny";
 let initialDraft = createEmptyBaseRoutine();
 let shelfCatalog = [];
 
@@ -50,12 +50,6 @@ if (!supabase) {
     if (routineConfig) {
       initialDraft = collapseWeeklyScheduleToBaseRoutine(routineConfig.schedule);
     }
-
-    if (hasNonEmptyBaseRoutine(initialDraft)) {
-      persistedRoutineLabel = "Wczytano zapisaną rutynę";
-    } else if (shelfCatalog.length === 0) {
-      persistedRoutineLabel = "Najpierw dodaj produkty do półki";
-    }
   } catch (loadError) {
     routeError = isMissingUserDomainContractError(loadError)
       ? getMissingUserDomainContractMessage()
@@ -67,6 +61,62 @@ if (!supabase) {
 
 const shelfCount = shelfCatalog.length;
 const hasVeryFewProducts = shelfCount > 0 && shelfCount < 2;
+const hasPersistedRoutine = hasNonEmptyBaseRoutine(initialDraft);
+
+type RoutinePageState = "needs_products" | "empty" | "saved" | "reset";
+
+const pageState: RoutinePageState =
+  shelfCount === 0 ? "needs_products" : routineFlow === "reset" ? "reset" : hasPersistedRoutine ? "saved" : "empty";
+
+const pageStateCopy: Record<
+  RoutinePageState,
+  {
+    badge: string;
+    heading: string;
+    intro: string;
+    panelTitle: string;
+    panelBody: string;
+  }
+> = {
+  needs_products: {
+    badge: "Najpierw dodaj produkty do półki",
+    heading: "Przygotuj produkty do swojej pierwszej rutyny",
+    intro:
+      "Ten widok pozostaje dostępny, ale do zbudowania bazowej rutyny AM/PM potrzebujesz najpierw choć jednego produktu na półce.",
+    panelTitle: "Brakuje produktów do rozpoczęcia",
+    panelBody:
+      "Gdy dodasz pierwszy produkt, wróć tutaj i przypisz go do sekcji porannej albo wieczornej. Sama rutyna pozostaje na razie pusta.",
+  },
+  empty: {
+    badge: "Gotowe do ułożenia pierwszej rutyny",
+    heading: "Ułóż swoją pierwszą bazową rutynę AM/PM",
+    intro:
+      "Zacznij od dodania pierwszych kroków do sekcji porannej i wieczornej. Każdy wpis dostaje własną rolę, a zapis trafia do wspólnego weekly schedule.",
+    panelTitle: "Nie masz jeszcze zapisanej rutyny",
+    panelBody:
+      "Dodaj pierwszy krok do porannej albo wieczornej sekcji, ustaw kolejność i zapisz całość dopiero wtedy, gdy baza będzie gotowa.",
+  },
+  saved: {
+    badge: routineFlow === "save" ? "Rutyna została zapisana" : "Wczytano zapisaną rutynę",
+    heading: "Edytuj swoją bazową rutynę AM/PM",
+    intro:
+      "Masz już zapisaną bazę. Możesz wracać do niej z nawigacji, zmieniać kolejność kroków, dodawać nowe produkty albo całkowicie wyczyścić stan i zacząć od nowa.",
+    panelTitle: "Rutyna jest aktywna",
+    panelBody:
+      "Poniżej widzisz aktualny stan bazowej rutyny. Zmiany zapisują się jawnie przyciskiem, więc możesz spokojnie edytować draft przed wysłaniem.",
+  },
+  reset: {
+    badge: "Rutyna została wyczyszczona",
+    heading: "Masz czystą bazę do ponownego ułożenia",
+    intro:
+      "Reset usunął tylko zapis rutyny. Produkty na półce nadal są dostępne, więc możesz od razu zbudować nową wersję porannej i wieczornej bazy.",
+    panelTitle: "Rutyna jest pusta po resecie",
+    panelBody:
+      "Półka pozostała bez zmian. Wybierz produkty z katalogu poniżej i ułóż rutynę od początku, bez ponownego dodawania produktów do konta.",
+  },
+};
+
+const currentStateCopy = pageStateCopy[pageState];
 ---
 
 <Layout title="Moja rutyna">
@@ -80,17 +130,15 @@ const hasVeryFewProducts = shelfCount > 0 && shelfCount < 2;
         <div class="flex flex-col gap-4 border-b border-white/10 pb-6 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p class="text-sm tracking-[0.24em] text-cyan-100/55 uppercase">Manual routine management</p>
-            <h1 class="mt-2 text-3xl font-bold text-white">Ułóż swoją bazową rutynę AM/PM</h1>
+            <h1 class="mt-2 text-3xl font-bold text-white">{currentStateCopy.heading}</h1>
             <p class="mt-3 max-w-3xl text-sm leading-6 text-blue-100/75">
-              Ten widok służy do ręcznego zbudowania porannej i wieczornej bazy z produktów, które już są na Twojej
-              półce. Każdy wpis dostaje własny krok rutyny, a zapis trafia do wspólnego weekly schedule bez rozbijania
-              flow na osobne dni tygodnia.
+              {currentStateCopy.intro}
             </p>
           </div>
 
           <div class="flex flex-wrap gap-3">
             <div class="rounded-full border border-white/12 bg-black/15 px-4 py-2 text-sm text-blue-100/80">
-              {persistedRoutineLabel}
+              {currentStateCopy.badge}
             </div>
             <a
               href="/products/intake"
@@ -128,6 +176,11 @@ const hasVeryFewProducts = shelfCount > 0 && shelfCount < 2;
         {
           !routeError && (
             <>
+              <div class="mt-6 rounded-[1.5rem] border border-white/10 bg-slate-950/30 p-5">
+                <p class="text-sm font-semibold text-white">{currentStateCopy.panelTitle}</p>
+                <p class="mt-3 max-w-3xl text-sm leading-6 text-blue-100/70">{currentStateCopy.panelBody}</p>
+              </div>
+
               <div class="mt-6 grid gap-4 md:grid-cols-3">
                 <div class="rounded-[1.5rem] border border-white/10 bg-slate-950/30 p-5">
                   <p class="text-sm font-semibold text-white">Produkty na półce</p>
