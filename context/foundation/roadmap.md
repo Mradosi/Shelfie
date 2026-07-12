@@ -3,7 +3,7 @@ project: Shelfie
 version: 1
 status: draft
 created: 2026-05-28
-updated: 2026-07-11
+updated: 2026-07-12
 prd_version: 1
 main_goal: market-feedback
 top_blocker: decisions
@@ -34,7 +34,7 @@ Shelfie ma pomóc użytkownikowi uporządkować pielęgnację na bazie jego real
 | S-01 | first-skin-profile                 | user can sign in, provide skin context, and finish onboarding with an empty shelf ready for products                                | F-01             | US-01, FR-001, FR-002                                                              | done     |
 | S-02 | first-product-intake               | user can add the first product to their shelf from shared sources or AI/manual fallback and confirm it before save                  | F-01, F-02, S-01 | US-01, FR-003, FR-004, FR-005, FR-016, FR-017                                      | done     |
 | S-10 | ai-web-search-source-self-healing  | user can rely on AI web search fallback to retry dead product URLs automatically instead of failing on the first broken source      | S-02             | FR-004, FR-016, FR-017                                                              | proposed |
-| S-03 | first-manual-routine-management    | user can create, edit, and delete the first base AM/PM routine from owned products and assigned routine roles                      | S-01, S-02       | US-01, FR-008, FR-009, FR-010                                                      | proposed |
+| S-03 | first-manual-routine-management    | user can create, edit, and delete the first base AM/PM routine from owned products and assigned routine roles                      | S-01, S-02       | US-01, FR-008, FR-009, FR-010                                                      | done     |
 | S-04 | ai-routine-draft-and-review        | user can ask AI for a base-routine draft or improvement suggestions, then review and edit the result before save                    | F-02, S-03       | US-01, FR-008, FR-010                                                              | proposed |
 | S-05 | todays-routine-consumption         | user can view today's AM/PM routine from the saved base configuration and make lightweight one-off usage edits from routine screens | S-03             | US-01, FR-009                                                                      | proposed |
 | S-09 | day-specific-routine-overrides     | user can override selected weekdays without rebuilding the shared base AM/PM routine                                                | S-05             | US-01, FR-009                                                                      | proposed |
@@ -131,7 +131,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Blockers:** —
 - **Unknowns:** —
 - **Risk:** This slice has to stay focused on proving the user can manage a useful base routine without AI; if it absorbs AI assistance, selected-day overrides, or daily-consumption UX, the main validation signal gets blurred. The manual routine model must also stay compatible with later AI-created or AI-edited drafts, so `S-03` cannot introduce a manual-only structure that turns `S-04` or `S-09` into migration problems instead of additive slices.
-- **Status:** proposed
+- **Status:** done
 
 ### S-10: AI web-search source self-healing
 
@@ -260,3 +260,4 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **F-01: (foundation) A minimal persistence contract exists for per-user skin context, shelf items, product schedules, and routine configuration, with ownership boundaries that match the authenticated single-user model. This is explicitly a shared domain contract for downstream slices, not a full backend buildout.** — Archived 2026-05-31 → `context/archive/2026-05-30-user-domain-persistence-contract/`. Lesson: —.
 - **S-01: user can sign in, provide basic skin context, and finish onboarding with a saved profile and an empty shelf ready for product intake.** — Archived 2026-06-11 → `context/archive/2026-05-31-first-skin-profile/`. Lesson: —.
 - **S-02: user can add the first product to their shelf from shared sources or AI/manual fallback and confirm it before save.** — Archived 2026-07-09 → `context/archive/2026-06-11-first-product-intake/`. Lesson: —.
+- **S-03: user can manually create the first base AM/PM routine from owned products and their assigned routine roles, edit that routine later, and delete it when they want to rebuild from scratch, without authoring seven separate weekday plans.** — Archived 2026-07-12 → `context/archive/2026-07-09-first-manual-routine-management/`. Lesson: —.
