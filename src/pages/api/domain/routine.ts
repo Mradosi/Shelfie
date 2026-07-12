@@ -20,6 +20,13 @@ function encodeMessage(path: string, key: "error" | "success", message: string) 
   return `${url.pathname}${url.search}`;
 }
 
+function encodeRoutineSuccess(path: string, mode: RoutineMutationMode, message: string) {
+  const url = new URL(path, "https://shelfie.local");
+  url.searchParams.set("success", message);
+  url.searchParams.set("routineFlow", mode);
+  return `${url.pathname}${url.search}`;
+}
+
 function expectsJson(request: Request) {
   const accept = request.headers.get("Accept") ?? "";
   const requestedWith = request.headers.get("X-Shelfie-Request") ?? "";
@@ -234,5 +241,5 @@ export const POST: APIRoute = async (context) => {
     return jsonSuccess(mode, successRedirectTo);
   }
 
-  return context.redirect(encodeMessage(successRedirectTo, "success", successMessage));
+  return context.redirect(encodeRoutineSuccess(successRedirectTo, mode, successMessage));
 };
