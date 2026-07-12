@@ -280,8 +280,8 @@ Selected-day overrides są już zapisane w roadmapie jako `S-09`, więc `S-03` n
 
 #### Manual
 
-- [x] 1.3 Role-bearing routine entries round-trip through the domain layer without losing role or array order
-- [x] 1.4 Full reset clears `user_routine_configs.schedule` without removing owned shelf items
+- [x] 1.3 Role-bearing routine entries round-trip through the domain layer without losing role or array order — 7de8260
+- [x] 1.4 Full reset clears `user_routine_configs.schedule` without removing owned shelf items — 7de8260
 
 ### Phase 2: Protected manual routine surface
 
@@ -298,9 +298,9 @@ Selected-day overrides są już zapisane w roadmapie jako `S-09`, więc `S-03` n
 
 #### Automated
 
-- [x] 3.1 Final repository verification passes after the full slice lands
+- [x] 3.1 Final repository verification passes after the full slice lands — 7de8260
 
 #### Manual
 
-- [x] 3.2 After product intake, the user can move directly into routine creation from the success surface and later re-enter routine editing from the main navigation
-- [x] 3.3 After deleting the routine, the user sees a clean empty state ready to rebuild from scratch, with shelf products still intact
+- [x] 3.2 After product intake, the user can move directly into routine creation from the success surface and later re-enter routine editing from the main navigation — 7de8260
+- [x] 3.3 After deleting the routine, the user sees a clean empty state ready to rebuild from scratch, with shelf products still intact — 7de8260
