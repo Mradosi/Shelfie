@@ -291,9 +291,16 @@ export const POST: APIRoute = async (context) => {
       console.error("[product-intake] Could not create pending product interpretation", interpretationError);
     }
 
-    const successUrl = new URL(`/products/${product.id}`, "https://shelfie.local");
-    successUrl.searchParams.set("shelf", alreadyExisted ? "existing" : "added");
-    successUrl.searchParams.set("reusedProduct", reusedExistingProduct ? "1" : "0");
+    const successUrl = new URL("/shelf", "https://shelfie.local");
+    successUrl.searchParams.set("shelf", "added");
+    successUrl.searchParams.set(
+      "success",
+      alreadyExisted
+        ? "Ten produkt był już na Twojej półce."
+        : reusedExistingProduct
+          ? "Produkt został dodany do Twojej półki."
+          : "Nowy produkt został zapisany i dodany do Twojej półki.",
+    );
 
     if (wantsJson) {
       return new Response(JSON.stringify({ redirectTo: `${successUrl.pathname}${successUrl.search}` }), {

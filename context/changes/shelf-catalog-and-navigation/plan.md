@@ -232,23 +232,23 @@ Brak migracji. Istniejący trigger bazy obsługuje konsekwencję usunięcia memb
 
 #### Automated
 
-- [x] 2.1 Astro types, lint and production build pass with the removal endpoint and shared control
+- [x] 2.1 Astro types, lint and production build pass with the removal endpoint and shared control — 6aff4f0
 
 #### Manual
 
-- [x] 2.2 User can confirm or cancel removal from a shelf card; success changes only their membership
-- [x] 2.3 User can remove from details, see the outside-shelf state and add the product again
-- [x] 2.4 Removing a product used in the routine prunes only that product from the routine; invalid ownership does not delete data
+- [x] 2.2 User can confirm or cancel removal from a shelf card; success changes only their membership — 6aff4f0
+- [x] 2.3 User can remove from details, see the outside-shelf state and add the product again — 6aff4f0
+- [x] 2.4 Removing a product used in the routine prunes only that product from the routine; invalid ownership does not delete data — 6aff4f0
 
 ### Phase 3: Flow handoffs and lifecycle verification
 
 #### Automated
 
-- [ ] 3.1 Final repository verification passes through Astro sync, lint and production build
-- [ ] 3.2 Active primary navigation contains no debug-products link and uses only internal application paths
+- [x] 3.1 Final repository verification passes through Astro sync, lint and production build
+- [x] 3.2 Active primary navigation contains no debug-products link and uses only internal application paths
 
 #### Manual
 
-- [ ] 3.3 Full Panel-to-shelf-to-details-to-routine flow works without typing a URL
-- [ ] 3.4 New product intake redirects to the shelf while existing-product addition from details remains on details
-- [ ] 3.5 Routine editor reflects shelf removal while preserving remaining products and entries
+- [x] 3.3 Full Panel-to-shelf-to-details-to-routine flow works without typing a URL
+- [x] 3.4 New product intake redirects to the shelf while existing-product addition from details remains on details
+- [x] 3.5 Routine editor reflects shelf removal while preserving remaining products and entries

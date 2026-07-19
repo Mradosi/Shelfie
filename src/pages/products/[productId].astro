@@ -131,6 +131,14 @@ const shelfMessage =
                     Dane produktu pochodzą ze wspólnej bazy. Twoja analiza poniżej jest osobna i widoczna tylko dla
                     Ciebie.
                   </p>
+                  {isOnShelf && (
+                    <a
+                      href="/shelf"
+                      class="mt-5 inline-flex rounded-full border border-white/18 bg-white/6 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-white/14"
+                    >
+                      Wróć do mojej półki
+                    </a>
+                  )}
                   {!isOnShelf && (
                     <form method="POST" action="/api/domain/products/add-existing" class="mt-5">
                       <input type="hidden" name="productId" value={product.id} />

@@ -91,7 +91,7 @@ export default function NewProductReviewForm({ serverError }: NewProductReviewFo
         <h2 className="mt-2 text-2xl font-semibold text-white">Potwierdź lub popraw dane produktu przed zapisem</h2>
         <p className="mt-3 max-w-2xl text-sm leading-6 text-blue-100/75">
           Ten ekran służy tylko dla nowych draftów z OBF, AI, photo extraction albo manual entry. Zmiany zapiszą
-          confirmed product do shared bazy, a potem dodadzą go do Twojej półki.
+          confirmed product do shared bazy, a po zapisie przeniosą Cię do Twojej półki.
         </p>
       </div>
 
