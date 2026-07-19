@@ -1,0 +1,122 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import { createClient } from "@/lib/supabase";
+import {
+  getMissingUserDomainContractMessage,
+  getUserProfile,
+  isMissingUserDomainContractError,
+  isUserProfileComplete,
+  listUserShelfCatalog,
+  type UserShelfCatalogItem,
+} from "@/lib/domain/user-domain";
+
+const user = Astro.locals.user;
+
+if (!user) {
+  return Astro.redirect("/auth/signin");
+}
+
+const supabase = createClient(Astro.request.headers, Astro.cookies);
+let routeError: string | null = null;
+let shelfCatalog: UserShelfCatalogItem[] = [];
+
+if (!supabase) {
+  routeError = "Supabase nie jest skonfigurowane.";
+} else {
+  try {
+    const profile = await getUserProfile(supabase, user.id);
+    if (!isUserProfileComplete(profile)) {
+      return Astro.redirect("/onboarding/skin-profile");
+    }
+
+    shelfCatalog = await listUserShelfCatalog(supabase, user.id);
+  } catch (error) {
+    routeError = isMissingUserDomainContractError(error)
+      ? getMissingUserDomainContractMessage()
+      : error instanceof Error
+        ? error.message
+        : "Nie udało się wczytać produktów z Twojej półki.";
+  }
+}
+---
+
+<Layout title="Moja półka" showAppNavigation>
+  <main class="mx-auto w-full max-w-7xl py-6 text-white sm:py-10">
+    <section class="rounded-[2rem] border border-white/12 bg-white/10 p-6 backdrop-blur-xl sm:p-8">
+      <div class="flex flex-col gap-4 border-b border-white/10 pb-6 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <p class="text-sm tracking-[0.24em] text-cyan-100/55 uppercase">Katalog produktów</p>
+          <h1 class="mt-2 text-3xl font-bold text-white">Moja półka</h1>
+          <p class="mt-3 max-w-2xl text-sm leading-6 text-blue-100/75">
+            Tutaj znajdziesz produkty dostępne do użycia w swojej rutynie. Otwórz szczegóły, aby sprawdzić skład i
+            indywidualną analizę dopasowania.
+          </p>
+        </div>
+        <a
+          href="/products/intake"
+          class="inline-flex w-fit rounded-full bg-cyan-300 px-5 py-2.5 text-sm font-semibold text-slate-950 transition-transform hover:-translate-y-0.5"
+        >
+          Dodaj produkt
+        </a>
+      </div>
+
+      {
+        routeError ? (
+          <p class="mt-6 rounded-2xl border border-amber-400/30 bg-amber-950/40 px-4 py-3 text-sm text-amber-100">
+            {routeError}
+          </p>
+        ) : shelfCatalog.length === 0 ? (
+          <div class="mt-8 rounded-[1.75rem] border border-dashed border-cyan-200/25 bg-slate-950/25 p-8 text-center">
+            <p class="text-sm tracking-[0.22em] text-cyan-100/55 uppercase">Półka jest pusta</p>
+            <h2 class="mt-3 text-2xl font-semibold text-white">Dodaj pierwszy produkt</h2>
+            <p class="mx-auto mt-3 max-w-xl text-sm leading-6 text-blue-100/70">
+              Wyszukaj produkt lub dodaj go ręcznie, a po potwierdzeniu pojawi się tutaj i będzie gotowy do użycia w
+              rutynie.
+            </p>
+            <a
+              href="/products/intake"
+              class="mt-6 inline-flex rounded-full bg-cyan-300 px-5 py-2.5 text-sm font-semibold text-slate-950 transition-transform hover:-translate-y-0.5"
+            >
+              Przejdź do dodawania produktu
+            </a>
+          </div>
+        ) : (
+          <ol class="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {shelfCatalog.map((shelfItem) => (
+              <li class="flex flex-col overflow-hidden rounded-[1.5rem] border border-white/10 bg-slate-950/30">
+                <div class="flex min-h-52 items-center justify-center bg-linear-to-br from-cyan-300/14 via-slate-950/20 to-blue-500/12 p-6">
+                  {shelfItem.product.imageUrl ? (
+                    <img
+                      src={shelfItem.product.imageUrl}
+                      alt={shelfItem.product.name}
+                      class="max-h-40 max-w-full rounded-2xl object-contain shadow-xl shadow-slate-950/30"
+                    />
+                  ) : (
+                    <div class="flex size-28 items-center justify-center rounded-2xl border border-dashed border-white/20 bg-slate-950/20 px-3 text-center text-xs leading-5 text-blue-100/65">
+                      Brak zdjęcia produktu
+                    </div>
+                  )}
+                </div>
+                <div class="flex flex-1 flex-col p-5">
+                  <div class="flex items-start justify-between gap-3">
+                    <p class="text-sm text-cyan-100/80">{shelfItem.product.brand ?? "Marka nieznana"}</p>
+                    <span class="rounded-full border border-white/12 bg-white/5 px-2.5 py-1 text-xs text-blue-100/70">
+                      {shelfItem.product.category ?? "Inna kategoria"}
+                    </span>
+                  </div>
+                  <h2 class="mt-3 text-xl font-semibold text-white">{shelfItem.product.name}</h2>
+                  <a
+                    href={`/products/${shelfItem.product.id}`}
+                    class="mt-6 inline-flex w-fit rounded-full border border-white/18 bg-white/6 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-white/14"
+                  >
+                    Zobacz szczegóły
+                  </a>
+                </div>
+              </li>
+            ))}
+          </ol>
+        )
+      }
+    </section>
+  </main>
+</Layout>

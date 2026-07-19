@@ -3,7 +3,7 @@ project: Shelfie
 version: 1
 status: draft
 created: 2026-05-28
-updated: 2026-07-12
+updated: 2026-07-19
 prd_version: 1
 main_goal: market-feedback
 top_blocker: decisions
@@ -35,7 +35,9 @@ Shelfie ma pomóc użytkownikowi uporządkować pielęgnację na bazie jego real
 | S-02 | first-product-intake               | user can add the first product to their shelf from shared sources or AI/manual fallback and confirm it before save                  | F-01, F-02, S-01 | US-01, FR-003, FR-004, FR-005, FR-016, FR-017                                      | done     |
 | S-10 | ai-web-search-source-self-healing  | user can rely on AI web search fallback to retry dead product URLs automatically instead of failing on the first broken source      | S-02             | FR-004, FR-016, FR-017                                                              | proposed |
 | S-03 | first-manual-routine-management    | user can create, edit, and delete the first base AM/PM routine from owned products and assigned routine roles                      | S-01, S-02       | US-01, FR-008, FR-009, FR-010                                                      | done     |
-| S-11 | personalized-product-fit-analysis  | user can open product details and see a cached AI analysis of how a shelf product fits their skin profile                          | S-01, S-02, F-02 | US-01, FR-010                                                                      | proposed |
+| S-11 | personalized-product-fit-analysis  | user can open any known product's details and see a cached AI analysis of how it fits their skin profile                         | S-01, S-02, F-02 | US-01, FR-010                                                                      | done     |
+| S-13 | shelf-catalog-and-navigation       | user can browse their shelf, open product details, and move through the core product-to-routine flow from one clear navigation     | S-02, S-11      | US-01, FR-003, FR-008, FR-009                                                      | proposed |
+| S-12 | ingredient-details-and-glossary    | user can expand an INCI ingredient on product details and read a cached, plain-language description of its cosmetic role and caveats | S-11, F-02      | FR-004, FR-010                                                                      | proposed |
 | S-04 | ai-routine-draft-and-review        | user can ask AI for a base-routine draft or improvement suggestions, then review and edit the result before save                    | S-03, S-11       | US-01, FR-008, FR-010                                                              | proposed |
 | S-05 | todays-routine-consumption         | user can view today's AM/PM routine from the saved base configuration and make lightweight one-off usage edits from routine screens | S-03             | US-01, FR-009                                                                      | proposed |
 | S-09 | day-specific-routine-overrides     | user can override selected weekdays without rebuilding the shared base AM/PM routine                                                | S-05             | US-01, FR-009                                                                      | proposed |
@@ -51,6 +53,8 @@ Navigation aid — groups items that share a Prerequisites chain. Canonical orde
 | ------ | ----------------------- | ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | A      | Core routine loop       | `F-01` → `S-01` → `S-02` → `S-03` → `S-05` | This is the main market-feedback path; `S-05` is the first daily-consumption checkpoint after the user proves they can manage a base routine without AI. |
 | B      | AI assistance layer     | `F-02` → `S-11` → `S-04` → `S-06`          | This stream first establishes per-user product interpretation, then lets AI use that cached understanding to draft and explain routines more consistently. |
+| G      | Ingredient explainability | `F-02` → `S-11` → `S-12`                  | This extension makes existing INCI lists understandable through a shared, cacheable ingredient glossary without adding per-click AI calls. |
+| H      | Shelf navigation         | `S-02` → `S-11` → `S-13` → `S-07`         | This stream turns stored shelf membership into a usable product hub before adding notes, reactions, or check-ins. |
 | F      | Intake resilience       | `S-02` → `S-10`                            | This slice hardens the existing AI web search fallback so broken source URLs trigger bounded self-healing retries instead of user-visible dead-end errors. |
 | C      | Weekly overrides        | `S-05` → `S-09`                            | This extension adds selected-day flexibility only after the base routine and today's routine have already proved their value.                             |
 | D      | Post-routine adaptation | `S-07`                                     | This slice branches after `S-05` and keeps lightweight feedback separate from the core routine-validation path.                                          |
@@ -149,7 +153,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 
 ### S-11: Personalized product fit analysis
 
-- **Outcome:** user can open a shelf product details view and see a cached AI interpretation of how that product fits their skin profile, including a clear verdict, benefits, cautions, and warnings, without re-running the full analysis on every view.
+- **Outcome:** user can open the details of any known product, whether or not it is already on their shelf, and see a cached AI interpretation of how that product fits their skin profile, including a clear verdict, benefits, cautions, and warnings, without re-running the full analysis on every view.
 - **Change ID:** personalized-product-fit-analysis
 - **PRD refs:** US-01, FR-010
 - **Prerequisites:** S-01, S-02, F-02
@@ -158,6 +162,33 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Unknowns:**
   - Should routine AI wait for missing or stale product interpretations, or proceed in a visibly degraded mode when some shelf products have not been analyzed yet? — Owner: team. Block: S-04.
 - **Risk:** This slice must define the per-user product-interpretation contract and lifecycle without drifting into full routine generation, full conflict detection, or medical-style product scoring. If it stores only raw prose instead of structured fields plus short explanations, later slices will re-run AI unnecessarily or rebuild a second interpretation layer beside it.
+- **Status:** done
+
+### S-13: Shelf catalog and navigation
+
+- **Outcome:** user can open a user-facing “Moja półka” catalog of owned products, move from each item to the canonical product details page, add or remove products from that shelf, and use a clear global navigation to move through the core `Panel → Półka → Produkt → Dodaj produkt / Rutyna` flow.
+- **Change ID:** shelf-catalog-and-navigation
+- **PRD refs:** US-01, FR-003, FR-008, FR-009
+- **Prerequisites:** S-02, S-11
+- **Parallel with:** S-12, S-04
+- **Blockers:** —
+- **Unknowns:**
+  - Which minimal shelf grouping or filtering is needed for the first useful catalog: no grouping, routine membership, product category, or a combination? — Owner: team. Block: no.
+- **Risk:** This slice must establish only the core information architecture and shelf flow. If it absorbs notes, reactions, advanced filtering, analytics, mobile redesign, or routine recommendation logic, it becomes a broad application redesign instead of a clear navigation and catalog milestone.
+- **Status:** proposed
+
+### S-12: Ingredient details and glossary
+
+- **Outcome:** user can expand any displayed INCI ingredient on a canonical product details screen and read a concise, plain-language explanation of its cosmetic role, likely benefits, and relevant caveats.
+- **Change ID:** ingredient-details-and-glossary
+- **PRD refs:** FR-004, FR-010
+- **Prerequisites:** S-11, F-02
+- **Parallel with:** S-04, S-05
+- **Blockers:** —
+- **Unknowns:**
+  - Which shared ingredient source should supply the initial glossary and what fields can be treated as trustworthy enough for user-facing copy? — Owner: team. Block: no.
+  - Should missing ingredient entries use a bounded on-demand enrichment flow or show a transparent “description unavailable” state in MVP? — Owner: team. Block: no.
+- **Risk:** This slice must keep ingredient knowledge shared and cacheable by normalized INCI name. If every click invokes AI, the details screen becomes slow, costly, and inconsistent; if it becomes a full ingredient-science database, it will delay the core product and routine flows.
 - **Status:** proposed
 
 ### S-04: AI routine draft and review
@@ -244,9 +275,11 @@ Foundations below assume these are present and do NOT re-scaffold them.
 | S-02       | first-product-intake               | Ship first confirmed product intake flow onto the shelf                 | no                    | Wait for F-01, F-02, and S-01.                                                                      |
 | S-10       | ai-web-search-source-self-healing  | Add bounded retry + source validation for AI web-search product intake  | yes                   | Extends `S-02` by retrying dead AI-proposed URLs instead of failing immediately; keep scope to self-healing of the existing fallback path. |
 | S-03       | first-manual-routine-management    | Ship first manual base-routine management flow from owned products      | yes                   | Manual scope settled: one base AM/PM routine applies across the week; selected-day overrides stay in a later slice. |
-| S-11       | personalized-product-fit-analysis  | Add cached per-user product interpretation and product-details analysis | yes                   | Should establish the persisted product-interpretation contract before routine AI starts depending on it. |
-| S-04       | ai-routine-draft-and-review        | Add AI draft and review flow on top of the manual base-routine model    | no                    | Wait for S-03 and S-11; this should accelerate, not replace, manual routine management.              |
-| S-05       | todays-routine-consumption         | Ship today's AM/PM routine consumption flow from the saved base routine | no                    | Wait for S-03; this is the first daily-use slice.                                                   |
+| S-11       | personalized-product-fit-analysis  | Add cached per-user product interpretation and product-details analysis | no                    | Implemented; archive before starting a new change.                                                    |
+| S-13       | shelf-catalog-and-navigation       | Add a “Moja półka” catalog and core product navigation                  | yes                   | All prerequisites are complete; keep scope to catalog, details links, shelf membership actions, and primary navigation. |
+| S-12       | ingredient-details-and-glossary    | Add expandable, cached ingredient descriptions on product details       | yes                   | All prerequisites are complete; use shared ingredient records keyed by normalized INCI name, not AI calls on click. |
+| S-04       | ai-routine-draft-and-review        | Add AI draft and review flow on top of the manual base-routine model    | yes                   | All prerequisites are complete; this should accelerate, not replace, manual routine management.      |
+| S-05       | todays-routine-consumption         | Ship today's AM/PM routine consumption flow from the saved base routine | yes                   | All prerequisites are complete; this is the first daily-use slice.                                   |
 | S-09       | day-specific-routine-overrides     | Add selected-day overrides on top of the shared base AM/PM routine      | no                    | Wait for S-05 so overrides extend a proven base-and-today flow instead of expanding S-03.          |
 | S-06       | routine-warnings-and-guidance      | Add soft routine warnings and guidance during routine use               | no                    | Wait for S-04 and S-05.                                                                             |
 | S-07       | shelf-notes-and-skin-checkins      | Add shelf notes, reactions, and lightweight skin check-ins              | no                    | Wait for S-05.                                                                                      |
@@ -256,7 +289,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 
 1. **How should conflict detection be split between deterministic rules and AI explanations?** — Owner: team. Block: S-06.
 2. **How should AI-assisted routine editing and later selected-day overrides interact with the shared base AM/PM model?** — Owner: team. Block: S-04, S-09.
-3. **When some shelf products lack a fresh personalized interpretation, should routine AI block, auto-refresh first, or proceed in degraded mode with explicit lower confidence?** — Owner: team. Block: S-11, S-04.
+3. **When some shelf products lack a fresh personalized interpretation, should routine AI block, auto-refresh first, or proceed in degraded mode with explicit lower confidence?** — Owner: team. Block: S-04.
 
 ## Parked
 
@@ -277,3 +310,4 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **S-01: user can sign in, provide basic skin context, and finish onboarding with a saved profile and an empty shelf ready for product intake.** — Archived 2026-06-11 → `context/archive/2026-05-31-first-skin-profile/`. Lesson: —.
 - **S-02: user can add the first product to their shelf from shared sources or AI/manual fallback and confirm it before save.** — Archived 2026-07-09 → `context/archive/2026-06-11-first-product-intake/`. Lesson: —.
 - **S-03: user can manually create the first base AM/PM routine from owned products and their assigned routine roles, edit that routine later, and delete it when they want to rebuild from scratch, without authoring seven separate weekday plans.** — Archived 2026-07-12 → `context/archive/2026-07-09-first-manual-routine-management/`. Lesson: —.
+- **S-11: user can open the details of any known product, whether or not it is already on their shelf, and see a cached AI interpretation of how that product fits their skin profile, including a clear verdict, benefits, cautions, and warnings, without re-running the full analysis on every view.** — Archived 2026-07-19 → `context/archive/2026-07-12-personalized-product-fit-analysis/`. Lesson: —.

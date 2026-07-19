@@ -1,32 +1,50 @@
 ---
 const { user } = Astro.locals;
+const primaryLinks = [
+  { href: "/dashboard", label: "Panel" },
+  { href: "/shelf", label: "Moja półka" },
+  { href: "/products/intake", label: "Dodaj produkt" },
+  { href: "/routine", label: "Rutyna" },
+];
+
+const isActive = (href: string) => {
+  if (href === "/products/intake") {
+    return Astro.url.pathname.startsWith(href);
+  }
+
+  return Astro.url.pathname === href;
+};
 ---
 
 <div
-  class="mb-4 flex items-center justify-between rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/80"
+  class="mb-4 flex flex-col gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/80 backdrop-blur-xl lg:flex-row lg:items-center lg:justify-between"
 >
   {
     user ? (
       <>
-        <span class="text-blue-100/70">{user.email}</span>
-        <div class="flex items-center gap-3">
-          <a
-            href="/settings/skin-profile"
-            class="text-purple-300 transition-colors hover:text-purple-100 hover:underline"
-          >
+        <div class="flex flex-wrap items-center gap-2">
+          {primaryLinks.map((link) => (
+            <a
+              href={link.href}
+              aria-current={isActive(link.href) ? "page" : undefined}
+              class:list={[
+                "rounded-full px-3 py-1.5 transition-colors",
+                isActive(link.href)
+                  ? "bg-cyan-300 text-slate-950"
+                  : "text-blue-100/80 hover:bg-white/10 hover:text-white",
+              ]}
+            >
+              {link.label}
+            </a>
+          ))}
+        </div>
+        <div class="flex flex-wrap items-center gap-x-3 gap-y-2">
+          <span class="max-w-48 truncate text-blue-100/60">{user.email}</span>
+          <a href="/settings/skin-profile" class="text-cyan-100/80 transition-colors hover:text-white hover:underline">
             Profil skóry
           </a>
-          <a href="/routine" class="text-purple-300 transition-colors hover:text-purple-100 hover:underline">
-            Rutyna
-          </a>
-          <a href="/dashboard" class="text-purple-300 transition-colors hover:text-purple-100 hover:underline">
-            Panel
-          </a>
-          <a href="/debug/products" class="text-purple-300 transition-colors hover:text-purple-100 hover:underline">
-            Debug produktów
-          </a>
           <form method="POST" action="/api/auth/signout">
-            <button type="submit" class="text-purple-300 transition-colors hover:text-purple-100 hover:underline">
+            <button type="submit" class="text-cyan-100/80 transition-colors hover:text-white hover:underline">
               Wyloguj się
             </button>
           </form>
