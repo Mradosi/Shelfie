@@ -1,7 +1,7 @@
 ---
 change_id: personalized-product-fit-analysis
 title: Personalized product fit analysis
-status: implementing
+status: implemented
 created: 2026-07-12
 updated: 2026-07-19
 ---
