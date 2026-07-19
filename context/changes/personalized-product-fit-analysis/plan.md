@@ -183,6 +183,7 @@ Ta faza wprowadza właściwy ekran produktu, który jest canonical miejscem odcz
 **Intent**: Obsłużyć interaktywne stany `pending/ready/failed/stale` bez blokowania całej strony produktu.
 
 **Contract**: Komponent przyjmuje initial state z SSR i potrafi:
+
 - pokazać `pending` z informacją, że analiza trwa,
 - pokazać `ready` z werdyktem, summary, recommended/caution/warnings,
 - pokazać `failed` z akcją retry,
@@ -324,9 +325,9 @@ Ta faza spina nowy ekran z istniejącymi flow search/intake oraz domyka realisty
 
 #### Automated
 
-- [x] 1.1 Nowa migracja stosuje się lokalnie bez resetu
-- [x] 1.2 Type-safe domain contract kompiluje się po synchronizacji Astro
-- [x] 1.3 Lint przechodzi po dodaniu nowego modułu domenowego
+- [x] 1.1 Nowa migracja stosuje się lokalnie bez resetu — 5ce58ee
+- [x] 1.2 Type-safe domain contract kompiluje się po synchronizacji Astro — 5ce58ee
+- [x] 1.3 Lint przechodzi po dodaniu nowego modułu domenowego — 5ce58ee
 
 #### Manual
 
@@ -338,29 +339,29 @@ Ta faza spina nowy ekran z istniejącymi flow search/intake oraz domyka realisty
 
 #### Automated
 
-- [ ] 2.1 Payload AI mapuje się do persisted contract bez błędów typu
-- [ ] 2.2 API route i moduł integracyjny przechodzą lint oraz build
-- [ ] 2.3 Migration-first workflow pozostaje zachowany bez `db reset`
+- [x] 2.1 Payload AI mapuje się do persisted contract bez błędów typu
+- [x] 2.2 API route i moduł integracyjny przechodzą lint oraz build
+- [x] 2.3 Migration-first workflow pozostaje zachowany bez `db reset`
 
 #### Manual
 
-- [ ] 2.4 Brakująca interpretacja może zostać utworzona jako `pending`
-- [ ] 2.5 Udany AI call zapisuje rekord `ready`
-- [ ] 2.6 Błąd AI zapisuje `failed` i pozwala na retry
-- [ ] 2.7 Zmiana danych wejściowych powoduje stan `stale`
+- [x] 2.4 Brakująca interpretacja może zostać utworzona jako `pending`
+- [x] 2.5 Udany AI call zapisuje rekord `ready`
+- [x] 2.6 Błąd AI zapisuje `failed` i pozwala na retry
+- [x] 2.7 Zmiana danych wejściowych powoduje stan `stale`
 
 ### Phase 3: Canonical Product Details UI
 
 #### Automated
 
-- [ ] 3.1 Nowy route i komponent przechodzą `astro sync`, lint i build
-- [ ] 3.2 Initial interpretation state serializuje się bez błędów hydration
+- [x] 3.1 Nowy route i komponent przechodzą `astro sync`, lint i build
+- [x] 3.2 Initial interpretation state serializuje się bez błędów hydration
 
 #### Manual
 
-- [ ] 3.3 Użytkownik może otworzyć `/products/<productId>` bez dodawania produktu do półki
-- [ ] 3.4 Ekran od razu pokazuje shared dane i poprawny stan analizy
-- [ ] 3.5 Produkt na półce używa tego samego canonical details screen
+- [x] 3.3 Użytkownik może otworzyć `/products/<productId>` bez dodawania produktu do półki
+- [x] 3.4 Ekran od razu pokazuje shared dane i poprawny stan analizy
+- [x] 3.5 Produkt na półce używa tego samego canonical details screen
 
 ### Phase 4: Entry Points & Verification
 
