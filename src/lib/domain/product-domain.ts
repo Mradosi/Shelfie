@@ -91,6 +91,13 @@ export interface SharedProduct {
   updatedAt: string;
 }
 
+export interface SharedProductInterpretationBasis {
+  category: ProductCategory | null;
+  inciList: string[];
+  inciConfidence: ProductConfidence | null;
+  inciUpdatedAt: string | null;
+}
+
 export async function listSharedProducts(supabase: ProductDomainClient) {
   const { data, error } = await supabase
     .from("products")
@@ -250,6 +257,22 @@ function normalizeInciList(value: string[] | null | undefined) {
   }
 
   return Array.from(new Set(value.map((item) => item.trim()).filter(Boolean)));
+}
+
+export function createProductInterpretationBasis(value: unknown): SharedProductInterpretationBasis {
+  const candidate: Record<string, unknown> =
+    typeof value === "object" && value !== null && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
+  const category = isProductCategory(candidate.category) ? candidate.category : null;
+  const inciList = normalizeInciList(Array.isArray(candidate.inciList) ? candidate.inciList : undefined);
+  const inciConfidence = isProductConfidence(candidate.inciConfidence) ? candidate.inciConfidence : null;
+  const inciUpdatedAt = typeof candidate.inciUpdatedAt === "string" ? candidate.inciUpdatedAt : null;
+
+  return {
+    category,
+    inciList,
+    inciConfidence,
+    inciUpdatedAt,
+  };
 }
 
 function mapSharedProduct(row: SharedProductRow): SharedProduct {
