@@ -13,6 +13,7 @@ import {
 
 const user = Astro.locals.user;
 const productId = Astro.params.productId;
+const shelfState = Astro.url.searchParams.get("shelf");
 
 if (!user) {
   return Astro.redirect("/auth/signin");
@@ -56,6 +57,12 @@ const categoryLabel = product?.category ?? "Nieustalona kategoria";
 const provenance = [product?.inciSource, product?.inciConfidence ? `pewność: ${product.inciConfidence}` : null]
   .filter(Boolean)
   .join(" · ");
+const shelfMessage =
+  shelfState === "added"
+    ? "Produkt został dodany do Twojej półki. Analiza dopasowania jest dostępna poniżej."
+    : shelfState === "existing"
+      ? "Ten produkt był już na Twojej półce."
+      : null;
 ---
 
 <Layout title={product ? `${product.name} | Shelfie` : "Szczegóły produktu | Shelfie"}>
@@ -81,6 +88,11 @@ const provenance = [product?.inciSource, product?.inciConfidence ? `pewność: $
       {
         details && product && (
           <div class="mt-6 space-y-6">
+            {shelfMessage && (
+              <p class="rounded-2xl border border-emerald-300/25 bg-emerald-300/10 px-4 py-3 text-sm text-emerald-50">
+                {shelfMessage}
+              </p>
+            )}
             <section class="overflow-hidden rounded-[2rem] border border-white/12 bg-white/8 shadow-2xl shadow-slate-950/25 backdrop-blur-xl">
               <div class="grid gap-0 lg:grid-cols-[minmax(16rem,0.7fr)_minmax(0,1.3fr)]">
                 <div class="flex min-h-72 items-center justify-center bg-linear-to-br from-cyan-300/16 via-slate-950/20 to-blue-500/12 p-8">
@@ -113,6 +125,19 @@ const provenance = [product?.inciSource, product?.inciConfidence ? `pewność: $
                     Dane produktu pochodzą ze wspólnej bazy. Twoja analiza poniżej jest osobna i widoczna tylko dla
                     Ciebie.
                   </p>
+                  {!isOnShelf && (
+                    <form method="POST" action="/api/domain/products/add-existing" class="mt-5">
+                      <input type="hidden" name="productId" value={product.id} />
+                      <input type="hidden" name="successRedirectTo" value={`/products/${product.id}?shelf=added`} />
+                      <input type="hidden" name="errorRedirectTo" value={`/products/${product.id}`} />
+                      <button
+                        type="submit"
+                        class="rounded-full bg-cyan-300 px-5 py-2.5 text-sm font-semibold text-slate-950 transition-transform hover:-translate-y-0.5"
+                      >
+                        Dodaj do mojej półki
+                      </button>
+                    </form>
+                  )}
                   <dl class="mt-7 grid gap-4 text-sm sm:grid-cols-2">
                     <div class="rounded-2xl border border-white/10 bg-slate-950/25 p-4">
                       <dt class="text-blue-100/50">Pochodzenie danych INCI</dt>

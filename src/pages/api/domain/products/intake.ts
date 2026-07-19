@@ -223,11 +223,9 @@ export const POST: APIRoute = async (context) => {
   const form = await context.request.formData();
   const wantsJson = expectsJson(context.request);
 
-  let successRedirectTo = "/dashboard";
   let errorRedirectTo = "/dashboard";
 
   try {
-    successRedirectTo = parseRedirectPath(form.get("successRedirectTo"), successRedirectTo);
     errorRedirectTo = parseRedirectPath(form.get("errorRedirectTo"), errorRedirectTo);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Nieprawidłowa ścieżka przekierowania";
@@ -283,7 +281,7 @@ export const POST: APIRoute = async (context) => {
 
   try {
     const { product, reusedExistingProduct } = await saveConfirmedSharedProduct(supabase, confirmedProduct);
-    const { shelfItem, alreadyExisted } = await ensureShelfItem(supabase, user.id, product.id);
+    const { alreadyExisted } = await ensureShelfItem(supabase, user.id, product.id);
 
     // This is intentionally best-effort: AI lifecycle must never block product intake.
     try {
@@ -293,11 +291,9 @@ export const POST: APIRoute = async (context) => {
       console.error("[product-intake] Could not create pending product interpretation", interpretationError);
     }
 
-    const successUrl = new URL(successRedirectTo, "https://shelfie.local");
-    successUrl.searchParams.set("productId", product.id);
-    successUrl.searchParams.set("shelfItemId", shelfItem.id);
+    const successUrl = new URL(`/products/${product.id}`, "https://shelfie.local");
+    successUrl.searchParams.set("shelf", alreadyExisted ? "existing" : "added");
     successUrl.searchParams.set("reusedProduct", reusedExistingProduct ? "1" : "0");
-    successUrl.searchParams.set("existingShelfItem", alreadyExisted ? "1" : "0");
 
     if (wantsJson) {
       return new Response(JSON.stringify({ redirectTo: `${successUrl.pathname}${successUrl.search}` }), {

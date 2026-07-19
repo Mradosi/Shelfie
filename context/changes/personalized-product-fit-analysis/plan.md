@@ -339,41 +339,41 @@ Ta faza spina nowy ekran z istniejącymi flow search/intake oraz domyka realisty
 
 #### Automated
 
-- [x] 2.1 Payload AI mapuje się do persisted contract bez błędów typu
-- [x] 2.2 API route i moduł integracyjny przechodzą lint oraz build
-- [x] 2.3 Migration-first workflow pozostaje zachowany bez `db reset`
+- [x] 2.1 Payload AI mapuje się do persisted contract bez błędów typu — fb76ad4
+- [x] 2.2 API route i moduł integracyjny przechodzą lint oraz build — fb76ad4
+- [x] 2.3 Migration-first workflow pozostaje zachowany bez `db reset` — fb76ad4
 
 #### Manual
 
-- [x] 2.4 Brakująca interpretacja może zostać utworzona jako `pending`
-- [x] 2.5 Udany AI call zapisuje rekord `ready`
-- [x] 2.6 Błąd AI zapisuje `failed` i pozwala na retry
-- [x] 2.7 Zmiana danych wejściowych powoduje stan `stale`
+- [x] 2.4 Brakująca interpretacja może zostać utworzona jako `pending` — fb76ad4
+- [x] 2.5 Udany AI call zapisuje rekord `ready` — fb76ad4
+- [x] 2.6 Błąd AI zapisuje `failed` i pozwala na retry — fb76ad4
+- [x] 2.7 Zmiana danych wejściowych powoduje stan `stale` — fb76ad4
 
 ### Phase 3: Canonical Product Details UI
 
 #### Automated
 
-- [x] 3.1 Nowy route i komponent przechodzą `astro sync`, lint i build
-- [x] 3.2 Initial interpretation state serializuje się bez błędów hydration
+- [x] 3.1 Nowy route i komponent przechodzą `astro sync`, lint i build — fb76ad4
+- [x] 3.2 Initial interpretation state serializuje się bez błędów hydration — fb76ad4
 
 #### Manual
 
-- [x] 3.3 Użytkownik może otworzyć `/products/<productId>` bez dodawania produktu do półki
-- [x] 3.4 Ekran od razu pokazuje shared dane i poprawny stan analizy
-- [x] 3.5 Produkt na półce używa tego samego canonical details screen
+- [x] 3.3 Użytkownik może otworzyć `/products/<productId>` bez dodawania produktu do półki — fb76ad4
+- [x] 3.4 Ekran od razu pokazuje shared dane i poprawny stan analizy — fb76ad4
+- [x] 3.5 Produkt na półce używa tego samego canonical details screen — fb76ad4
 
 ### Phase 4: Entry Points & Verification
 
 #### Automated
 
-- [ ] 4.1 Końcowa weryfikacja repo przechodzi przez `npx astro sync`
-- [ ] 4.2 Lint przechodzi dla nowych route’ów, komponentów i warstwy domenowej
-- [ ] 4.3 Build przechodzi z nowym details route i API
+- [x] 4.1 Końcowa weryfikacja repo przechodzi przez `npx astro sync`
+- [x] 4.2 Lint przechodzi dla nowych route’ów, komponentów i warstwy domenowej
+- [x] 4.3 Build przechodzi z nowym details route i API
 
 #### Manual
 
-- [ ] 4.4 Shared search pozwala wejść w details bez dodawania produktu do półki
-- [ ] 4.5 Add-to-shelf redirect prowadzi do canonical details
-- [ ] 4.6 Zmiana structured profile fields oznacza interpretację jako `stale`, a `notes` nie
-- [ ] 4.7 Stan `failed` pozwala na ręczny retry z UI
+- [x] 4.4 Shared search pozwala wejść w details bez dodawania produktu do półki
+- [x] 4.5 Add-to-shelf redirect prowadzi do canonical details
+- [x] 4.6 Zmiana structured profile fields oznacza interpretację jako `stale`, a `notes` nie
+- [x] 4.7 Stan `failed` pozwala na ręczny retry z UI
