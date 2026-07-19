@@ -1,0 +1,57 @@
+---
+interface Props {
+  shelfItemId: string;
+  successRedirectTo: string;
+  errorRedirectTo: string;
+  label: string;
+  className?: string;
+}
+
+const { shelfItemId, successRedirectTo, errorRedirectTo, label, className } = Astro.props;
+const formId = `remove-shelf-item-${shelfItemId}`;
+const dialogId = `remove-shelf-dialog-${shelfItemId}`;
+---
+
+<form id={formId} method="POST" action="/api/domain/products/remove-from-shelf" class:list={[className]}>
+  <input type="hidden" name="shelfItemId" value={shelfItemId} />
+  <input type="hidden" name="successRedirectTo" value={successRedirectTo} />
+  <input type="hidden" name="errorRedirectTo" value={errorRedirectTo} />
+  <button
+    type="button"
+    onclick={`document.getElementById(${JSON.stringify(dialogId)})?.showModal()`}
+    class="rounded-full border border-rose-300/35 bg-rose-300/10 px-4 py-2 text-sm font-medium text-rose-100 transition-colors hover:bg-rose-300/20"
+  >
+    {label}
+  </button>
+</form>
+
+<dialog
+  id={dialogId}
+  aria-labelledby={`${dialogId}-title`}
+  class="m-auto w-[min(calc(100%_-_2rem),32rem)] rounded-[2rem] border border-rose-200/20 bg-slate-950 p-0 text-white shadow-2xl shadow-black/50 backdrop:bg-slate-950/80"
+>
+  <div class="p-6 sm:p-8">
+    <p class="text-sm tracking-[0.2em] text-rose-100/60 uppercase">Usuwanie z półki</p>
+    <h2 id={`${dialogId}-title`} class="mt-3 text-2xl font-semibold text-white">Usunąć ten produkt?</h2>
+    <p class="mt-4 text-sm leading-6 text-blue-100/75">
+      Produkt zniknie z Twojej półki. Jeżeli jest użyty w zapisanej rutynie, zostanie z niej automatycznie usunięty.
+    </p>
+    <div class="mt-7 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+      <form method="dialog">
+        <button
+          type="submit"
+          class="w-full rounded-full border border-white/18 bg-white/6 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-white/14 sm:w-auto"
+        >
+          Zostaw produkt
+        </button>
+      </form>
+      <button
+        type="submit"
+        form={formId}
+        class="w-full rounded-full bg-rose-300 px-5 py-2.5 text-sm font-semibold text-slate-950 transition-transform hover:-translate-y-0.5 sm:w-auto"
+      >
+        Usuń z półki
+      </button>
+    </div>
+  </div>
+</dialog>
