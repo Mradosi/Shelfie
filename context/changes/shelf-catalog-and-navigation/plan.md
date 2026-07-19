@@ -244,11 +244,11 @@ Brak migracji. Istniejący trigger bazy obsługuje konsekwencję usunięcia memb
 
 #### Automated
 
-- [x] 3.1 Final repository verification passes through Astro sync, lint and production build
-- [x] 3.2 Active primary navigation contains no debug-products link and uses only internal application paths
+- [x] 3.1 Final repository verification passes through Astro sync, lint and production build — b392160
+- [x] 3.2 Active primary navigation contains no debug-products link and uses only internal application paths — b392160
 
 #### Manual
 
-- [x] 3.3 Full Panel-to-shelf-to-details-to-routine flow works without typing a URL
-- [x] 3.4 New product intake redirects to the shelf while existing-product addition from details remains on details
-- [x] 3.5 Routine editor reflects shelf removal while preserving remaining products and entries
+- [x] 3.3 Full Panel-to-shelf-to-details-to-routine flow works without typing a URL — b392160
+- [x] 3.4 New product intake redirects to the shelf while existing-product addition from details remains on details — b392160
+- [x] 3.5 Routine editor reflects shelf removal while preserving remaining products and entries — b392160
