@@ -149,6 +149,13 @@ export interface UserProfileInput {
   notes: string | null;
 }
 
+export interface UserProfileInterpretationBasis {
+  skinType: SkinType | null;
+  skinAspects: SkinAspects;
+  concerns: string[];
+  goals: string[];
+}
+
 export interface UserShelfItem {
   id: string;
   userId: string;
@@ -205,6 +212,17 @@ export function createEmptyUserProfile(): UserProfileInput {
   };
 }
 
+export function createUserProfileInterpretationBasis(profile: unknown): UserProfileInterpretationBasis {
+  const candidate = isRecord(profile) ? profile : {};
+
+  return {
+    skinType: normalizeSkinType(candidate.skinType),
+    skinAspects: normalizeSkinAspects(candidate.skinAspects),
+    concerns: normalizeDistinctStringArray(candidate.concerns),
+    goals: normalizeDistinctStringArray(candidate.goals),
+  };
+}
+
 export function isUserProfileComplete(profile: Pick<UserProfile, "skinType" | "skinAspects"> | null) {
   if (!profile?.skinType) {
     return false;
@@ -227,6 +245,16 @@ function asStringArray(value: unknown): string[] {
   }
 
   return value.filter((item): item is string => typeof item === "string");
+}
+
+function normalizeDistinctStringArray(value: unknown) {
+  return Array.from(
+    new Set(
+      asStringArray(value)
+        .map((item) => item.trim())
+        .filter(Boolean),
+    ),
+  ).sort((left, right) => left.localeCompare(right, "pl"));
 }
 
 function normalizeOptionalText(value: string | null | undefined) {
@@ -340,7 +368,7 @@ export function isMissingUserDomainContractError(error: unknown) {
 }
 
 export function getMissingUserDomainContractMessage() {
-  return "Tabele domeny użytkownika nie są jeszcze dostępne. Uruchom `supabase db reset` albo zastosuj najnowsze migracje i odśwież panel.";
+  return "Tabele domeny użytkownika nie są jeszcze dostępne. Uruchom `npx supabase migration up`, a potem odśwież panel.";
 }
 
 export async function getUserProfile(supabase: UserDomainClient, userId: string) {
