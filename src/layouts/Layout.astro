@@ -2,13 +2,15 @@
 import "../styles/global.css";
 import { ClientRouter } from "astro:transitions";
 import Banner from "@/components/Banner.astro";
+import Topbar from "@/components/Topbar.astro";
 import { missingConfigs } from "@/lib/config-status";
 
 interface Props {
   title?: string;
+  showAppNavigation?: boolean;
 }
 
-const { title = "10x Astro Starter" } = Astro.props;
+const { title = "10x Astro Starter", showAppNavigation = false } = Astro.props;
 ---
 
 <!doctype html>
@@ -37,7 +39,18 @@ const { title = "10x Astro Starter" } = Astro.props;
         </Banner>
       ))
     }
-    <slot />
+    {
+      showAppNavigation ? (
+        <div class="bg-cosmic min-h-screen p-4 text-white">
+          <div class="relative z-10 mx-auto w-full max-w-7xl">
+            <Topbar />
+          </div>
+          <slot />
+        </div>
+      ) : (
+        <slot />
+      )
+    }
   </body>
 </html>
 

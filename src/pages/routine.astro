@@ -1,5 +1,4 @@
 ---
-import Topbar from "@/components/Topbar.astro";
 import ManualRoutineEditor from "@/components/routine/ManualRoutineEditor";
 import Layout from "@/layouts/Layout.astro";
 import {
@@ -119,12 +118,8 @@ const pageStateCopy: Record<
 const currentStateCopy = pageStateCopy[pageState];
 ---
 
-<Layout title="Moja rutyna">
-  <div class="bg-cosmic min-h-screen p-4 text-white">
-    <div class="relative z-10">
-      <Topbar />
-    </div>
-
+<Layout title="Moja rutyna" showAppNavigation>
+  <div class="text-white">
     <div class="mx-auto flex w-full max-w-7xl flex-col gap-6 py-6 sm:py-10">
       <section class="rounded-[2rem] border border-white/12 bg-white/10 p-8 backdrop-blur-xl">
         <div class="flex flex-col gap-4 border-b border-white/10 pb-6 lg:flex-row lg:items-end lg:justify-between">
