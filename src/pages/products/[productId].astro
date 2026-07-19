@@ -1,5 +1,6 @@
 ---
 import ProductInterpretationPanel from "@/components/products/ProductInterpretationPanel";
+import RemoveShelfItemForm from "@/components/products/RemoveShelfItemForm.astro";
 import Layout from "@/layouts/Layout.astro";
 import { getUserScopedProductDetails } from "@/lib/domain/product-interpretation";
 import { createClient } from "@/lib/supabase";
@@ -27,6 +28,7 @@ const supabase = createClient(Astro.request.headers, Astro.cookies);
 let routeError: string | null = null;
 let details: Awaited<ReturnType<typeof getUserScopedProductDetails>> | null = null;
 let isOnShelf = false;
+let shelfItemId: string | null = null;
 
 if (!supabase) {
   routeError = "Supabase nie jest skonfigurowane.";
@@ -42,7 +44,9 @@ if (!supabase) {
       listUserShelfItems(supabase, user.id),
     ]);
     details = loadedDetails;
-    isOnShelf = shelfItems.some((item) => item.productId === loadedDetails.product.id);
+    const shelfItem = shelfItems.find((item) => item.productId === loadedDetails.product.id);
+    isOnShelf = Boolean(shelfItem);
+    shelfItemId = shelfItem?.id ?? null;
   } catch (error) {
     routeError = isMissingUserDomainContractError(error)
       ? getMissingUserDomainContractMessage()
@@ -62,7 +66,9 @@ const shelfMessage =
     ? "Produkt został dodany do Twojej półki. Analiza dopasowania jest dostępna poniżej."
     : shelfState === "existing"
       ? "Ten produkt był już na Twojej półce."
-      : null;
+      : shelfState === "removed"
+        ? "Produkt został usunięty z Twojej półki."
+        : null;
 ---
 
 <Layout title={product ? `${product.name} | Shelfie` : "Szczegóły produktu | Shelfie"} showAppNavigation>
@@ -137,6 +143,15 @@ const shelfMessage =
                         Dodaj do mojej półki
                       </button>
                     </form>
+                  )}
+                  {shelfItemId && (
+                    <RemoveShelfItemForm
+                      shelfItemId={shelfItemId}
+                      successRedirectTo={`/products/${product.id}`}
+                      errorRedirectTo={`/products/${product.id}`}
+                      label="Usuń z mojej półki"
+                      className="mt-5"
+                    />
                   )}
                   <dl class="mt-7 grid gap-4 text-sm sm:grid-cols-2">
                     <div class="rounded-2xl border border-white/10 bg-slate-950/25 p-4">

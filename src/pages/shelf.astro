@@ -1,5 +1,6 @@
 ---
 import Layout from "@/layouts/Layout.astro";
+import RemoveShelfItemForm from "@/components/products/RemoveShelfItemForm.astro";
 import { createClient } from "@/lib/supabase";
 import {
   getMissingUserDomainContractMessage,
@@ -11,6 +12,8 @@ import {
 } from "@/lib/domain/user-domain";
 
 const user = Astro.locals.user;
+const error = Astro.url.searchParams.get("error");
+const success = Astro.url.searchParams.get("success");
 
 if (!user) {
   return Astro.redirect("/auth/signin");
@@ -59,6 +62,22 @@ if (!supabase) {
           Dodaj produkt
         </a>
       </div>
+
+      {
+        success && (
+          <p class="mt-6 rounded-2xl border border-emerald-400/30 bg-emerald-950/40 px-4 py-3 text-sm text-emerald-200">
+            {success}
+          </p>
+        )
+      }
+
+      {
+        error && (
+          <p class="mt-6 rounded-2xl border border-rose-400/30 bg-rose-950/40 px-4 py-3 text-sm text-rose-100">
+            {error}
+          </p>
+        )
+      }
 
       {
         routeError ? (
@@ -111,6 +130,13 @@ if (!supabase) {
                   >
                     Zobacz szczegóły
                   </a>
+                  <RemoveShelfItemForm
+                    shelfItemId={shelfItem.id}
+                    successRedirectTo="/shelf"
+                    errorRedirectTo="/shelf"
+                    label="Usuń z półki"
+                    className="mt-3"
+                  />
                 </div>
               </li>
             ))}

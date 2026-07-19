@@ -221,24 +221,24 @@ Brak migracji. Istniejący trigger bazy obsługuje konsekwencję usunięcia memb
 
 #### Automated
 
-- [x] 1.1 Astro types, lint and production build pass with the protected shelf route and application shell
+- [x] 1.1 Astro types, lint and production build pass with the protected shelf route and application shell — d7207a7
 
 #### Manual
 
-- [x] 1.2 Primary navigation is available on every signed-in domain screen and excludes the debug route
-- [x] 1.3 Shelf cards, empty state and details links work for owned products; `/shelf` redirects unauthenticated users
+- [x] 1.2 Primary navigation is available on every signed-in domain screen and excludes the debug route — d7207a7
+- [x] 1.3 Shelf cards, empty state and details links work for owned products; `/shelf` redirects unauthenticated users — d7207a7
 
 ### Phase 2: Safe shelf removal
 
 #### Automated
 
-- [ ] 2.1 Astro types, lint and production build pass with the removal endpoint and shared control
+- [x] 2.1 Astro types, lint and production build pass with the removal endpoint and shared control
 
 #### Manual
 
-- [ ] 2.2 User can confirm or cancel removal from a shelf card; success changes only their membership
-- [ ] 2.3 User can remove from details, see the outside-shelf state and add the product again
-- [ ] 2.4 Removing a product used in the routine prunes only that product from the routine; invalid ownership does not delete data
+- [x] 2.2 User can confirm or cancel removal from a shelf card; success changes only their membership
+- [x] 2.3 User can remove from details, see the outside-shelf state and add the product again
+- [x] 2.4 Removing a product used in the routine prunes only that product from the routine; invalid ownership does not delete data
 
 ### Phase 3: Flow handoffs and lifecycle verification
 
