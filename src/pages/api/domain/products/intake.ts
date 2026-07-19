@@ -10,6 +10,7 @@ import {
   type ProductConfidence,
   type ProductSource,
 } from "@/lib/domain/product-domain";
+import { ensurePendingUserProductInterpretation } from "@/lib/domain/product-interpretation";
 import { addUserShelfItem, listUserShelfItems } from "@/lib/domain/user-domain";
 import { createClient } from "@/lib/supabase";
 
@@ -283,6 +284,14 @@ export const POST: APIRoute = async (context) => {
   try {
     const { product, reusedExistingProduct } = await saveConfirmedSharedProduct(supabase, confirmedProduct);
     const { shelfItem, alreadyExisted } = await ensureShelfItem(supabase, user.id, product.id);
+
+    // This is intentionally best-effort: AI lifecycle must never block product intake.
+    try {
+      await ensurePendingUserProductInterpretation(supabase, user.id, product.id);
+    } catch (interpretationError) {
+      // eslint-disable-next-line no-console -- the product has already been saved successfully
+      console.error("[product-intake] Could not create pending product interpretation", interpretationError);
+    }
 
     const successUrl = new URL(successRedirectTo, "https://shelfie.local");
     successUrl.searchParams.set("productId", product.id);

@@ -1,6 +1,22 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { createProductInterpretationBasis, type SharedProductInterpretationBasis } from "@/lib/domain/product-domain";
-import { createUserProfileInterpretationBasis, type UserProfileInterpretationBasis } from "@/lib/domain/user-domain";
+import {
+  createProductInterpretationBasis,
+  getSharedProductById,
+  type SharedProduct,
+  type SharedProductInterpretationBasis,
+} from "@/lib/domain/product-domain";
+import {
+  createUserProfileInterpretationBasis,
+  getUserProfile,
+  isUserProfileComplete,
+  type UserProfile,
+  type UserProfileInterpretationBasis,
+} from "@/lib/domain/user-domain";
+import {
+  analyzeProductFit,
+  PRODUCT_FIT_MODEL_VERSION,
+  PRODUCT_FIT_PROMPT_VERSION,
+} from "@/lib/integrations/openrouter-product-fit";
 
 type ProductInterpretationClient = SupabaseClient;
 
@@ -139,6 +155,14 @@ export interface InterpretationStaleCheckInput {
   promptVersion?: string | null;
   modelVersion?: string | null;
 }
+
+export interface UserScopedProductDetails {
+  product: SharedProduct;
+  profile: UserProfile;
+  interpretation: UserProductInterpretation;
+}
+
+export type InterpretationGenerationAction = "start" | "retry" | "refresh";
 
 function isInterpretationStatus(value: unknown): value is InterpretationStatus {
   return typeof value === "string" && (INTERPRETATION_STATUS_OPTIONS as readonly string[]).includes(value);
@@ -444,4 +468,129 @@ export async function markFailedUserProductInterpretation(
   }
 
   return mapUserProductInterpretation(data as UserProductInterpretationRow);
+}
+
+async function loadProductAndCompleteProfile(supabase: ProductInterpretationClient, userId: string, productId: string) {
+  const [product, profile] = await Promise.all([
+    getSharedProductById(supabase, productId),
+    getUserProfile(supabase, userId),
+  ]);
+  if (!product) {
+    throw new Error("Nie znaleziono produktu w shared bazie");
+  }
+
+  if (!isUserProfileComplete(profile)) {
+    throw new Error("Uzupełnij profil skóry przed uruchomieniem analizy produktu");
+  }
+
+  return { product, profile };
+}
+
+async function getFreshInterpretation(
+  supabase: ProductInterpretationClient,
+  userId: string,
+  product: SharedProduct,
+  profile: UserProfile,
+) {
+  const profileBasis = createUserProfileInterpretationBasis(profile);
+  const productBasis = createProductInterpretationBasis(product);
+  const current = await getUserProductInterpretation(supabase, userId, product.id);
+
+  if (!current) {
+    return ensurePendingUserProductInterpretation(supabase, userId, product.id);
+  }
+
+  const staleReason = getInterpretationStaleReason({
+    interpretation: current,
+    profileBasis,
+    productBasis,
+    promptVersion: PRODUCT_FIT_PROMPT_VERSION,
+    modelVersion: PRODUCT_FIT_MODEL_VERSION,
+  });
+
+  return staleReason ? markInterpretationStale(supabase, userId, product.id, staleReason) : current;
+}
+
+export async function getUserScopedProductDetails(
+  supabase: ProductInterpretationClient,
+  userId: string,
+  productId: string,
+): Promise<UserScopedProductDetails> {
+  const { product, profile } = await loadProductAndCompleteProfile(supabase, userId, productId);
+  const interpretation = await getFreshInterpretation(supabase, userId, product, profile);
+
+  return { product, profile, interpretation };
+}
+
+export async function startInterpretationGeneration(
+  supabase: ProductInterpretationClient,
+  userId: string,
+  productId: string,
+) {
+  return generateInterpretation(supabase, userId, productId, "start");
+}
+
+export async function refreshStaleInterpretation(
+  supabase: ProductInterpretationClient,
+  userId: string,
+  productId: string,
+) {
+  return generateInterpretation(supabase, userId, productId, "refresh");
+}
+
+export async function retryFailedInterpretation(
+  supabase: ProductInterpretationClient,
+  userId: string,
+  productId: string,
+) {
+  return generateInterpretation(supabase, userId, productId, "retry");
+}
+
+async function generateInterpretation(
+  supabase: ProductInterpretationClient,
+  userId: string,
+  productId: string,
+  action: InterpretationGenerationAction,
+) {
+  const { product, profile } = await loadProductAndCompleteProfile(supabase, userId, productId);
+  const interpretation = await getFreshInterpretation(supabase, userId, product, profile);
+
+  if (interpretation.status === "ready") {
+    return interpretation;
+  }
+
+  if (action === "retry" && interpretation.status !== "failed") {
+    throw new Error("Ponowienie jest dostępne tylko dla nieudanej analizy");
+  }
+
+  if (action === "refresh" && interpretation.status !== "stale") {
+    throw new Error("Odświeżenie jest dostępne tylko dla nieaktualnej analizy");
+  }
+
+  const profileBasis = createUserProfileInterpretationBasis(profile);
+  const productBasis = createProductInterpretationBasis(product);
+
+  try {
+    const analysis = await analyzeProductFit(product, profileBasis);
+    return await saveReadyUserProductInterpretation(supabase, {
+      userId,
+      productId,
+      ...analysis,
+      profileBasis,
+      productBasis,
+      modelVersion: PRODUCT_FIT_MODEL_VERSION,
+      promptVersion: PRODUCT_FIT_PROMPT_VERSION,
+    });
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : "Nie udało się wygenerować analizy produktu";
+    return markFailedUserProductInterpretation(supabase, {
+      userId,
+      productId,
+      errorMessage,
+      profileBasis,
+      productBasis,
+      modelVersion: PRODUCT_FIT_MODEL_VERSION,
+      promptVersion: PRODUCT_FIT_PROMPT_VERSION,
+    });
+  }
 }
