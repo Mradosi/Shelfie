@@ -213,15 +213,13 @@ export default function ProductIntakeFlow({ serverError }: ProductIntakeFlowProp
     void navigate("/products/intake/review/new");
   }
 
-  function navigateToSharedReview(candidate: ProductIntakeCandidate) {
+  function navigateToProductDetails(candidate: ProductIntakeCandidate) {
     if (!candidate.id) {
       setSearchError("Nie udało się przygotować potwierdzenia produktu z bazy.");
       return;
     }
 
-    const url = new URL("/products/intake/review/shared", window.location.origin);
-    url.searchParams.set("productId", candidate.id);
-    void navigate(`${url.pathname}${url.search}`);
+    void navigate(`/products/${candidate.id}`);
   }
 
   function getPrimaryActionLabel(candidate: ProductIntakeCandidate) {
@@ -230,7 +228,7 @@ export default function ProductIntakeFlow({ serverError }: ProductIntakeFlowProp
     }
 
     if (candidate.origin === "shared") {
-      return "Potwierdź i dodaj";
+      return "Zobacz szczegóły";
     }
 
     return "Przejdź do edycji draftu";
@@ -243,7 +241,7 @@ export default function ProductIntakeFlow({ serverError }: ProductIntakeFlowProp
     }
 
     if (candidate.origin === "shared") {
-      navigateToSharedReview(candidate);
+      navigateToProductDetails(candidate);
       return;
     }
 
@@ -602,9 +600,9 @@ export default function ProductIntakeFlow({ serverError }: ProductIntakeFlowProp
             <p className="text-sm tracking-[0.22em] text-cyan-100/55 uppercase">Krok 1</p>
             <h2 className="mt-2 text-2xl font-semibold text-white">Znajdź produkt po nazwie albo barcode</h2>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-blue-100/75">
-              Najpierw sprawdzimy współdzieloną bazę produktów. Jeśli trafimy na istniejący produkt, na kolejnym ekranie
-              tylko potwierdzisz dodanie go do swojej półki. Nowe drafty przejdą do osobnego review z edycją przed
-              zapisem.
+              Najpierw sprawdzimy współdzieloną bazę produktów. Jeśli trafimy na istniejący produkt, od razu otworzysz
+              jego szczegóły i sprawdzisz dopasowanie do swojej skóry. Nowe drafty przejdą do osobnego review z edycją
+              przed zapisem.
             </p>
           </div>
 

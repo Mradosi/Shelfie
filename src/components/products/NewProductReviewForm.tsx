@@ -101,7 +101,6 @@ export default function NewProductReviewForm({ serverError }: NewProductReviewFo
         className="space-y-5 rounded-[1.5rem] border border-white/12 bg-slate-950/30 p-5"
         onSubmit={handleReviewSubmit}
       >
-        <input type="hidden" name="successRedirectTo" value="/products/intake/complete" />
         <input type="hidden" name="errorRedirectTo" value="/products/intake/review/new" />
         <input type="hidden" name="inciSource" value={draft.inciSource} />
         <input type="hidden" name="inciConfidence" value={draft.inciConfidence} />
