@@ -331,9 +331,9 @@ Ta faza spina nowy ekran z istniejącymi flow search/intake oraz domyka realisty
 
 #### Manual
 
-- [ ] 1.4 Tabela `user_product_interpretations` istnieje z `unique (user_id, product_id)`
-- [ ] 1.5 Reguły invalidation rozróżniają pola strukturalne od `notes`
-- [ ] 1.6 RLS blokuje odczyt i zapis interpretacji innego użytkownika
+- [x] 1.4 Tabela `user_product_interpretations` istnieje z `unique (user_id, product_id)`
+- [x] 1.5 Reguły invalidation rozróżniają pola strukturalne od `notes` — 99a3f44
+- [x] 1.6 RLS blokuje odczyt i zapis interpretacji innego użytkownika
 
 ### Phase 2: AI Orchestration & Read Model
 
@@ -367,13 +367,13 @@ Ta faza spina nowy ekran z istniejącymi flow search/intake oraz domyka realisty
 
 #### Automated
 
-- [x] 4.1 Końcowa weryfikacja repo przechodzi przez `npx astro sync`
-- [x] 4.2 Lint przechodzi dla nowych route’ów, komponentów i warstwy domenowej
-- [x] 4.3 Build przechodzi z nowym details route i API
+- [x] 4.1 Końcowa weryfikacja repo przechodzi przez `npx astro sync` — 99a3f44
+- [x] 4.2 Lint przechodzi dla nowych route’ów, komponentów i warstwy domenowej — 99a3f44
+- [x] 4.3 Build przechodzi z nowym details route i API — 99a3f44
 
 #### Manual
 
-- [x] 4.4 Shared search pozwala wejść w details bez dodawania produktu do półki
-- [x] 4.5 Add-to-shelf redirect prowadzi do canonical details
-- [x] 4.6 Zmiana structured profile fields oznacza interpretację jako `stale`, a `notes` nie
-- [x] 4.7 Stan `failed` pozwala na ręczny retry z UI
+- [x] 4.4 Shared search pozwala wejść w details bez dodawania produktu do półki — 99a3f44
+- [x] 4.5 Add-to-shelf redirect prowadzi do canonical details — 99a3f44
+- [x] 4.6 Zmiana structured profile fields oznacza interpretację jako `stale`, a `notes` nie — 99a3f44
+- [x] 4.7 Stan `failed` pozwala na ręczny retry z UI — 99a3f44
