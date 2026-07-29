@@ -11,9 +11,13 @@ interface Props {
   serverError?: string | null;
 }
 
+function getFormFieldValue(formData: FormData, fieldName: string) {
+  const value = formData.get(fieldName);
+  return typeof value === "string" ? value : "";
+}
+
 export default function SignUpForm({ serverError }: Props) {
   const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string; confirmPassword?: string }>({});
@@ -21,9 +25,9 @@ export default function SignUpForm({ serverError }: Props) {
   function validate(form: HTMLFormElement) {
     const next: typeof errors = {};
     const formData = new FormData(form);
-    const email = String(formData.get("email") ?? "");
-    const submittedPassword = String(formData.get("password") ?? "");
-    const submittedConfirmPassword = String(formData.get("confirmPassword") ?? "");
+    const email = getFormFieldValue(formData, "email");
+    const submittedPassword = getFormFieldValue(formData, "password");
+    const submittedConfirmPassword = getFormFieldValue(formData, "confirmPassword");
 
     if (!email.trim()) {
       next.email = "Adres e-mail jest wymagany";
@@ -72,7 +76,9 @@ export default function SignUpForm({ serverError }: Props) {
         type="email"
         label="Adres e-mail"
         defaultValue=""
-        onChange={() => clearError("email")}
+        onChange={() => {
+          clearError("email");
+        }}
         autoComplete="email"
         placeholder="twoj@email.pl"
         error={errors.email}
@@ -84,8 +90,8 @@ export default function SignUpForm({ serverError }: Props) {
         label="Hasło"
         type={showPassword ? "text" : "password"}
         defaultValue=""
-        onChange={(v) => {
-          setPassword(v);
+        onChange={(value) => {
+          setPassword(value);
           clearError("password");
         }}
         autoComplete="new-password"
@@ -109,8 +115,7 @@ export default function SignUpForm({ serverError }: Props) {
         label="Potwierdź hasło"
         type={showConfirmPassword ? "text" : "password"}
         defaultValue=""
-        onChange={(v) => {
-          setConfirmPassword(v);
+        onChange={() => {
           clearError("confirmPassword");
         }}
         autoComplete="new-password"

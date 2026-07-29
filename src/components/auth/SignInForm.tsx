@@ -9,6 +9,11 @@ interface Props {
   serverError?: string | null;
 }
 
+function getFormFieldValue(formData: FormData, fieldName: string) {
+  const value = formData.get(fieldName);
+  return typeof value === "string" ? value : "";
+}
+
 export default function SignInForm({ serverError }: Props) {
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
@@ -16,8 +21,8 @@ export default function SignInForm({ serverError }: Props) {
   function validate(form: HTMLFormElement) {
     const next: typeof errors = {};
     const formData = new FormData(form);
-    const email = String(formData.get("email") ?? "");
-    const password = String(formData.get("password") ?? "");
+    const email = getFormFieldValue(formData, "email");
+    const password = getFormFieldValue(formData, "password");
 
     if (!email.trim()) {
       next.email = "Adres e-mail jest wymagany";
@@ -48,7 +53,9 @@ export default function SignInForm({ serverError }: Props) {
         type="email"
         label="Adres e-mail"
         defaultValue=""
-        onChange={() => clearError("email")}
+        onChange={() => {
+          clearError("email");
+        }}
         autoComplete="email"
         placeholder="twoj@email.pl"
         error={errors.email}
@@ -60,7 +67,9 @@ export default function SignInForm({ serverError }: Props) {
         label="Hasło"
         type={showPassword ? "text" : "password"}
         defaultValue=""
-        onChange={() => clearError("password")}
+        onChange={() => {
+          clearError("password");
+        }}
         autoComplete="current-password"
         placeholder="Twoje hasło"
         error={errors.password}

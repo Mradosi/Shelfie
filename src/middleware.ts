@@ -8,6 +8,7 @@ const PROTECTED_ROUTES = [
   "/routine",
   "/shelf",
   "/start",
+  "/today",
   "/onboarding/skin-profile",
   "/settings/skin-profile",
 ];

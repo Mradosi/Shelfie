@@ -1,0 +1,107 @@
+---
+import { ROUTINE_ROLE_LABELS, type RoutineDaySchedule, type RoutineScheduleEntry } from "@/lib/domain/routine-schedule";
+import type { UserShelfCatalogItem } from "@/lib/domain/user-domain";
+
+interface Props {
+  daySchedule: RoutineDaySchedule;
+  shelfCatalog: UserShelfCatalogItem[];
+}
+
+const { daySchedule, shelfCatalog } = Astro.props;
+const shelfItemsById = new Map(shelfCatalog.map((item) => [item.id, item]));
+
+const sections = [
+  {
+    key: "morning",
+    eyebrow: "AM",
+    title: "Rano",
+    description: "Kroki, które masz zaplanowane na początek dnia.",
+    entries: daySchedule.morning,
+  },
+  {
+    key: "evening",
+    eyebrow: "PM",
+    title: "Wieczorem",
+    description: "Kroki, które masz zaplanowane na zakończenie dnia.",
+    entries: daySchedule.evening,
+  },
+] as const;
+
+function resolveEntries(entries: RoutineScheduleEntry[]) {
+  return entries.flatMap((entry) => {
+    const shelfItem = shelfItemsById.get(entry.shelf_item_id);
+    return shelfItem ? [{ entry, shelfItem }] : [];
+  });
+}
+---
+
+<div class="grid gap-6 xl:grid-cols-2">
+  {
+    sections.map((section) => {
+      const entries = resolveEntries(section.entries);
+
+      return (
+        <section class="rounded-[1.75rem] border border-white/10 bg-slate-950/30 p-5 sm:p-6">
+          <div class="flex items-start justify-between gap-4 border-b border-white/10 pb-5">
+            <div>
+              <p class="text-sm tracking-[0.24em] text-cyan-100/55 uppercase">{section.eyebrow}</p>
+              <h2 class="mt-2 text-2xl font-semibold text-white">{section.title}</h2>
+              <p class="mt-2 text-sm leading-6 text-blue-100/70">{section.description}</p>
+            </div>
+            <span class="rounded-full border border-white/12 bg-white/5 px-3 py-1.5 text-sm text-blue-100/75">
+              {entries.length} {entries.length === 1 ? "krok" : "kroki"}
+            </span>
+          </div>
+
+          {entries.length === 0 ? (
+            <div class="mt-5 rounded-2xl border border-dashed border-white/15 bg-white/4 px-4 py-5 text-sm leading-6 text-blue-100/65">
+              Na tę porę dnia nie masz jeszcze zaplanowanych kroków.
+            </div>
+          ) : (
+            <ol class="mt-5 space-y-3">
+              {entries.map(({ entry, shelfItem }, index) => (
+                <li>
+                  <a
+                    href={`/products/${shelfItem.product.id}`}
+                    class="group flex gap-4 rounded-2xl border border-white/10 bg-white/5 p-3.5 transition-colors hover:border-cyan-200/35 hover:bg-cyan-200/8"
+                  >
+                    <span class="flex size-8 shrink-0 items-center justify-center rounded-full border border-cyan-200/20 bg-cyan-200/10 text-sm font-semibold text-cyan-100">
+                      {index + 1}
+                    </span>
+                    <div class="flex min-w-0 flex-1 items-center gap-3">
+                      <div class="flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-slate-950/35">
+                        {shelfItem.product.imageUrl ? (
+                          <img
+                            src={shelfItem.product.imageUrl}
+                            alt={shelfItem.product.name}
+                            class="size-full object-contain p-1"
+                          />
+                        ) : (
+                          <span class="px-1 text-center text-[0.65rem] leading-4 text-blue-100/50">Brak zdjęcia</span>
+                        )}
+                      </div>
+                      <div class="min-w-0">
+                        <span class="inline-flex rounded-full border border-cyan-200/20 bg-cyan-200/10 px-2.5 py-1 text-xs font-medium text-cyan-100">
+                          {ROUTINE_ROLE_LABELS[entry.routine_role]}
+                        </span>
+                        {shelfItem.product.brand && (
+                          <p class="mt-2 truncate text-xs text-blue-100/55">{shelfItem.product.brand}</p>
+                        )}
+                        <h3 class="mt-1 truncate text-base font-semibold text-white transition-colors group-hover:text-cyan-100">
+                          {shelfItem.product.name}
+                        </h3>
+                      </div>
+                    </div>
+                    <span class="self-center text-sm text-cyan-100/60 transition-transform group-hover:translate-x-0.5">
+                      Szczegóły
+                    </span>
+                  </a>
+                </li>
+              ))}
+            </ol>
+          )}
+        </section>
+      );
+    })
+  }
+</div>
