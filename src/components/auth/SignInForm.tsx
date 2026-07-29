@@ -10,13 +10,15 @@ interface Props {
 }
 
 export default function SignInForm({ serverError }: Props) {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
 
-  function validate() {
+  function validate(form: HTMLFormElement) {
     const next: typeof errors = {};
+    const formData = new FormData(form);
+    const email = String(formData.get("email") ?? "");
+    const password = String(formData.get("password") ?? "");
+
     if (!email.trim()) {
       next.email = "Adres e-mail jest wymagany";
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
@@ -34,7 +36,7 @@ export default function SignInForm({ serverError }: Props) {
   }
 
   function handleSubmit(e: React.SubmitEvent<HTMLFormElement>) {
-    if (!validate()) {
+    if (!validate(e.currentTarget)) {
       e.preventDefault();
     }
   }
@@ -45,11 +47,9 @@ export default function SignInForm({ serverError }: Props) {
         id="email"
         type="email"
         label="Adres e-mail"
-        value={email}
-        onChange={(v) => {
-          setEmail(v);
-          clearError("email");
-        }}
+        defaultValue=""
+        onChange={() => clearError("email")}
+        autoComplete="email"
         placeholder="twoj@email.pl"
         error={errors.email}
         icon={<Mail className="size-4" />}
@@ -59,11 +59,9 @@ export default function SignInForm({ serverError }: Props) {
         id="password"
         label="Hasło"
         type={showPassword ? "text" : "password"}
-        value={password}
-        onChange={(v) => {
-          setPassword(v);
-          clearError("password");
-        }}
+        defaultValue=""
+        onChange={() => clearError("password")}
+        autoComplete="current-password"
         placeholder="Twoje hasło"
         error={errors.password}
         icon={<Lock className="size-4" />}

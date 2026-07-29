@@ -1,6 +1,7 @@
 ---
 import ProductIntakeFlow from "@/components/products/ProductIntakeFlow";
 import Layout from "@/layouts/Layout.astro";
+import { consumeFlashMessage } from "@/lib/flash-message";
 import { createClient } from "@/lib/supabase";
 import {
   getMissingUserDomainContractMessage,
@@ -10,7 +11,8 @@ import {
 } from "@/lib/domain/user-domain";
 
 const user = Astro.locals.user;
-const error = Astro.url.searchParams.get("error");
+const flash = consumeFlashMessage(Astro.cookies);
+const error = flash?.kind === "error" ? flash.message : null;
 
 if (!user) {
   return Astro.redirect("/auth/signin");

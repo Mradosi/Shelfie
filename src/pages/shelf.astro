@@ -1,6 +1,7 @@
 ---
 import Layout from "@/layouts/Layout.astro";
 import RemoveShelfItemForm from "@/components/products/RemoveShelfItemForm.astro";
+import { consumeFlashMessage } from "@/lib/flash-message";
 import { createClient } from "@/lib/supabase";
 import {
   getMissingUserDomainContractMessage,
@@ -12,8 +13,9 @@ import {
 } from "@/lib/domain/user-domain";
 
 const user = Astro.locals.user;
-const error = Astro.url.searchParams.get("error");
-const success = Astro.url.searchParams.get("success");
+const flash = consumeFlashMessage(Astro.cookies);
+const error = flash?.kind === "error" ? flash.message : null;
+const success = flash?.kind === "success" ? flash.message : null;
 
 if (!user) {
   return Astro.redirect("/auth/signin");

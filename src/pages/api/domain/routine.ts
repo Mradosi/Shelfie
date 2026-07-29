@@ -10,22 +10,10 @@ import {
   isMissingUserDomainContractError,
   upsertUserRoutineConfig,
 } from "@/lib/domain/user-domain";
+import { setFlashMessage } from "@/lib/flash-message";
 import { createClient } from "@/lib/supabase";
 
 type RoutineMutationMode = "save" | "reset";
-
-function encodeMessage(path: string, key: "error" | "success", message: string) {
-  const url = new URL(path, "https://shelfie.local");
-  url.searchParams.set(key, message);
-  return `${url.pathname}${url.search}`;
-}
-
-function encodeRoutineSuccess(path: string, mode: RoutineMutationMode, message: string) {
-  const url = new URL(path, "https://shelfie.local");
-  url.searchParams.set("success", message);
-  url.searchParams.set("routineFlow", mode);
-  return `${url.pathname}${url.search}`;
-}
 
 function expectsJson(request: Request) {
   const accept = request.headers.get("Accept") ?? "";
@@ -57,7 +45,7 @@ function parseRedirectPath(value: FormDataEntryValue | string | null | undefined
     throw new Error("Ścieżka przekierowania musi prowadzić wewnątrz aplikacji");
   }
 
-  return trimmed;
+  return new URL(trimmed, "https://shelfie.local").pathname;
 }
 
 function parseMode(value: FormDataEntryValue | string | null | undefined): RoutineMutationMode {
@@ -173,7 +161,8 @@ export const POST: APIRoute = async (context) => {
       return jsonError(message);
     }
 
-    return context.redirect(encodeMessage("/routine", "error", message));
+    setFlashMessage(context.cookies, { kind: "error", message });
+    return context.redirect("/routine");
   }
 
   const supabase = createClient(context.request.headers, context.cookies);
@@ -182,7 +171,8 @@ export const POST: APIRoute = async (context) => {
       return jsonError("Supabase nie jest skonfigurowane", 500);
     }
 
-    return context.redirect(encodeMessage(errorRedirectTo, "error", "Supabase nie jest skonfigurowane"));
+    setFlashMessage(context.cookies, { kind: "error", message: "Supabase nie jest skonfigurowane" });
+    return context.redirect(errorRedirectTo);
   }
 
   const {
@@ -195,7 +185,8 @@ export const POST: APIRoute = async (context) => {
       return jsonError(authError.message, 401);
     }
 
-    return context.redirect(encodeMessage(errorRedirectTo, "error", authError.message));
+    setFlashMessage(context.cookies, { kind: "error", message: authError.message });
+    return context.redirect(errorRedirectTo);
   }
 
   if (!user) {
@@ -233,13 +224,15 @@ export const POST: APIRoute = async (context) => {
       return jsonError(message, 500);
     }
 
-    return context.redirect(encodeMessage(errorRedirectTo, "error", message));
+    setFlashMessage(context.cookies, { kind: "error", message });
+    return context.redirect(errorRedirectTo);
   }
 
   const successMessage = mode === "save" ? "Rutyna została zapisana" : "Rutyna została wyczyszczona";
+  setFlashMessage(context.cookies, { kind: "success", message: successMessage });
   if (wantsJson) {
     return jsonSuccess(mode, successRedirectTo);
   }
 
-  return context.redirect(encodeRoutineSuccess(successRedirectTo, mode, successMessage));
+  return context.redirect(successRedirectTo);
 };

@@ -1,5 +1,6 @@
 ---
 import Layout from "@/layouts/Layout.astro";
+import { consumeFlashMessage } from "@/lib/flash-message";
 import { createClient } from "@/lib/supabase";
 import {
   getMissingUserDomainContractMessage,
@@ -9,7 +10,7 @@ import {
 } from "@/lib/domain/user-domain";
 
 const user = Astro.locals.user;
-const source = Astro.url.searchParams.get("source");
+const flash = consumeFlashMessage(Astro.cookies);
 
 if (!user) {
   return Astro.redirect("/auth/signin");
@@ -28,9 +29,6 @@ if (!supabase) {
       return Astro.redirect("/onboarding/skin-profile");
     }
 
-    if (source !== "save") {
-      return Astro.redirect("/settings/skin-profile");
-    }
   } catch (error) {
     routeError = isMissingUserDomainContractError(error)
       ? getMissingUserDomainContractMessage()
@@ -51,6 +49,21 @@ if (!supabase) {
           Świetnie. Mamy już punkt wyjścia do dalszej personalizacji, a kolejnym krokiem będzie dodanie pierwszego
           produktu.
         </p>
+
+        {
+          flash && (
+            <p
+              class:list={[
+                "mt-6 rounded-2xl px-4 py-3 text-sm",
+                flash.kind === "success"
+                  ? "border border-emerald-400/30 bg-emerald-950/40 text-emerald-200"
+                  : "border border-red-400/30 bg-red-950/40 text-red-200",
+              ]}
+            >
+              {flash.message}
+            </p>
+          )
+        }
 
         {
           routeError && (

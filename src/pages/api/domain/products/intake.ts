@@ -12,17 +12,12 @@ import {
 } from "@/lib/domain/product-domain";
 import { ensurePendingUserProductInterpretation } from "@/lib/domain/product-interpretation";
 import { addUserShelfItem, listUserShelfItems } from "@/lib/domain/user-domain";
+import { setFlashMessage } from "@/lib/flash-message";
 import { createClient } from "@/lib/supabase";
 
 const MAX_TEXT_LENGTH = 160;
 const MAX_LIST_ITEMS = 256;
 const MAX_IMAGE_URL_LENGTH = 2000;
-
-function encodeMessage(path: string, key: "error" | "success", message: string) {
-  const url = new URL(path, "https://shelfie.local");
-  url.searchParams.set(key, message);
-  return `${url.pathname}${url.search}`;
-}
 
 function expectsJson(request: Request) {
   const accept = request.headers.get("Accept") ?? "";
@@ -49,7 +44,7 @@ function parseRedirectPath(value: FormDataEntryValue | null, fallback: string) {
     throw new Error("Ścieżka przekierowania musi prowadzić wewnątrz aplikacji");
   }
 
-  return trimmed;
+  return new URL(trimmed, "https://shelfie.local").pathname;
 }
 
 function parseRequiredText(value: FormDataEntryValue | null, fieldName: string) {
@@ -233,7 +228,8 @@ export const POST: APIRoute = async (context) => {
       return jsonError(message);
     }
 
-    return context.redirect(encodeMessage("/dashboard", "error", message));
+    setFlashMessage(context.cookies, { kind: "error", message });
+    return context.redirect("/dashboard");
   }
 
   const supabase = createClient(context.request.headers, context.cookies);
@@ -242,7 +238,8 @@ export const POST: APIRoute = async (context) => {
       return jsonError("Supabase nie jest skonfigurowane", 500);
     }
 
-    return context.redirect(encodeMessage(errorRedirectTo, "error", "Supabase nie jest skonfigurowane"));
+    setFlashMessage(context.cookies, { kind: "error", message: "Supabase nie jest skonfigurowane" });
+    return context.redirect(errorRedirectTo);
   }
 
   const {
@@ -255,7 +252,8 @@ export const POST: APIRoute = async (context) => {
       return jsonError(authError.message, 401);
     }
 
-    return context.redirect(encodeMessage(errorRedirectTo, "error", authError.message));
+    setFlashMessage(context.cookies, { kind: "error", message: authError.message });
+    return context.redirect(errorRedirectTo);
   }
 
   if (!user) {
@@ -276,7 +274,8 @@ export const POST: APIRoute = async (context) => {
       return jsonError(message);
     }
 
-    return context.redirect(encodeMessage(errorRedirectTo, "error", message));
+    setFlashMessage(context.cookies, { kind: "error", message });
+    return context.redirect(errorRedirectTo);
   }
 
   try {
@@ -291,19 +290,17 @@ export const POST: APIRoute = async (context) => {
       console.error("[product-intake] Could not create pending product interpretation", interpretationError);
     }
 
-    const successUrl = new URL("/shelf", "https://shelfie.local");
-    successUrl.searchParams.set("shelf", "added");
-    successUrl.searchParams.set(
-      "success",
+    const successMessage =
       alreadyExisted
         ? "Ten produkt był już na Twojej półce."
         : reusedExistingProduct
           ? "Produkt został dodany do Twojej półki."
-          : "Nowy produkt został zapisany i dodany do Twojej półki.",
-    );
+          : "Nowy produkt został zapisany i dodany do Twojej półki.";
+
+    setFlashMessage(context.cookies, { kind: "success", message: successMessage });
 
     if (wantsJson) {
-      return new Response(JSON.stringify({ redirectTo: `${successUrl.pathname}${successUrl.search}` }), {
+      return new Response(JSON.stringify({ redirectTo: "/shelf" }), {
         status: 200,
         headers: {
           "Content-Type": "application/json",
@@ -311,13 +308,14 @@ export const POST: APIRoute = async (context) => {
       });
     }
 
-    return context.redirect(`${successUrl.pathname}${successUrl.search}`);
+    return context.redirect("/shelf");
   } catch (error) {
     const message = error instanceof Error ? error.message : "Nie udało się zapisać produktu";
     if (wantsJson) {
       return jsonError(message, 500);
     }
 
-    return context.redirect(encodeMessage(errorRedirectTo, "error", message));
+    setFlashMessage(context.cookies, { kind: "error", message });
+    return context.redirect(errorRedirectTo);
   }
 };
