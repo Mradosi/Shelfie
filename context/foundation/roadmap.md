@@ -3,7 +3,7 @@ project: Shelfie
 version: 1
 status: draft
 created: 2026-05-28
-updated: 2026-07-19
+updated: 2026-07-29
 prd_version: 1
 main_goal: market-feedback
 top_blocker: decisions
@@ -39,7 +39,7 @@ Shelfie ma pomóc użytkownikowi uporządkować pielęgnację na bazie jego real
 | S-13 | shelf-catalog-and-navigation       | user can browse their shelf, open product details, and move through the core product-to-routine flow from one clear navigation     | S-02, S-11      | US-01, FR-003, FR-008, FR-009                                                      | done     |
 | S-12 | ingredient-details-and-glossary    | user can expand an INCI ingredient on product details and read a cached, plain-language description of its cosmetic role and caveats | S-11, F-02      | FR-004, FR-010                                                                      | proposed |
 | S-04 | ai-routine-draft-and-review        | user can ask AI for a base-routine draft or improvement suggestions, then review and edit the result before save                    | S-03, S-11       | US-01, FR-008, FR-010                                                              | proposed |
-| S-05 | todays-routine-consumption         | user can view today's AM/PM routine from the saved base configuration and make lightweight one-off usage edits from routine screens | S-03             | US-01, FR-009                                                                      | proposed |
+| S-05 | todays-routine-consumption         | user can view today's AM/PM routine from the saved base configuration and make lightweight one-off usage edits from routine screens | S-03             | US-01, FR-009                                                                      | done     |
 | S-09 | day-specific-routine-overrides     | user can override selected weekdays without rebuilding the shared base AM/PM routine                                                | S-05             | US-01, FR-009                                                                      | proposed |
 | S-06 | routine-warnings-and-guidance      | user can review soft warnings about conflicts or overuse, plus product-role and missing-step guidance while adjusting routine usage | S-04, S-05       | US-01, FR-010, FR-011                                                              | proposed |
 | S-07 | shelf-notes-and-skin-checkins      | user can manage the shelf with notes/reactions and log a quick skin check-in for later guidance                                     | S-05             | US-01, FR-006, FR-007, FR-012                                                      | proposed |
@@ -214,7 +214,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Blockers:** —
 - **Unknowns:** —
 - **Risk:** Without a separate consumption slice, the MVP can organize a routine on paper but still fail the daily-use test that the product depends on.
-- **Status:** proposed
+- **Status:** done
 
 ### S-09: Day-specific routine overrides
 
@@ -311,4 +311,5 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **S-02: user can add the first product to their shelf from shared sources or AI/manual fallback and confirm it before save.** — Archived 2026-07-09 → `context/archive/2026-06-11-first-product-intake/`. Lesson: —.
 - **S-03: user can manually create the first base AM/PM routine from owned products and their assigned routine roles, edit that routine later, and delete it when they want to rebuild from scratch, without authoring seven separate weekday plans.** — Archived 2026-07-12 → `context/archive/2026-07-09-first-manual-routine-management/`. Lesson: —.
 - **S-11: user can open the details of any known product, whether or not it is already on their shelf, and see a cached AI interpretation of how that product fits their skin profile, including a clear verdict, benefits, cautions, and warnings, without re-running the full analysis on every view.** — Archived 2026-07-19 → `context/archive/2026-07-12-personalized-product-fit-analysis/`. Lesson: —.
+- **S-05: user can open today's AM/PM routine from the saved base configuration, understand what belongs in the current view, and make one-off usage edits from routine screens without redefining the base routine.** — Archived 2026-07-29 → `context/archive/2026-07-29-todays-routine-consumption/`. Lesson: —.
 - **S-13: user can open a user-facing “Moja półka” catalog of owned products, move from each item to the canonical product details page, add or remove products from that shelf, and use a clear global navigation to move through the core `Panel → Półka → Produkt → Dodaj produkt / Rutyna` flow.** — Archived 2026-07-19 → `context/archive/2026-07-19-shelf-catalog-and-navigation/`. Lesson: —.
