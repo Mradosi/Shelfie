@@ -2,6 +2,7 @@
 import ProductInterpretationPanel from "@/components/products/ProductInterpretationPanel";
 import RemoveShelfItemForm from "@/components/products/RemoveShelfItemForm.astro";
 import Layout from "@/layouts/Layout.astro";
+import { consumeFlashMessage } from "@/lib/flash-message";
 import { getUserScopedProductDetails } from "@/lib/domain/product-interpretation";
 import { createClient } from "@/lib/supabase";
 import {
@@ -14,7 +15,7 @@ import {
 
 const user = Astro.locals.user;
 const productId = Astro.params.productId;
-const shelfState = Astro.url.searchParams.get("shelf");
+const flash = consumeFlashMessage(Astro.cookies);
 
 if (!user) {
   return Astro.redirect("/auth/signin");
@@ -61,14 +62,6 @@ const categoryLabel = product?.category ?? "Nieustalona kategoria";
 const provenance = [product?.inciSource, product?.inciConfidence ? `pewność: ${product.inciConfidence}` : null]
   .filter(Boolean)
   .join(" · ");
-const shelfMessage =
-  shelfState === "added"
-    ? "Produkt został dodany do Twojej półki. Analiza dopasowania jest dostępna poniżej."
-    : shelfState === "existing"
-      ? "Ten produkt był już na Twojej półce."
-      : shelfState === "removed"
-        ? "Produkt został usunięty z Twojej półki."
-        : null;
 ---
 
 <Layout title={product ? `${product.name} | Shelfie` : "Szczegóły produktu | Shelfie"} showAppNavigation>
@@ -94,9 +87,16 @@ const shelfMessage =
       {
         details && product && (
           <div class="mt-6 space-y-6">
-            {shelfMessage && (
-              <p class="rounded-2xl border border-emerald-300/25 bg-emerald-300/10 px-4 py-3 text-sm text-emerald-50">
-                {shelfMessage}
+            {flash && (
+              <p
+                class:list={[
+                  "rounded-2xl px-4 py-3 text-sm",
+                  flash.kind === "success"
+                    ? "border border-emerald-300/25 bg-emerald-300/10 text-emerald-50"
+                    : "border border-rose-300/25 bg-rose-950/40 text-rose-100",
+                ]}
+              >
+                {flash.message}
               </p>
             )}
             <section class="overflow-hidden rounded-[2rem] border border-white/12 bg-white/8 shadow-2xl shadow-slate-950/25 backdrop-blur-xl">
@@ -142,7 +142,7 @@ const shelfMessage =
                   {!isOnShelf && (
                     <form method="POST" action="/api/domain/products/add-existing" class="mt-5">
                       <input type="hidden" name="productId" value={product.id} />
-                      <input type="hidden" name="successRedirectTo" value={`/products/${product.id}?shelf=added`} />
+                      <input type="hidden" name="successRedirectTo" value={`/products/${product.id}`} />
                       <input type="hidden" name="errorRedirectTo" value={`/products/${product.id}`} />
                       <button
                         type="submit"

@@ -10,8 +10,10 @@ interface FormFieldProps {
   name?: string;
   label: string;
   type?: string;
-  value: string;
+  value?: string;
+  defaultValue?: string;
   onChange: (value: string) => void;
+  autoComplete?: string;
   placeholder?: string;
   error?: string;
   hint?: ReactNode;
@@ -25,13 +27,17 @@ export function FormField({
   label,
   type = "text",
   value,
+  defaultValue,
   onChange,
+  autoComplete,
   placeholder,
   error,
   hint,
   icon,
   endContent,
 }: FormFieldProps) {
+  const valueProps = value === undefined ? { defaultValue } : { value };
+
   return (
     <div>
       <label htmlFor={id} className="mb-1 block text-sm text-blue-100/80">
@@ -43,10 +49,11 @@ export function FormField({
           id={id}
           name={name ?? id}
           type={type}
-          value={value}
+          {...valueProps}
           onChange={(e) => {
             onChange(e.target.value);
           }}
+          autoComplete={autoComplete}
           placeholder={placeholder}
           className={cn(
             inputBase,

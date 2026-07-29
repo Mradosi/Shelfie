@@ -1,5 +1,6 @@
 ---
 import Layout from "@/layouts/Layout.astro";
+import { consumeFlashMessage } from "@/lib/flash-message";
 import { createClient } from "@/lib/supabase";
 import {
   getSkinAspectLevelLabel,
@@ -15,8 +16,9 @@ import {
 } from "@/lib/domain/user-domain";
 
 const { user } = Astro.locals;
-const error = Astro.url.searchParams.get("error");
-const success = Astro.url.searchParams.get("success");
+const flash = consumeFlashMessage(Astro.cookies);
+const error = flash?.kind === "error" ? flash.message : null;
+const success = flash?.kind === "success" ? flash.message : null;
 const supabase = createClient(Astro.request.headers, Astro.cookies);
 let domainError: string | null = null;
 let persistedProfile = null;

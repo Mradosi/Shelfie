@@ -175,7 +175,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Unknowns:**
   - Which minimal shelf grouping or filtering is needed for the first useful catalog: no grouping, routine membership, product category, or a combination? — Owner: team. Block: no.
 - **Risk:** This slice must establish only the core information architecture and shelf flow. If it absorbs notes, reactions, advanced filtering, analytics, mobile redesign, or routine recommendation logic, it becomes a broad application redesign instead of a clear navigation and catalog milestone.
-- **Status:** proposed
+- **Status:** done
 
 ### S-12: Ingredient details and glossary
 

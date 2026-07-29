@@ -1,6 +1,7 @@
 export const ROUTINE_DAY_KEYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"] as const;
 
 export const BASE_ROUTINE_SECTION_KEYS = ["morning", "evening"] as const;
+export const ROUTINE_TIME_ZONE = "Europe/Warsaw";
 export const ROUTINE_ROLE_OPTIONS = [
   "cleanse",
   "moisturize",
@@ -53,6 +54,12 @@ export interface RoutineScheduleEntry {
 
 export type RoutineScheduleSection = Record<string, RoutineScheduleEntry[]>;
 export type RoutineSchedule = Record<string, RoutineScheduleSection>;
+
+export interface RoutineDaySchedule {
+  dayKey: RoutineDayKey;
+  morning: RoutineScheduleEntry[];
+  evening: RoutineScheduleEntry[];
+}
 
 export interface BaseRoutineEntry {
   shelfItemId: string;
@@ -190,6 +197,35 @@ export function normalizeRoutineSchedule(schedule: unknown): RoutineSchedule {
   }
 
   return normalized;
+}
+
+export function getRoutineDayKeyForDate(date: Date): RoutineDayKey {
+  if (Number.isNaN(date.getTime())) {
+    throw new Error("Data rutyny musi być prawidłowa");
+  }
+
+  const weekday = new Intl.DateTimeFormat("en-US", {
+    timeZone: ROUTINE_TIME_ZONE,
+    weekday: "long",
+  }).format(date);
+  const dayKey = weekday.toLowerCase();
+
+  if (!(ROUTINE_DAY_KEYS as readonly string[]).includes(dayKey)) {
+    throw new Error(`Nieobsługiwany dzień rutyny: ${weekday}`);
+  }
+
+  return dayKey as RoutineDayKey;
+}
+
+export function getRoutineDaySchedule(schedule: unknown, dayKey: RoutineDayKey): RoutineDaySchedule {
+  const normalizedSchedule = normalizeRoutineSchedule(schedule);
+  const daySchedule = normalizedSchedule[dayKey];
+
+  return {
+    dayKey,
+    morning: (daySchedule?.morning ?? []).map((entry) => ({ ...entry })),
+    evening: (daySchedule?.evening ?? []).map((entry) => ({ ...entry })),
+  };
 }
 
 export function parseBaseRoutineDraft(input: unknown): BaseRoutineDraft {

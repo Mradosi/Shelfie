@@ -1,9 +1,0 @@
----
-const productId = Astro.url.searchParams.get("productId");
-
-if (!productId) {
-  return Astro.redirect("/products/intake");
-}
-
-return Astro.redirect(`/products/${encodeURIComponent(productId)}`);
----

@@ -1,6 +1,7 @@
 ---
 import ManualRoutineEditor from "@/components/routine/ManualRoutineEditor";
 import Layout from "@/layouts/Layout.astro";
+import { consumeFlashMessage } from "@/lib/flash-message";
 import {
   collapseWeeklyScheduleToBaseRoutine,
   createEmptyBaseRoutine,
@@ -17,9 +18,9 @@ import {
 } from "@/lib/domain/user-domain";
 
 const user = Astro.locals.user;
-const error = Astro.url.searchParams.get("error");
-const routineFlow = Astro.url.searchParams.get("routineFlow");
-const success = Astro.url.searchParams.get("success");
+const flash = consumeFlashMessage(Astro.cookies);
+const error = flash?.kind === "error" ? flash.message : null;
+const success = flash?.kind === "success" ? flash.message : null;
 
 if (!user) {
   return Astro.redirect("/auth/signin");
@@ -62,10 +63,10 @@ const shelfCount = shelfCatalog.length;
 const hasVeryFewProducts = shelfCount > 0 && shelfCount < 2;
 const hasPersistedRoutine = hasNonEmptyBaseRoutine(initialDraft);
 
-type RoutinePageState = "needs_products" | "empty" | "saved" | "reset";
+type RoutinePageState = "needs_products" | "empty" | "saved";
 
 const pageState: RoutinePageState =
-  shelfCount === 0 ? "needs_products" : routineFlow === "reset" ? "reset" : hasPersistedRoutine ? "saved" : "empty";
+  shelfCount === 0 ? "needs_products" : hasPersistedRoutine ? "saved" : "empty";
 
 const pageStateCopy: Record<
   RoutinePageState,
@@ -96,22 +97,13 @@ const pageStateCopy: Record<
       "Dodaj pierwszy krok do porannej albo wieczornej sekcji, ustaw kolejność i zapisz całość dopiero wtedy, gdy baza będzie gotowa.",
   },
   saved: {
-    badge: routineFlow === "save" ? "Rutyna została zapisana" : "Wczytano zapisaną rutynę",
+    badge: "Wczytano zapisaną rutynę",
     heading: "Edytuj swoją bazową rutynę AM/PM",
     intro:
       "Masz już zapisaną bazę. Możesz wracać do niej z nawigacji, zmieniać kolejność kroków, dodawać nowe produkty albo całkowicie wyczyścić stan i zacząć od nowa.",
     panelTitle: "Rutyna jest aktywna",
     panelBody:
       "Poniżej widzisz aktualny stan bazowej rutyny. Zmiany zapisują się jawnie przyciskiem, więc możesz spokojnie edytować draft przed wysłaniem.",
-  },
-  reset: {
-    badge: "Rutyna została wyczyszczona",
-    heading: "Masz czystą bazę do ponownego ułożenia",
-    intro:
-      "Reset usunął tylko zapis rutyny. Produkty na półce nadal są dostępne, więc możesz od razu zbudować nową wersję porannej i wieczornej bazy.",
-    panelTitle: "Rutyna jest pusta po resecie",
-    panelBody:
-      "Półka pozostała bez zmian. Wybierz produkty z katalogu poniżej i ułóż rutynę od początku, bez ponownego dodawania produktów do konta.",
   },
 };
 

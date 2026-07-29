@@ -12,15 +12,18 @@ interface Props {
 }
 
 export default function SignUpForm({ serverError }: Props) {
-  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string; confirmPassword?: string }>({});
 
-  function validate() {
+  function validate(form: HTMLFormElement) {
     const next: typeof errors = {};
+    const formData = new FormData(form);
+    const email = String(formData.get("email") ?? "");
+    const submittedPassword = String(formData.get("password") ?? "");
+    const submittedConfirmPassword = String(formData.get("confirmPassword") ?? "");
 
     if (!email.trim()) {
       next.email = "Adres e-mail jest wymagany";
@@ -28,15 +31,15 @@ export default function SignUpForm({ serverError }: Props) {
       next.email = "Wpisz poprawny adres e-mail";
     }
 
-    if (!password) {
+    if (!submittedPassword) {
       next.password = "Hasło jest wymagane";
-    } else if (password.length < MIN_PASSWORD_LENGTH) {
+    } else if (submittedPassword.length < MIN_PASSWORD_LENGTH) {
       next.password = `Hasło musi mieć co najmniej ${MIN_PASSWORD_LENGTH} znaków`;
     }
 
-    if (!confirmPassword) {
+    if (!submittedConfirmPassword) {
       next.confirmPassword = "Potwierdź hasło";
-    } else if (password !== confirmPassword) {
+    } else if (submittedPassword !== submittedConfirmPassword) {
       next.confirmPassword = "Hasła nie są takie same";
     }
 
@@ -49,7 +52,7 @@ export default function SignUpForm({ serverError }: Props) {
   }
 
   function handleSubmit(e: React.SubmitEvent<HTMLFormElement>) {
-    if (!validate()) {
+    if (!validate(e.currentTarget)) {
       e.preventDefault();
     }
   }
@@ -68,11 +71,9 @@ export default function SignUpForm({ serverError }: Props) {
         id="email"
         type="email"
         label="Adres e-mail"
-        value={email}
-        onChange={(v) => {
-          setEmail(v);
-          clearError("email");
-        }}
+        defaultValue=""
+        onChange={() => clearError("email")}
+        autoComplete="email"
         placeholder="twoj@email.pl"
         error={errors.email}
         icon={<Mail className="size-4" />}
@@ -82,11 +83,12 @@ export default function SignUpForm({ serverError }: Props) {
         id="password"
         label="Hasło"
         type={showPassword ? "text" : "password"}
-        value={password}
+        defaultValue=""
         onChange={(v) => {
           setPassword(v);
           clearError("password");
         }}
+        autoComplete="new-password"
         placeholder="Minimum 6 znaków"
         error={errors.password}
         hint={passwordHint}
@@ -106,11 +108,12 @@ export default function SignUpForm({ serverError }: Props) {
         name="confirmPassword"
         label="Potwierdź hasło"
         type={showConfirmPassword ? "text" : "password"}
-        value={confirmPassword}
+        defaultValue=""
         onChange={(v) => {
           setConfirmPassword(v);
           clearError("confirmPassword");
         }}
+        autoComplete="new-password"
         placeholder="Wpisz hasło ponownie"
         error={errors.confirmPassword}
         icon={<Lock className="size-4" />}

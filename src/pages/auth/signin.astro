@@ -1,8 +1,10 @@
 ---
 import Layout from "@/layouts/Layout.astro";
 import SignInForm from "@/components/auth/SignInForm";
+import { consumeFlashMessage } from "@/lib/flash-message";
 
-const error = Astro.url.searchParams.get("error");
+const flash = consumeFlashMessage(Astro.cookies);
+const error = flash?.kind === "error" ? flash.message : null;
 ---
 
 <Layout title="Logowanie">

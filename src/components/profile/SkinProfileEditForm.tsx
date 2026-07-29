@@ -151,7 +151,7 @@ export default function SkinProfileEditForm({
 
         <div className="flex flex-wrap gap-3">
           <a
-            href="/onboarding/skin-profile?mode=rerun"
+            href="/onboarding/skin-profile"
             className="rounded-full border border-white/20 bg-white/8 px-4 py-2 text-sm text-white transition-colors hover:bg-white/16"
           >
             Przejdź ponownie przez pytania

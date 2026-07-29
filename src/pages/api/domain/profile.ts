@@ -16,17 +16,12 @@ import {
   isValidQuestionnaireAnswers,
   mapQuestionnaireAnswersToSkinAspects,
 } from "@/lib/domain/skin-profile-questionnaire";
+import { setFlashMessage } from "@/lib/flash-message";
 import { createClient } from "@/lib/supabase";
 
 const MAX_TEXT_LENGTH = 80;
 const MAX_LIST_ITEMS = 8;
 const MAX_NOTES_LENGTH = 500;
-
-function encodeMessage(path: string, key: "error" | "success", message: string) {
-  const url = new URL(path, "https://shelfie.local");
-  url.searchParams.set(key, message);
-  return `${url.pathname}${url.search}`;
-}
 
 function parseOptionalText(value: FormDataEntryValue | null, fieldName: string) {
   if (value === null) {
@@ -105,7 +100,7 @@ function parseRedirectPath(value: FormDataEntryValue | null, fallback: string) {
     throw new Error("Ścieżka przekierowania musi prowadzić wewnątrz aplikacji");
   }
 
-  return trimmed;
+  return new URL(trimmed, "https://shelfie.local").pathname;
 }
 
 function parseList(values: FormDataEntryValue[], fieldName: string, options?: { splitCommas?: boolean }) {
@@ -198,12 +193,14 @@ export const POST: APIRoute = async (context) => {
     errorRedirectTo = parseRedirectPath(form.get("errorRedirectTo"), errorRedirectTo);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Nieprawidłowa ścieżka przekierowania";
-    return context.redirect(encodeMessage("/dashboard", "error", message));
+    setFlashMessage(context.cookies, { kind: "error", message });
+    return context.redirect("/dashboard");
   }
 
   const supabase = createClient(context.request.headers, context.cookies);
   if (!supabase) {
-    return context.redirect(encodeMessage(errorRedirectTo, "error", "Supabase nie jest skonfigurowane"));
+    setFlashMessage(context.cookies, { kind: "error", message: "Supabase nie jest skonfigurowane" });
+    return context.redirect(errorRedirectTo);
   }
 
   const {
@@ -212,7 +209,8 @@ export const POST: APIRoute = async (context) => {
   } = await supabase.auth.getUser();
 
   if (authError) {
-    return context.redirect(encodeMessage(errorRedirectTo, "error", authError.message));
+    setFlashMessage(context.cookies, { kind: "error", message: authError.message });
+    return context.redirect(errorRedirectTo);
   }
 
   if (!user) {
@@ -225,21 +223,25 @@ export const POST: APIRoute = async (context) => {
     profileInput = parseProfileForm(form);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Nieprawidłowe dane profilu";
-    return context.redirect(encodeMessage(errorRedirectTo, "error", message));
+    setFlashMessage(context.cookies, { kind: "error", message });
+    return context.redirect(errorRedirectTo);
   }
 
   try {
     await upsertUserProfile(supabase, user.id, profileInput);
   } catch (error) {
     if (isMissingUserDomainContractError(error)) {
-      return context.redirect(encodeMessage(errorRedirectTo, "error", getMissingUserDomainContractMessage()));
+      setFlashMessage(context.cookies, { kind: "error", message: getMissingUserDomainContractMessage() });
+      return context.redirect(errorRedirectTo);
     }
 
     const message = error instanceof Error ? error.message : "Nie udało się zapisać profilu";
-    return context.redirect(encodeMessage(errorRedirectTo, "error", message));
+    setFlashMessage(context.cookies, { kind: "error", message });
+    return context.redirect(errorRedirectTo);
   }
 
   const successMessage =
     successRedirectTo === "/onboarding/skin-profile/complete" ? "Profil został zapisany" : "Zmiany zostały zapisane";
-  return context.redirect(encodeMessage(successRedirectTo, "success", successMessage));
+  setFlashMessage(context.cookies, { kind: "success", message: successMessage });
+  return context.redirect(successRedirectTo);
 };

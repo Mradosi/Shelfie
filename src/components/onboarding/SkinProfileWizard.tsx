@@ -176,7 +176,7 @@ export default function SkinProfileWizard({
   return (
     <form method="POST" action="/api/domain/profile" className="mt-8 space-y-8" onSubmit={handleSubmit}>
       <input type="hidden" name="mode" value="onboarding" />
-      <input type="hidden" name="successRedirectTo" value="/onboarding/skin-profile/complete?source=save" />
+      <input type="hidden" name="successRedirectTo" value="/onboarding/skin-profile/complete" />
       <input type="hidden" name="errorRedirectTo" value="/onboarding/skin-profile" />
       <input type="hidden" name="questionnaireAnswers" value={JSON.stringify(questionAnswers)} />
       <input type="hidden" name="skinType" value={skinType} />

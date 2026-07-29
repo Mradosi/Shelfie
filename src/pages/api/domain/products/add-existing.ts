@@ -1,13 +1,8 @@
 import type { APIRoute } from "astro";
 import { getSharedProductById } from "@/lib/domain/product-domain";
 import { addUserShelfItem, listUserShelfItems } from "@/lib/domain/user-domain";
+import { setFlashMessage } from "@/lib/flash-message";
 import { createClient } from "@/lib/supabase";
-
-function encodeMessage(path: string, key: "error" | "success", message: string) {
-  const url = new URL(path, "https://shelfie.local");
-  url.searchParams.set(key, message);
-  return `${url.pathname}${url.search}`;
-}
 
 function parseRedirectPath(value: FormDataEntryValue | null, fallback: string) {
   if (typeof value !== "string" || !value.trim()) {
@@ -19,7 +14,7 @@ function parseRedirectPath(value: FormDataEntryValue | null, fallback: string) {
     throw new Error("Ścieżka przekierowania musi prowadzić wewnątrz aplikacji");
   }
 
-  return trimmed;
+  return new URL(trimmed, "https://shelfie.local").pathname;
 }
 
 function parseRequiredProductId(value: FormDataEntryValue | null) {
@@ -44,7 +39,7 @@ async function ensureShelfItem(supabase: ReturnType<typeof createClient>, userId
 export const POST: APIRoute = async (context) => {
   const form = await context.request.formData();
 
-  let successRedirectTo = "/products/intake/complete";
+  let successRedirectTo = "/shelf";
   let errorRedirectTo = "/products/intake";
 
   try {
@@ -52,7 +47,8 @@ export const POST: APIRoute = async (context) => {
     errorRedirectTo = parseRedirectPath(form.get("errorRedirectTo"), errorRedirectTo);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Nieprawidłowa ścieżka przekierowania";
-    return context.redirect(encodeMessage("/products/intake", "error", message));
+    setFlashMessage(context.cookies, { kind: "error", message });
+    return context.redirect("/products/intake");
   }
 
   let productId: string;
@@ -60,12 +56,14 @@ export const POST: APIRoute = async (context) => {
     productId = parseRequiredProductId(form.get("productId"));
   } catch (error) {
     const message = error instanceof Error ? error.message : "Nie udało się odczytać produktu";
-    return context.redirect(encodeMessage(errorRedirectTo, "error", message));
+    setFlashMessage(context.cookies, { kind: "error", message });
+    return context.redirect(errorRedirectTo);
   }
 
   const supabase = createClient(context.request.headers, context.cookies);
   if (!supabase) {
-    return context.redirect(encodeMessage(errorRedirectTo, "error", "Supabase nie jest skonfigurowane"));
+    setFlashMessage(context.cookies, { kind: "error", message: "Supabase nie jest skonfigurowane" });
+    return context.redirect(errorRedirectTo);
   }
 
   const {
@@ -74,7 +72,8 @@ export const POST: APIRoute = async (context) => {
   } = await supabase.auth.getUser();
 
   if (authError) {
-    return context.redirect(encodeMessage(errorRedirectTo, "error", authError.message));
+    setFlashMessage(context.cookies, { kind: "error", message: authError.message });
+    return context.redirect(errorRedirectTo);
   }
 
   if (!user) {
@@ -87,16 +86,15 @@ export const POST: APIRoute = async (context) => {
       throw new Error("Nie udało się odnaleźć produktu w shared bazie");
     }
 
-    const { shelfItem, alreadyExisted } = await ensureShelfItem(supabase, user.id, product.id);
-    const successUrl = new URL(successRedirectTo, "https://shelfie.local");
-    successUrl.searchParams.set("productId", product.id);
-    successUrl.searchParams.set("shelfItemId", shelfItem.id);
-    successUrl.searchParams.set("reusedProduct", "1");
-    successUrl.searchParams.set("existingShelfItem", alreadyExisted ? "1" : "0");
-
-    return context.redirect(`${successUrl.pathname}${successUrl.search}`);
+    const { alreadyExisted } = await ensureShelfItem(supabase, user.id, product.id);
+    setFlashMessage(context.cookies, {
+      kind: "success",
+      message: alreadyExisted ? "Ten produkt był już na Twojej półce." : "Produkt został dodany do Twojej półki.",
+    });
+    return context.redirect(successRedirectTo);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Nie udało się dodać produktu na półkę";
-    return context.redirect(encodeMessage(errorRedirectTo, "error", message));
+    setFlashMessage(context.cookies, { kind: "error", message });
+    return context.redirect(errorRedirectTo);
   }
 };

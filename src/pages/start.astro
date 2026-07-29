@@ -1,5 +1,6 @@
 ---
 import Layout from "@/layouts/Layout.astro";
+import { setFlashMessage } from "@/lib/flash-message";
 import { createClient } from "@/lib/supabase";
 import {
   getMissingUserDomainContractMessage,
@@ -7,12 +8,6 @@ import {
   isMissingUserDomainContractError,
   isUserProfileComplete,
 } from "@/lib/domain/user-domain";
-
-const DASHBOARD_ERROR_PATH = "/dashboard?error=";
-
-function encodeMessage(path: string, message: string) {
-  return `${path}${encodeURIComponent(message)}`;
-}
 
 const user = Astro.locals.user;
 
@@ -41,7 +36,8 @@ try {
       ? error.message
       : "Nie udało się wczytać Twojego profilu.";
 
-  return Astro.redirect(encodeMessage(DASHBOARD_ERROR_PATH, message));
+  setFlashMessage(Astro.cookies, { kind: "error", message });
+  return Astro.redirect("/dashboard");
 }
 ---
 

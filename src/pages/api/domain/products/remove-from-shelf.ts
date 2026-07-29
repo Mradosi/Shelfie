@@ -1,12 +1,7 @@
 import type { APIRoute } from "astro";
+import { setFlashMessage } from "@/lib/flash-message";
 import { removeUserShelfItem } from "@/lib/domain/user-domain";
 import { createClient } from "@/lib/supabase";
-
-function encodeMessage(path: string, key: "error" | "success", message: string) {
-  const url = new URL(path, "https://shelfie.local");
-  url.searchParams.set(key, message);
-  return `${url.pathname}${url.search}`;
-}
 
 function parseRedirectPath(value: FormDataEntryValue | null, fallback: string) {
   if (typeof value !== "string" || !value.trim()) {
@@ -18,7 +13,7 @@ function parseRedirectPath(value: FormDataEntryValue | null, fallback: string) {
     throw new Error("Ścieżka przekierowania musi prowadzić wewnątrz aplikacji");
   }
 
-  return trimmed;
+  return new URL(trimmed, "https://shelfie.local").pathname;
 }
 
 function parseRequiredShelfItemId(value: FormDataEntryValue | null) {
@@ -40,7 +35,8 @@ export const POST: APIRoute = async (context) => {
     errorRedirectTo = parseRedirectPath(form.get("errorRedirectTo"), errorRedirectTo);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Nieprawidłowa ścieżka przekierowania";
-    return context.redirect(encodeMessage("/shelf", "error", message));
+    setFlashMessage(context.cookies, { kind: "error", message });
+    return context.redirect("/shelf");
   }
 
   let shelfItemId: string;
@@ -48,12 +44,14 @@ export const POST: APIRoute = async (context) => {
     shelfItemId = parseRequiredShelfItemId(form.get("shelfItemId"));
   } catch (error) {
     const message = error instanceof Error ? error.message : "Nie udało się odczytać produktu z półki";
-    return context.redirect(encodeMessage(errorRedirectTo, "error", message));
+    setFlashMessage(context.cookies, { kind: "error", message });
+    return context.redirect(errorRedirectTo);
   }
 
   const supabase = createClient(context.request.headers, context.cookies);
   if (!supabase) {
-    return context.redirect(encodeMessage(errorRedirectTo, "error", "Supabase nie jest skonfigurowane"));
+    setFlashMessage(context.cookies, { kind: "error", message: "Supabase nie jest skonfigurowane" });
+    return context.redirect(errorRedirectTo);
   }
 
   const {
@@ -62,7 +60,8 @@ export const POST: APIRoute = async (context) => {
   } = await supabase.auth.getUser();
 
   if (authError) {
-    return context.redirect(encodeMessage(errorRedirectTo, "error", authError.message));
+    setFlashMessage(context.cookies, { kind: "error", message: authError.message });
+    return context.redirect(errorRedirectTo);
   }
 
   if (!user) {
@@ -75,13 +74,11 @@ export const POST: APIRoute = async (context) => {
       throw new Error("Nie znaleziono produktu na Twojej półce");
     }
 
-    const successUrl = new URL(successRedirectTo, "https://shelfie.local");
-    successUrl.searchParams.set("shelf", "removed");
-    successUrl.searchParams.set("success", "Produkt został usunięty z Twojej półki.");
-
-    return context.redirect(`${successUrl.pathname}${successUrl.search}`);
+    setFlashMessage(context.cookies, { kind: "success", message: "Produkt został usunięty z Twojej półki." });
+    return context.redirect(successRedirectTo);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Nie udało się usunąć produktu z półki";
-    return context.redirect(encodeMessage(errorRedirectTo, "error", message));
+    setFlashMessage(context.cookies, { kind: "error", message });
+    return context.redirect(errorRedirectTo);
   }
 };
