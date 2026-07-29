@@ -1,9 +1,10 @@
 ---
 change_id: todays-routine-consumption
 title: Today's routine consumption
-status: implemented
+status: archived
 created: 2026-07-29
 updated: 2026-07-29
+archived_at: 2026-07-29T11:43:42Z
 ---
 
 ## Notes
