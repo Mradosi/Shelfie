@@ -219,12 +219,22 @@ export function getRoutineDayKeyForDate(date: Date): RoutineDayKey {
 
 export function getRoutineDaySchedule(schedule: unknown, dayKey: RoutineDayKey): RoutineDaySchedule {
   const normalizedSchedule = normalizeRoutineSchedule(schedule);
-  const daySchedule = normalizedSchedule[dayKey];
+  const daySchedule = Object.prototype.hasOwnProperty.call(normalizedSchedule, dayKey)
+    ? normalizedSchedule[dayKey]
+    : null;
+
+  function copySectionEntries(sectionKey: BaseRoutineSectionKey) {
+    if (!daySchedule || !Object.prototype.hasOwnProperty.call(daySchedule, sectionKey)) {
+      return [];
+    }
+
+    return daySchedule[sectionKey].map((entry) => ({ ...entry }));
+  }
 
   return {
     dayKey,
-    morning: (daySchedule?.morning ?? []).map((entry) => ({ ...entry })),
-    evening: (daySchedule?.evening ?? []).map((entry) => ({ ...entry })),
+    morning: copySectionEntries("morning"),
+    evening: copySectionEntries("evening"),
   };
 }
 

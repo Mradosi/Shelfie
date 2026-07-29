@@ -65,8 +65,7 @@ const hasPersistedRoutine = hasNonEmptyBaseRoutine(initialDraft);
 
 type RoutinePageState = "needs_products" | "empty" | "saved";
 
-const pageState: RoutinePageState =
-  shelfCount === 0 ? "needs_products" : hasPersistedRoutine ? "saved" : "empty";
+const pageState: RoutinePageState = shelfCount === 0 ? "needs_products" : hasPersistedRoutine ? "saved" : "empty";
 
 const pageStateCopy: Record<
   RoutinePageState,

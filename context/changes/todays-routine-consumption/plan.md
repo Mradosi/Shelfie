@@ -172,22 +172,22 @@ Brak migracji. S-05 jest read-only consumerem istniejacego `user_routine_configs
 
 #### Automated
 
-- [x] 1.1 Astro types and lint pass for the daily projection contract
+- [x] 1.1 Astro types and lint pass for the daily projection contract — 4b34e31
 
 #### Manual
 
-- [ ] 1.2 Resolver selects the correct `Europe/Warsaw` day and preserves entry order with empty-section handling
-- [ ] 1.3 Daily reading avoids base-routine collapse and does not mutate persisted schedule
+- [x] 1.2 Resolver selects the correct `Europe/Warsaw` day and preserves entry order with empty-section handling
+- [x] 1.3 Daily reading avoids base-routine collapse and does not mutate persisted schedule
 
 ### Phase 2: Today view and navigation
 
 #### Automated
 
-- [ ] 2.1 Final repository verification passes with the new protected page
+- [x] 2.1 Final repository verification passes with the new protected page
 
 #### Manual
 
-- [ ] 2.2 Saved routine is visible from Topbar with both AM/PM sections and the current Polish date
-- [ ] 2.3 Cards preserve order and roles and open the matching product details page
-- [ ] 2.4 Empty routine state links to `/routine` without state in the URL
-- [ ] 2.5 Changes saved in the base routine are reflected on `/today` without a daily save
+- [x] 2.2 Saved routine is visible from Topbar with both AM/PM sections and the current Polish date
+- [x] 2.3 Cards preserve order and roles and open the matching product details page
+- [x] 2.4 Empty routine state links to `/routine` without state in the URL
+- [x] 2.5 Changes saved in the base routine are reflected on `/today` without a daily save

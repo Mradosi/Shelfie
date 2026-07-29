@@ -28,7 +28,6 @@ if (!supabase) {
     if (!isUserProfileComplete(profile)) {
       return Astro.redirect("/onboarding/skin-profile");
     }
-
   } catch (error) {
     routeError = isMissingUserDomainContractError(error)
       ? getMissingUserDomainContractMessage()

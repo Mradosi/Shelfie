@@ -290,12 +290,11 @@ export const POST: APIRoute = async (context) => {
       console.error("[product-intake] Could not create pending product interpretation", interpretationError);
     }
 
-    const successMessage =
-      alreadyExisted
-        ? "Ten produkt był już na Twojej półce."
-        : reusedExistingProduct
-          ? "Produkt został dodany do Twojej półki."
-          : "Nowy produkt został zapisany i dodany do Twojej półki.";
+    const successMessage = alreadyExisted
+      ? "Ten produkt był już na Twojej półce."
+      : reusedExistingProduct
+        ? "Produkt został dodany do Twojej półki."
+        : "Nowy produkt został zapisany i dodany do Twojej półki.";
 
     setFlashMessage(context.cookies, { kind: "success", message: successMessage });
 
