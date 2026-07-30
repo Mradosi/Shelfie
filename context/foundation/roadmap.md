@@ -39,7 +39,7 @@ Shelfie ma pomóc użytkownikowi uporządkować pielęgnację na bazie jego real
 | S-13 | shelf-catalog-and-navigation       | user can browse their shelf, open product details, and move through the core product-to-routine flow from one clear navigation     | S-02, S-11      | US-01, FR-003, FR-008, FR-009                                                      | done     |
 | S-12 | ingredient-details-and-glossary    | user can expand an INCI ingredient on product details and read a cached, plain-language description of its cosmetic role and caveats | S-11, F-02      | FR-004, FR-010                                                                      | proposed |
 | S-14 | admin-catalog-batch-import         | administrator can curate and confirm batches of AI-assisted product candidates before they enter the shared catalog                 | F-02, S-10      | FR-003, FR-004, FR-016, FR-017                                                      | proposed |
-| S-04 | ai-routine-draft-and-review        | user can ask AI for a base-routine draft or improvement suggestions, then review and edit the result before save                    | S-03, S-11       | US-01, FR-008, FR-010                                                              | proposed |
+| S-04 | ai-routine-draft-and-review        | user can ask AI for a base-routine draft or improvement suggestions, then review and edit the result before save                    | S-03, S-11       | US-01, FR-008, FR-010                                                              | done     |
 | S-05 | todays-routine-consumption         | user can view today's AM/PM routine from the saved base configuration and make lightweight one-off usage edits from routine screens | S-03             | US-01, FR-009                                                                      | done     |
 | S-09 | day-specific-routine-overrides     | user can override selected weekdays without rebuilding the shared base AM/PM routine                                                | S-05             | US-01, FR-009                                                                      | proposed |
 | S-06 | routine-warnings-and-guidance      | user can review soft warnings about conflicts or overuse, plus product-role and missing-step guidance while adjusting routine usage | S-04, S-05       | US-01, FR-010, FR-011                                                              | proposed |
@@ -191,7 +191,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
   - Which shared ingredient source should supply the initial glossary and what fields can be treated as trustworthy enough for user-facing copy? — Owner: team. Block: no.
   - Should missing ingredient entries use a bounded on-demand enrichment flow or show a transparent “description unavailable” state in MVP? — Owner: team. Block: no.
 - **Risk:** This slice must keep ingredient knowledge shared and cacheable by normalized INCI name. If every click invokes AI, the details screen becomes slow, costly, and inconsistent; if it becomes a full ingredient-science database, it will delay the core product and routine flows.
-- **Status:** proposed
+- **Status:** done
 
 ### S-14: Admin catalog batch import
 
@@ -218,7 +218,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Unknowns:**
   - How should routine drafting behave when a shelf contains a mix of `ready`, `stale`, and missing product interpretations? — Owner: team. Block: no.
 - **Risk:** This slice should improve or accelerate a manual routine the user already understands; if it becomes the place where product interpretation is recomputed ad hoc instead of consuming the cached per-user analysis from `S-11`, the system will duplicate AI work and drift between product-details guidance and routine guidance.
-- **Status:** proposed
+- **Status:** done
 
 ### S-05: Today's routine consumption
 
@@ -322,6 +322,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 ## Done
 
 (Empty on first generation. `/10x-archive` appends an entry here — and flips that item's `Status` to `done` — when a change whose `Change ID` matches the item is archived.)
+- **S-04: user can ask AI to draft the base routine from owned products and skin context, review missing-step or product-role suggestions, and accept or edit the result before saving it into the same base-routine model.** — Archived 2026-07-30 → `context/archive/2026-07-30-ai-routine-draft-and-review/`. Lesson: —.
 
 - **F-01: (foundation) A minimal persistence contract exists for per-user skin context, shelf items, product schedules, and routine configuration, with ownership boundaries that match the authenticated single-user model. This is explicitly a shared domain contract for downstream slices, not a full backend buildout.** — Archived 2026-05-31 → `context/archive/2026-05-30-user-domain-persistence-contract/`. Lesson: —.
 - **S-01: user can sign in, provide basic skin context, and finish onboarding with a saved profile and an empty shelf ready for product intake.** — Archived 2026-06-11 → `context/archive/2026-05-31-first-skin-profile/`. Lesson: —.
