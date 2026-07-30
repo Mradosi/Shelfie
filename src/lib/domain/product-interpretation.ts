@@ -164,6 +164,16 @@ export interface UserScopedProductDetails {
 
 export type InterpretationGenerationAction = "start" | "retry" | "refresh";
 
+export interface ProductInterpretationPreparationFailure {
+  productId: string;
+  message: string;
+}
+
+export interface ProductInterpretationPreparationResult {
+  ready: UserProductInterpretation[];
+  failures: ProductInterpretationPreparationFailure[];
+}
+
 function isInterpretationStatus(value: unknown): value is InterpretationStatus {
   return typeof value === "string" && (INTERPRETATION_STATUS_OPTIONS as readonly string[]).includes(value);
 }
@@ -544,6 +554,46 @@ export async function retryFailedInterpretation(
   productId: string,
 ) {
   return generateInterpretation(supabase, userId, productId, "retry");
+}
+
+export async function prepareUserProductInterpretations(
+  supabase: ProductInterpretationClient,
+  userId: string,
+  productIds: string[],
+): Promise<ProductInterpretationPreparationResult> {
+  const uniqueProductIds = Array.from(new Set(productIds.map((productId) => productId.trim()).filter(Boolean)));
+  const result: ProductInterpretationPreparationResult = { ready: [], failures: [] };
+
+  // Keep provider work bounded even when a user has a large shelf.
+  for (const productId of uniqueProductIds) {
+    try {
+      const { interpretation } = await getUserScopedProductDetails(supabase, userId, productId);
+      const nextInterpretation =
+        interpretation.status === "ready"
+          ? interpretation
+          : interpretation.status === "failed"
+            ? await retryFailedInterpretation(supabase, userId, productId)
+            : interpretation.status === "stale"
+              ? await refreshStaleInterpretation(supabase, userId, productId)
+              : await startInterpretationGeneration(supabase, userId, productId);
+
+      if (nextInterpretation.status === "ready") {
+        result.ready.push(nextInterpretation);
+      } else {
+        result.failures.push({
+          productId,
+          message: nextInterpretation.lastError ?? "Analiza produktu nie została ukończona.",
+        });
+      }
+    } catch (error) {
+      result.failures.push({
+        productId,
+        message: error instanceof Error ? error.message : "Nie udało się przygotować analizy produktu.",
+      });
+    }
+  }
+
+  return result;
 }
 
 async function generateInterpretation(

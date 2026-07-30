@@ -111,6 +111,35 @@ export async function listSharedProducts(supabase: ProductDomainClient) {
   return data.map((row) => mapSharedProduct(row));
 }
 
+export async function listSharedProductsByCategories(
+  supabase: ProductDomainClient,
+  input: SharedProductCategoryLookupInput,
+) {
+  const categories = Array.from(new Set(input.categories.filter(isProductCategory)));
+  if (categories.length === 0) {
+    return [];
+  }
+
+  const excludedProductIds = Array.from(
+    new Set((input.excludeProductIds ?? []).map((productId) => productId.trim()).filter(Boolean)),
+  );
+  const limit = Math.max(1, Math.min(input.limit, 24));
+  const query = supabase.from("products").select(PRODUCT_COLUMNS).in("category", categories).order("updated_at", {
+    ascending: false,
+  });
+
+  if (excludedProductIds.length > 0) {
+    query.not("id", "in", `(${excludedProductIds.join(",")})`);
+  }
+
+  const { data, error } = await query.limit(limit);
+  if (error) {
+    throw new Error(`Nie udało się wczytać kandydatów z katalogu: ${error.message}`);
+  }
+
+  return data.map((row) => mapSharedProduct(row));
+}
+
 export interface SharedProductLookupInput {
   barcode?: string | null;
   name?: string | null;
@@ -120,6 +149,12 @@ export interface SharedProductLookupInput {
 export interface SharedProductSearchInput {
   query: string;
   limit?: number;
+}
+
+export interface SharedProductCategoryLookupInput {
+  categories: ProductCategory[];
+  excludeProductIds?: string[];
+  limit: number;
 }
 
 export interface ConfirmedProductInput {

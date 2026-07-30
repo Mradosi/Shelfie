@@ -1,5 +1,6 @@
-import { useRef, useState } from "react";
-import { ArrowDown, ArrowUp, Plus, RotateCcw, Trash2 } from "lucide-react";
+import { useEffect, useEffectEvent, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { ArrowDown, ArrowUp, Plus, RotateCcw, Trash2, X } from "lucide-react";
 import { PRODUCT_CATEGORY_LABELS, isProductCategory } from "@/lib/domain/product-domain";
 import {
   ROUTINE_ROLE_DESCRIPTIONS,
@@ -33,7 +34,10 @@ interface DraftState {
 
 interface ManualRoutineEditorProps {
   initialDraft: BaseRoutineDraft;
+  savedDraft?: BaseRoutineDraft;
   shelfCatalog: UserShelfCatalogItem[];
+  onDraftChange?: (draft: BaseRoutineDraft) => void;
+  onDirtyChange?: (isDirty: boolean) => void;
 }
 
 function buildShelfLabel(item: UserShelfCatalogItem) {
@@ -91,11 +95,19 @@ function buildInitialDraftState(initialDraft: BaseRoutineDraft) {
   };
 }
 
-export default function ManualRoutineEditor({ initialDraft, shelfCatalog }: ManualRoutineEditorProps) {
+export default function ManualRoutineEditor({
+  initialDraft,
+  savedDraft,
+  shelfCatalog,
+  onDraftChange,
+  onDirtyChange,
+}: ManualRoutineEditorProps) {
   const initialState = buildInitialDraftState(initialDraft);
   const nextIdRef = useRef(initialState.nextCounter);
+  const resetSubmitterRef = useRef<HTMLButtonElement>(null);
+  const allowResetSubmitRef = useRef(false);
   const createClientId = () => `routine-entry-${nextIdRef.current++}`;
-  const initialSerialized = JSON.stringify(initialDraft);
+  const initialSerialized = JSON.stringify(savedDraft ?? initialDraft);
   const [draft, setDraft] = useState<DraftState>(initialState.draft);
   const [activeSection, setActiveSection] = useState<BaseRoutineSectionKey>(
     initialDraft.morning.length > 0 ? "morning" : initialDraft.evening.length > 0 ? "evening" : "morning",
@@ -103,6 +115,7 @@ export default function ManualRoutineEditor({ initialDraft, shelfCatalog }: Manu
   const [selectedShelfItemId, setSelectedShelfItemId] = useState(shelfCatalog[0]?.id ?? "");
   const [selectedRole, setSelectedRole] = useState<RoutineRole>("cleanse");
   const [submissionMode, setSubmissionMode] = useState<"save" | "reset" | null>(null);
+  const [isResetConfirmationOpen, setIsResetConfirmationOpen] = useState(false);
 
   const shelfLookup = shelfCatalog.reduce<Record<string, UserShelfCatalogItem | undefined>>((lookup, item) => {
     lookup[item.id] = item;
@@ -114,6 +127,36 @@ export default function ManualRoutineEditor({ initialDraft, shelfCatalog }: Manu
   const isDirty = serializedDraft !== initialSerialized;
   const activeEntries = draft[activeSection];
   const roleSummary = buildRoleSummary(activeEntries, shelfLookup);
+  const reportDraftChange = useEffectEvent(() => {
+    onDraftChange?.(serializeDraft(draft));
+  });
+  const reportDirtyChange = useEffectEvent(() => {
+    onDirtyChange?.(isDirty);
+  });
+
+  useEffect(() => {
+    reportDraftChange();
+  }, [serializedDraft]);
+
+  useEffect(() => {
+    reportDirtyChange();
+  }, [isDirty]);
+
+  useEffect(() => {
+    if (!isResetConfirmationOpen) {
+      return;
+    }
+
+    const bodyOverflow = document.body.style.overflow;
+    const documentOverflow = document.documentElement.style.overflow;
+    document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = bodyOverflow;
+      document.documentElement.style.overflow = documentOverflow;
+    };
+  }, [isResetConfirmationOpen]);
 
   function addEntry() {
     if (!selectedShelfItemId) {
@@ -434,6 +477,7 @@ export default function ManualRoutineEditor({ initialDraft, shelfCatalog }: Manu
 
           <div className="flex flex-wrap gap-3">
             <button
+              ref={resetSubmitterRef}
               type="submit"
               name="mode"
               value="reset"
@@ -444,14 +488,13 @@ export default function ManualRoutineEditor({ initialDraft, shelfCatalog }: Manu
                   return;
                 }
 
-                if (
-                  !window.confirm(
-                    "Czy na pewno chcesz wyczyścić całą bazową rutynę? Produkty na półce pozostaną bez zmian.",
-                  )
-                ) {
+                if (!allowResetSubmitRef.current) {
                   event.preventDefault();
+                  setIsResetConfirmationOpen(true);
                   return;
                 }
+
+                allowResetSubmitRef.current = false;
               }}
               className="inline-flex items-center gap-2 rounded-full border border-red-400/25 bg-red-950/30 px-4 py-2.5 text-sm font-semibold text-red-100 transition-colors hover:bg-red-950/45 disabled:cursor-not-allowed disabled:opacity-40"
             >
@@ -522,6 +565,63 @@ export default function ManualRoutineEditor({ initialDraft, shelfCatalog }: Manu
           </div>
         </div>
       </aside>
+
+      {isResetConfirmationOpen &&
+        createPortal(
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/75 p-4 backdrop-blur-sm">
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="reset-routine-title"
+              className="w-full max-w-md rounded-[1.75rem] border border-rose-300/25 bg-slate-900 p-6 shadow-2xl"
+            >
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-sm tracking-[0.2em] text-rose-200/70 uppercase">Reset rutyny</p>
+                  <h2 id="reset-routine-title" className="mt-2 text-xl font-semibold text-white">
+                    Wyczyścić bazową rutynę?
+                  </h2>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsResetConfirmationOpen(false);
+                  }}
+                  className="rounded-full border border-white/12 p-2 text-blue-100/70 transition-colors hover:bg-white/10 hover:text-white"
+                  aria-label="Zamknij"
+                >
+                  <X className="size-4" />
+                </button>
+              </div>
+              <p className="mt-4 text-sm leading-6 text-blue-100/75">
+                Produkty na półce pozostaną bez zmian. Możesz później ułożyć nową rutynę ręcznie albo z pomocą AI.
+              </p>
+              <div className="mt-6 flex flex-wrap justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsResetConfirmationOpen(false);
+                  }}
+                  className="rounded-full border border-white/15 bg-white/5 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-white/10"
+                >
+                  Anuluj
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsResetConfirmationOpen(false);
+                    allowResetSubmitRef.current = true;
+                    resetSubmitterRef.current?.form?.requestSubmit(resetSubmitterRef.current);
+                  }}
+                  className="rounded-full bg-rose-300 px-4 py-2.5 text-sm font-semibold text-slate-950 transition-colors hover:bg-rose-200"
+                >
+                  Wyczyść rutynę
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body,
+        )}
     </form>
   );
 }
