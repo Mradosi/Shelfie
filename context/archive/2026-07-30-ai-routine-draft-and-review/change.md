@@ -1,9 +1,10 @@
 ---
 change_id: ai-routine-draft-and-review
 title: AI routine draft and review
-status: implemented
+status: archived
 created: 2026-07-30
 updated: 2026-07-30
+archived_at: 2026-07-30T15:23:46Z
 ---
 
 ## Notes
