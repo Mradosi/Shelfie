@@ -191,7 +191,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
   - Which shared ingredient source should supply the initial glossary and what fields can be treated as trustworthy enough for user-facing copy? — Owner: team. Block: no.
   - Should missing ingredient entries use a bounded on-demand enrichment flow or show a transparent “description unavailable” state in MVP? — Owner: team. Block: no.
 - **Risk:** This slice must keep ingredient knowledge shared and cacheable by normalized INCI name. If every click invokes AI, the details screen becomes slow, costly, and inconsistent; if it becomes a full ingredient-science database, it will delay the core product and routine flows.
-- **Status:** done
+- **Status:** proposed
 
 ### S-14: Admin catalog batch import
 
