@@ -1,5 +1,5 @@
 ---
-import ManualRoutineEditor from "@/components/routine/ManualRoutineEditor";
+import RoutineWorkspace from "@/components/routine/RoutineWorkspace";
 import Layout from "@/layouts/Layout.astro";
 import { consumeFlashMessage } from "@/lib/flash-message";
 import {
@@ -208,7 +208,7 @@ const currentStateCopy = pageStateCopy[pageState];
               )}
 
               <div class="mt-8">
-                <ManualRoutineEditor client:load initialDraft={initialDraft} shelfCatalog={shelfCatalog} />
+                <RoutineWorkspace client:load initialDraft={initialDraft} shelfCatalog={shelfCatalog} />
               </div>
             </>
           )

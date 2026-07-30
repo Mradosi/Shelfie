@@ -3,7 +3,7 @@ project: Shelfie
 version: 1
 status: draft
 created: 2026-05-28
-updated: 2026-07-29
+updated: 2026-07-30
 prd_version: 1
 main_goal: market-feedback
 top_blocker: decisions
@@ -38,6 +38,7 @@ Shelfie ma pomóc użytkownikowi uporządkować pielęgnację na bazie jego real
 | S-11 | personalized-product-fit-analysis  | user can open any known product's details and see a cached AI analysis of how it fits their skin profile                         | S-01, S-02, F-02 | US-01, FR-010                                                                      | done     |
 | S-13 | shelf-catalog-and-navigation       | user can browse their shelf, open product details, and move through the core product-to-routine flow from one clear navigation     | S-02, S-11      | US-01, FR-003, FR-008, FR-009                                                      | done     |
 | S-12 | ingredient-details-and-glossary    | user can expand an INCI ingredient on product details and read a cached, plain-language description of its cosmetic role and caveats | S-11, F-02      | FR-004, FR-010                                                                      | proposed |
+| S-14 | admin-catalog-batch-import         | administrator can curate and confirm batches of AI-assisted product candidates before they enter the shared catalog                 | F-02, S-10      | FR-003, FR-004, FR-016, FR-017                                                      | proposed |
 | S-04 | ai-routine-draft-and-review        | user can ask AI for a base-routine draft or improvement suggestions, then review and edit the result before save                    | S-03, S-11       | US-01, FR-008, FR-010                                                              | proposed |
 | S-05 | todays-routine-consumption         | user can view today's AM/PM routine from the saved base configuration and make lightweight one-off usage edits from routine screens | S-03             | US-01, FR-009                                                                      | done     |
 | S-09 | day-specific-routine-overrides     | user can override selected weekdays without rebuilding the shared base AM/PM routine                                                | S-05             | US-01, FR-009                                                                      | proposed |
@@ -53,6 +54,7 @@ Navigation aid — groups items that share a Prerequisites chain. Canonical orde
 | ------ | ----------------------- | ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | A      | Core routine loop       | `F-01` → `S-01` → `S-02` → `S-03` → `S-05` | This is the main market-feedback path; `S-05` is the first daily-consumption checkpoint after the user proves they can manage a base routine without AI. |
 | B      | AI assistance layer     | `F-02` → `S-11` → `S-04` → `S-06`          | This stream first establishes per-user product interpretation, then lets AI use that cached understanding to draft and explain routines more consistently. |
+| I      | Catalog curation        | `F-02` → `S-10` → `S-14`                  | This internal-only stream grows the shared catalog through sourced, human-approved imports; it can later expand the choice available to routine AI without blocking its shelf-based flow. |
 | G      | Ingredient explainability | `F-02` → `S-11` → `S-12`                  | This extension makes existing INCI lists understandable through a shared, cacheable ingredient glossary without adding per-click AI calls. |
 | H      | Shelf navigation         | `S-02` → `S-11` → `S-13` → `S-07`         | This stream turns stored shelf membership into a usable product hub before adding notes, reactions, or check-ins. |
 | F      | Intake resilience       | `S-02` → `S-10`                            | This slice hardens the existing AI web search fallback so broken source URLs trigger bounded self-healing retries instead of user-visible dead-end errors. |
@@ -191,6 +193,20 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Risk:** This slice must keep ingredient knowledge shared and cacheable by normalized INCI name. If every click invokes AI, the details screen becomes slow, costly, and inconsistent; if it becomes a full ingredient-science database, it will delay the core product and routine flows.
 - **Status:** proposed
 
+### S-14: Admin catalog batch import
+
+- **Outcome:** an administrator can start an AI-assisted import batch for a selected brand or catalog scope, review one sourced product candidate at a time, correct it when needed, and explicitly approve or reject it before it enters the shared `products` catalog.
+- **Change ID:** admin-catalog-batch-import
+- **PRD refs:** FR-003, FR-004, FR-016, FR-017
+- **Prerequisites:** F-02, S-10
+- **Parallel with:** S-12
+- **Blockers:** —
+- **Unknowns:**
+  - Which initial import scopes should be supported beyond a single brand: product category, popularity-based discovery, or both? — Owner: team. Block: no.
+  - What is the minimal administrator authorization boundary for the internal panel in the MVP? — Owner: team. Block: implementation.
+- **Risk:** This slice must remain a bounded, human-in-the-loop catalog curation flow. AI may discover, extract, and prefill candidates, but it must never fabricate ingredients or publish products without a reviewable source and an explicit administrator decision. It must not become an unrestricted crawler, a general marketplace integration, or a user-facing shopping feature.
+- **Status:** proposed
+
 ### S-04: AI routine draft and review
 
 - **Outcome:** user can ask AI to draft the base routine from owned products and skin context, review missing-step or product-role suggestions, and accept or edit the result before saving it into the same base-routine model.
@@ -278,7 +294,8 @@ Foundations below assume these are present and do NOT re-scaffold them.
 | S-11       | personalized-product-fit-analysis  | Add cached per-user product interpretation and product-details analysis | no                    | Implemented; archive before starting a new change.                                                    |
 | S-13       | shelf-catalog-and-navigation       | Add a “Moja półka” catalog and core product navigation                  | yes                   | All prerequisites are complete; keep scope to catalog, details links, shelf membership actions, and primary navigation. |
 | S-12       | ingredient-details-and-glossary    | Add expandable, cached ingredient descriptions on product details       | yes                   | All prerequisites are complete; use shared ingredient records keyed by normalized INCI name, not AI calls on click. |
-| S-04       | ai-routine-draft-and-review        | Add AI draft and review flow on top of the manual base-routine model    | yes                   | All prerequisites are complete; this should accelerate, not replace, manual routine management.      |
+| S-14       | admin-catalog-batch-import         | Add an internal, review-first batch import for shared catalog products  | yes                   | Keep imports source-backed and administrator-confirmed; use it to seed catalog coverage before AI recommends products from outside the shelf. |
+| S-04       | ai-routine-draft-and-review        | Add AI draft and review flow on top of the manual base-routine model    | yes                   | All prerequisites are complete; start with the current catalog and let S-14 expand later recommendation coverage. |
 | S-05       | todays-routine-consumption         | Ship today's AM/PM routine consumption flow from the saved base routine | yes                   | All prerequisites are complete; this is the first daily-use slice.                                   |
 | S-09       | day-specific-routine-overrides     | Add selected-day overrides on top of the shared base AM/PM routine      | no                    | Wait for S-05 so overrides extend a proven base-and-today flow instead of expanding S-03.          |
 | S-06       | routine-warnings-and-guidance      | Add soft routine warnings and guidance during routine use               | no                    | Wait for S-04 and S-05.                                                                             |
