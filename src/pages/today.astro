@@ -1,6 +1,12 @@
 ---
-import TodayRoutine from "@/components/routine/TodayRoutine.astro";
+import TodayRoutine from "@/components/routine/TodayRoutine";
 import Layout from "@/layouts/Layout.astro";
+import {
+  createRoutineGuidance,
+  createRoutineGuidanceInputs,
+  type RoutineGuidance,
+} from "@/lib/domain/routine-guidance";
+import { listUserProductInterpretations } from "@/lib/domain/product-interpretation";
 import { getRoutineDayKeyForDate, getRoutineDaySchedule, ROUTINE_TIME_ZONE } from "@/lib/domain/routine-schedule";
 import { createClient } from "@/lib/supabase";
 import {
@@ -31,6 +37,7 @@ const supabase = createClient(Astro.request.headers, Astro.cookies);
 let routeError: string | null = null;
 let shelfCatalog: UserShelfCatalogItem[] = [];
 let daySchedule = getRoutineDaySchedule({}, todayDayKey);
+let todayGuidance: RoutineGuidance | null = null;
 
 if (!supabase) {
   routeError = "Supabase nie jest skonfigurowane.";
@@ -48,6 +55,29 @@ if (!supabase) {
 
     shelfCatalog = ownedShelfCatalog;
     daySchedule = getRoutineDaySchedule(routineConfig?.schedule ?? {}, todayDayKey);
+
+    try {
+      const interpretations = await listUserProductInterpretations(
+        supabase,
+        user.id,
+        ownedShelfCatalog.map((item) => item.productId),
+      );
+      todayGuidance = createRoutineGuidance(
+        {
+          morning: daySchedule.morning.map((entry) => ({
+            shelfItemId: entry.shelf_item_id,
+            routineRole: entry.routine_role,
+          })),
+          evening: daySchedule.evening.map((entry) => ({
+            shelfItemId: entry.shelf_item_id,
+            routineRole: entry.routine_role,
+          })),
+        },
+        createRoutineGuidanceInputs(ownedShelfCatalog, interpretations),
+      );
+    } catch {
+      todayGuidance = null;
+    }
   } catch (error) {
     routeError = isMissingUserDomainContractError(error)
       ? getMissingUserDomainContractMessage()
@@ -93,7 +123,12 @@ const hasRoutineEntries = daySchedule.morning.length > 0 || daySchedule.evening.
           !routeError &&
             (hasRoutineEntries ? (
               <div class="mt-6">
-                <TodayRoutine daySchedule={daySchedule} shelfCatalog={shelfCatalog} />
+                <TodayRoutine
+                  client:load
+                  daySchedule={daySchedule}
+                  shelfCatalog={shelfCatalog}
+                  guidance={todayGuidance}
+                />
               </div>
             ) : (
               <section class="mt-6 rounded-[1.75rem] border border-dashed border-cyan-200/25 bg-cyan-200/6 p-6 sm:p-8">

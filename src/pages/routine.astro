@@ -7,8 +7,17 @@ import {
   createEmptyBaseRoutine,
   hasNonEmptyBaseRoutine,
 } from "@/lib/domain/routine-schedule";
+import { getSharedProductsByIds } from "@/lib/domain/product-domain";
+import { listUserProductInterpretations } from "@/lib/domain/product-interpretation";
+import {
+  createRoutineAiAssessmentFingerprint,
+  createRoutineAiShelfInputs,
+  getUserRoutineAiAssessment,
+} from "@/lib/domain/routine-ai-assessment";
+import { parseRoutineAiAssessment, type RoutineAiAssessment } from "@/lib/domain/routine-ai";
 import { createClient } from "@/lib/supabase";
 import {
+  createUserProfileInterpretationBasis,
   getMissingUserDomainContractMessage,
   getUserProfile,
   getUserRoutineConfig,
@@ -30,6 +39,9 @@ const supabase = createClient(Astro.request.headers, Astro.cookies);
 let routeError: string | null = null;
 let initialDraft = createEmptyBaseRoutine();
 let shelfCatalog = [];
+let initialAssessment: RoutineAiAssessment | null = null;
+let initialAssessmentGeneratedAt: string | null = null;
+let initialAssessmentState: "current" | "stale" | "none" = "none";
 
 if (!supabase) {
   routeError = "Supabase nie jest skonfigurowane.";
@@ -49,6 +61,43 @@ if (!supabase) {
 
     if (routineConfig) {
       initialDraft = collapseWeeklyScheduleToBaseRoutine(routineConfig.schedule);
+    }
+
+    if (hasNonEmptyBaseRoutine(initialDraft)) {
+      try {
+        const [products, interpretations, storedAssessment] = await Promise.all([
+          getSharedProductsByIds(
+            supabase,
+            ownedShelfCatalog.map((item) => item.productId),
+          ),
+          listUserProductInterpretations(
+            supabase,
+            user.id,
+            ownedShelfCatalog.map((item) => item.productId),
+          ),
+          getUserRoutineAiAssessment(supabase, user.id),
+        ]);
+        if (storedAssessment) {
+          const assessmentShelf = createRoutineAiShelfInputs(ownedShelfCatalog, products, interpretations);
+          const fingerprint = await createRoutineAiAssessmentFingerprint(
+            createUserProfileInterpretationBasis(profile),
+            initialDraft,
+            assessmentShelf,
+          );
+          if (storedAssessment.inputFingerprint === fingerprint) {
+            initialAssessment = parseRoutineAiAssessment(storedAssessment.assessment, initialDraft, assessmentShelf);
+            initialAssessmentGeneratedAt = storedAssessment.generatedAt;
+            initialAssessmentState = "current";
+          } else {
+            initialAssessmentState = "stale";
+          }
+        }
+      } catch {
+        // Assessment is advisory. The editor remains usable if this optional read is unavailable.
+        initialAssessment = null;
+        initialAssessmentGeneratedAt = null;
+        initialAssessmentState = "none";
+      }
     }
   } catch (loadError) {
     routeError = isMissingUserDomainContractError(loadError)
@@ -208,7 +257,14 @@ const currentStateCopy = pageStateCopy[pageState];
               )}
 
               <div class="mt-8">
-                <RoutineWorkspace client:load initialDraft={initialDraft} shelfCatalog={shelfCatalog} />
+                <RoutineWorkspace
+                  client:load
+                  initialDraft={initialDraft}
+                  shelfCatalog={shelfCatalog}
+                  initialAssessment={initialAssessment}
+                  initialAssessmentGeneratedAt={initialAssessmentGeneratedAt}
+                  initialAssessmentState={initialAssessmentState}
+                />
               </div>
             </>
           )

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { Check, CircleAlert, LoaderCircle, RefreshCw, Sparkles, X } from "lucide-react";
-import type { RoutineAiMissingStep, RoutineAiProposal } from "@/lib/domain/routine-ai";
+import type { RoutineAiAssessment, RoutineAiMissingStep, RoutineAiProposal } from "@/lib/domain/routine-ai";
 import {
   hasNonEmptyBaseRoutine,
   ROUTINE_ROLE_LABELS,
@@ -10,6 +10,7 @@ import {
   type RoutineRole,
 } from "@/lib/domain/routine-schedule";
 import type { UserShelfCatalogItem } from "@/lib/domain/user-domain";
+import RoutineAiAssessmentPanel from "@/components/routine/RoutineAiAssessmentPanel";
 import ManualRoutineEditor from "@/components/routine/ManualRoutineEditor";
 
 type RoutineAiStage = "idle" | "preparing" | "generating" | "evaluating_candidates" | "ready" | "blocked" | "error";
@@ -43,6 +44,9 @@ interface MissingStepRecommendation {
 interface RoutineWorkspaceProps {
   initialDraft: BaseRoutineDraft;
   shelfCatalog: UserShelfCatalogItem[];
+  initialAssessment: RoutineAiAssessment | null;
+  initialAssessmentGeneratedAt: string | null;
+  initialAssessmentState: "current" | "stale" | "none";
 }
 
 const SECTION_LABELS: Record<BaseRoutineSectionKey, string> = {
@@ -116,11 +120,20 @@ function appendCandidateToProposal(
   };
 }
 
-export default function RoutineWorkspace({ initialDraft, shelfCatalog: initialShelfCatalog }: RoutineWorkspaceProps) {
+export default function RoutineWorkspace({
+  initialDraft,
+  shelfCatalog: initialShelfCatalog,
+  initialAssessment,
+  initialAssessmentGeneratedAt,
+  initialAssessmentState,
+}: RoutineWorkspaceProps) {
   const [draft, setDraft] = useState(initialDraft);
   const [savedDraft, setSavedDraft] = useState(initialDraft);
   const [editorRevision, setEditorRevision] = useState(0);
   const [shelfCatalog, setShelfCatalog] = useState(initialShelfCatalog);
+  const [assessment, setAssessment] = useState(initialAssessment);
+  const [assessmentGeneratedAt, setAssessmentGeneratedAt] = useState(initialAssessmentGeneratedAt);
+  const [assessmentState, setAssessmentState] = useState(initialAssessmentState);
   const [stage, setStage] = useState<RoutineAiStage>("idle");
   const [proposal, setProposal] = useState<RoutineAiProposal | null>(null);
   const [recommendations, setRecommendations] = useState<MissingStepRecommendation[]>([]);
@@ -172,11 +185,19 @@ export default function RoutineWorkspace({ initialDraft, shelfCatalog: initialSh
       }
 
       setStage("generating");
-      const generated = await postJson<{ proposal: RoutineAiProposal }>("/api/domain/routine/ai", {
+      const generated = await postJson<{
+        proposal: RoutineAiProposal;
+        assessment: { assessment: RoutineAiAssessment; generatedAt: string } | null;
+      }>("/api/domain/routine/ai", {
         action: "generate_proposal",
         currentDraft: draft,
       });
       setProposal(generated.proposal);
+      if (generated.assessment) {
+        setAssessment(generated.assessment.assessment);
+        setAssessmentGeneratedAt(generated.assessment.generatedAt);
+        setAssessmentState("current");
+      }
 
       if (generated.proposal.missingSteps.length === 0) {
         setStage("ready");
@@ -219,6 +240,9 @@ export default function RoutineWorkspace({ initialDraft, shelfCatalog: initialSh
       });
       setDraft(proposal.routine);
       setSavedDraft(proposal.routine);
+      setAssessment(null);
+      setAssessmentGeneratedAt(null);
+      setAssessmentState("stale");
       setProposal(null);
       setRecommendations([]);
       setStage("idle");
@@ -265,6 +289,15 @@ export default function RoutineWorkspace({ initialDraft, shelfCatalog: initialSh
     }
   }
 
+  function handleDraftChange(nextDraft: BaseRoutineDraft) {
+    setDraft(nextDraft);
+    if (JSON.stringify(nextDraft) !== JSON.stringify(savedDraft)) {
+      setAssessment(null);
+      setAssessmentGeneratedAt(null);
+      setAssessmentState("stale");
+    }
+  }
+
   return (
     <div className="space-y-6">
       <section className="rounded-[1.75rem] border border-cyan-300/20 bg-cyan-300/8 p-5 sm:p-6">
@@ -275,8 +308,8 @@ export default function RoutineWorkspace({ initialDraft, shelfCatalog: initialSh
               {hasCurrentDraft ? "Sprawdź i popraw rutynę z AI" : "Ułóż pierwszą rutynę z AI"}
             </h2>
             <p className="mt-3 text-sm leading-6 text-blue-100/75">
-              Asystent najpierw sprawdza aktualne analizy produktów z Twojej półki. Potem przygotowuje propozycję, którą
-              możesz obejrzeć przed decyzją o zapisie.
+              Asystent ocenia pełne składy produktów użytych w rutynie, ich połączenie i Twój profil skóry. Potem może
+              zaproponować korektę, którą obejrzysz przed decyzją o zapisie.
             </p>
           </div>
           <button
@@ -284,6 +317,7 @@ export default function RoutineWorkspace({ initialDraft, shelfCatalog: initialSh
             disabled={
               shelfCatalog.length === 0 ||
               proposal !== null ||
+              isDraftDirty ||
               stage === "preparing" ||
               stage === "generating" ||
               stage === "evaluating_candidates"
@@ -315,6 +349,13 @@ export default function RoutineWorkspace({ initialDraft, shelfCatalog: initialSh
               Może to chwilę potrwać przy produktach, które nie miały jeszcze aktualnej analizy.
             </p>
           </div>
+        )}
+
+        {isDraftDirty && (
+          <p className="mt-5 rounded-2xl border border-amber-200/25 bg-amber-950/25 px-4 py-3 text-sm leading-6 text-amber-100">
+            Zapisz zmiany w rutynie przed oceną AI. Dzięki temu wynik będzie można zachować i wyświetlić przy kolejnym
+            wejściu.
+          </p>
         )}
 
         {stage === "blocked" && (
@@ -363,6 +404,25 @@ export default function RoutineWorkspace({ initialDraft, shelfCatalog: initialSh
         <p className="rounded-2xl border border-rose-300/25 bg-rose-950/25 px-4 py-3 text-sm leading-6 text-rose-100">
           {requestError}
         </p>
+      )}
+
+      {assessmentState === "current" && assessment && assessmentGeneratedAt && (
+        <RoutineAiAssessmentPanel
+          assessment={assessment}
+          generatedAt={assessmentGeneratedAt}
+          shelfCatalog={shelfCatalog}
+        />
+      )}
+
+      {assessmentState === "stale" && !isDraftDirty && hasSavedRoutine && (
+        <section className="rounded-[1.75rem] border border-amber-200/25 bg-amber-950/20 p-5 sm:p-6">
+          <p className="text-sm tracking-[0.24em] text-amber-100/65 uppercase">Ocena AI wymaga odświeżenia</p>
+          <h2 className="mt-2 text-2xl font-semibold text-white">Rutyna lub jej dane źródłowe zmieniły się</h2>
+          <p className="mt-3 max-w-3xl text-sm leading-6 text-blue-100/80">
+            Poprzednia ocena nie jest już pokazywana jako aktualna. Sprawdź rutynę ponownie, aby AI uwzględniło obecny
+            układ, profil skóry i pełne składy produktów.
+          </p>
+        </section>
       )}
 
       {proposal && stage === "ready" && (
@@ -508,7 +568,7 @@ export default function RoutineWorkspace({ initialDraft, shelfCatalog: initialSh
         initialDraft={draft}
         savedDraft={savedDraft}
         shelfCatalog={shelfCatalog}
-        onDraftChange={setDraft}
+        onDraftChange={handleDraftChange}
       />
 
       {isApplyConfirmationOpen &&

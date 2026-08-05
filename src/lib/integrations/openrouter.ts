@@ -4,6 +4,7 @@ import { lookupIncidecoderProduct } from "@/lib/integrations/incidecoder";
 
 const OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1/chat/completions";
 const OPENROUTER_MODEL = "openai/gpt-4.1";
+const MAX_SOURCE_VALIDATION_RETRIES = 2;
 
 interface OpenRouterMessage {
   role: "system" | "user";
@@ -107,6 +108,22 @@ class AiWebSearchError extends Error {
     super(`[trace ${traceId}] ${message}`);
     this.name = "AiWebSearchError";
   }
+}
+
+class SourceValidationError extends AiWebSearchError {
+  constructor(
+    traceId: string,
+    readonly sourceUrl: string | null,
+    readonly reason: string,
+  ) {
+    super(traceId, reason);
+    this.name = "SourceValidationError";
+  }
+}
+
+interface RejectedSource {
+  sourceUrl: string | null;
+  reason: string;
 }
 
 function normalizeOptionalText(value: string | null | undefined) {
@@ -331,7 +348,7 @@ function computeIncidecoderMatch(
   };
 }
 
-function buildMessages(input: AiWebSearchInput, supportingContext: string) {
+function buildMessages(input: AiWebSearchInput, supportingContext: string, rejectedSources: RejectedSource[] = []) {
   const allowedCategories = [
     { slug: "cleanser", label: "Produkt myjący", when: "cleanser, wash, foam, gel cleanser" },
     { slug: "makeup_remover", label: "Demakijaż", when: "micellar water, balm, oil cleanser used for makeup removal" },
@@ -365,7 +382,7 @@ function buildMessages(input: AiWebSearchInput, supportingContext: string) {
     {
       role: "system",
       content:
-        "You are helping a Polish skincare app recover a cosmetic product INCI list for human review. You MUST use web search for this task and you must issue at least one web search tool call before answering. Search the web yourself and first try to find the official manufacturer product page by searching for the brand name and product name together, not by inventing or inferring a domain pattern. If a manufacturer result appears in search, prefer it over any retailer, marketplace, or INCIDecoder page. Only if you cannot find a credible manufacturer page after searching may you use INCIDecoder or retailer pages, and you must explain that downgrade explicitly. Prefer Polish-market manufacturer pages when available, but do not fabricate .pl URLs or any URL structure. Never guess or synthesize a likely ingredient list from general knowledge. If supporting context already contains a strong exact-match ingredient list, preserve it exactly rather than paraphrasing, shortening, or substituting a similar product. The category field MUST be exactly one of the provided category slugs. Do not invent free-text categories. Use other only when no listed category clearly fits. Always try to return an imageUrl from the same accepted source page when one is available, and it must be a direct image asset URL, not an HTML page URL. Before returning imageUrl, make sure it looks like the main product photo / packshot and not an icon, logo, badge, SVG marker, decorative asset, or placeholder. If you cannot find a reliable direct product image URL, return an empty string for imageUrl. If the query is too broad or multiple plausible variants exist that differ by concentration, SPF, size, line, generation, day/night, or another identity-defining discriminator, DO NOT pick one arbitrarily. In that case return status='ambiguous' with 2 to 5 most likely variants and a short refinement question. For very broad searches like brand+category families, still return only up to 5 likely variants and let the user refine manually. Only return status='resolved' when you can verify an exact or very strong product-variant match. Return only strict JSON with keys: status, question, refinementHint, variants, name, brand, category, barcode, imageUrl, inciText, sourceUrl, sourceType, sourceTitle, quotedEvidence, matchConfidence, exactVariantMatch, reasoning. For ambiguous results, variants must be an array of objects with keys: id, label, description, refinedName, refinedBrand. For resolved results, variants should be an empty array and question/refinementHint empty strings. quotedEvidence must be a short verbatim fragment copied from the same source page that proves the exact product or INCI match. Use empty strings for unknown scalar fields, sourceType limited to manufacturer|incidecoder|retailer|other, matchConfidence limited to high|medium|low, exactVariantMatch as true/false, and status limited to resolved|ambiguous. Do not include markdown fences or commentary.",
+        "You are helping a Polish skincare app recover a cosmetic product INCI list for human review. You MUST use web search for this task and you must issue at least one web search tool call before answering. Search the web yourself and first try to find the official manufacturer product page by searching for the brand name and product name together, not by inventing or inferring a domain pattern. If a manufacturer result appears in search, prefer it over any retailer, marketplace, or INCIDecoder page. Only if you cannot find a credible manufacturer page after searching may you use INCIDecoder or retailer pages, and you must explain that downgrade explicitly. Prefer Polish-market manufacturer pages when available, but do not fabricate .pl URLs or any URL structure. Never guess or synthesize a likely ingredient list from general knowledge. If supporting context already contains a strong exact-match ingredient list, preserve it exactly rather than paraphrasing, shortening, or substituting a similar product. The category field MUST be exactly one of the provided category slugs. Do not invent free-text categories. Use other only when no listed category clearly fits. Always try to return an imageUrl from the same accepted source page when one is available, and it must be a direct image asset URL, not an HTML page URL. Before returning imageUrl, make sure it looks like the main product photo / packshot and not an icon, logo, badge, SVG marker, decorative asset, or placeholder. If you cannot find a reliable direct product image URL, return an empty string for imageUrl. If rejectedSources are supplied, they were already validated as unusable: do not return any of them again and search for another live source. If the query is too broad or multiple plausible variants exist that differ by concentration, SPF, size, line, generation, day/night, or another identity-defining discriminator, DO NOT pick one arbitrarily. In that case return status='ambiguous' with 2 to 5 most likely variants and a short refinement question. For very broad searches like brand+category families, still return only up to 5 likely variants and let the user refine manually. Only return status='resolved' when you can verify an exact or very strong product-variant match. All user-facing text in question, refinementHint, variant label, and variant description MUST be in Polish. Return only strict JSON with keys: status, question, refinementHint, variants, name, brand, category, barcode, imageUrl, inciText, sourceUrl, sourceType, sourceTitle, quotedEvidence, matchConfidence, exactVariantMatch, reasoning. For ambiguous results, variants must be an array of objects with keys: id, label, description, refinedName, refinedBrand. For resolved results, variants should be an empty array and question/refinementHint empty strings. quotedEvidence must be a short verbatim fragment copied from the same source page that proves the exact product or INCI match. Use empty strings for unknown scalar fields, sourceType limited to manufacturer|incidecoder|retailer|other, matchConfidence limited to high|medium|low, exactVariantMatch as true/false, and status limited to resolved|ambiguous. Do not include markdown fences or commentary.",
     },
     {
       role: "user",
@@ -382,6 +399,7 @@ function buildMessages(input: AiWebSearchInput, supportingContext: string) {
           barcode: normalizeOptionalText(input.barcode),
         },
         supportingContext,
+        rejectedSources,
       }),
     },
   ];
@@ -394,7 +412,7 @@ function buildAmbiguityMessages(input: AiWebSearchInput, supportingContext: stri
     {
       role: "system",
       content:
-        "You are helping a Polish skincare app disambiguate a cosmetic product query before building a final review draft. You MUST use web search for this task and you must issue at least one web search tool call before answering. Search for the official manufacturer naming first. Do not return a final resolved product. Instead, return only a strict JSON object with keys: question, refinementHint, variants. variants must be an array of 2 to 5 objects with keys: id, label, description, refinedName, refinedBrand. Each variant should be a plausible product the user may have meant, using concise human-facing labels and descriptions that emphasize the distinguishing feature such as concentration, SPF, size, line, or generation. Prefer manufacturer wording for refinedName. If the search space is huge, still return at most 5 likely variants and rely on refinementHint to tell the user to type a more specific name.",
+        "You are helping a Polish skincare app disambiguate a cosmetic product query before building a final review draft. You MUST use web search for this task and you must issue at least one web search tool call before answering. Search for the official manufacturer naming first. Do not return a final resolved product. Instead, return only a strict JSON object with keys: question, refinementHint, variants. All user-facing text, including question, refinementHint, variant label, and variant description, MUST be in Polish. Do not add prose before or after the JSON and do not wrap it in Markdown code fences. variants must be an array of 2 to 5 objects with keys: id, label, description, refinedName, refinedBrand. Each variant should be a plausible product the user may have meant, using concise human-facing labels and descriptions that emphasize the distinguishing feature such as concentration, SPF, size, line, or generation. Prefer manufacturer wording for refinedName. If the search space is huge, still return at most 5 likely variants and rely on refinementHint to tell the user to type a more specific name.",
     },
     {
       role: "user",
@@ -415,25 +433,71 @@ function buildAmbiguityMessages(input: AiWebSearchInput, supportingContext: stri
   return messages;
 }
 
+function tryParseJsonObject(value: string) {
+  try {
+    const parsed: unknown = JSON.parse(value.trim());
+    return typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)
+      ? (parsed as Record<string, unknown>)
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+function extractFirstJsonObject(content: string) {
+  for (let start = content.indexOf("{"); start !== -1; start = content.indexOf("{", start + 1)) {
+    let depth = 0;
+    let inString = false;
+    let isEscaped = false;
+
+    for (let index = start; index < content.length; index += 1) {
+      const character = content[index];
+      if (inString) {
+        if (isEscaped) {
+          isEscaped = false;
+        } else if (character === "\\") {
+          isEscaped = true;
+        } else if (character === '"') {
+          inString = false;
+        }
+        continue;
+      }
+
+      if (character === '"') {
+        inString = true;
+      } else if (character === "{") {
+        depth += 1;
+      } else if (character === "}") {
+        depth -= 1;
+        if (depth === 0) {
+          const parsed = tryParseJsonObject(content.slice(start, index + 1));
+          if (parsed) {
+            return parsed;
+          }
+          break;
+        }
+      }
+    }
+  }
+
+  return null;
+}
+
 function parseJsonObject(content: string) {
-  const trimmed = content.trim();
-  const jsonMatch = /\{[\s\S]*\}$/.exec(trimmed);
-  if (!jsonMatch) {
+  const fencedCandidates = Array.from(content.matchAll(/```(?:json)?\s*([\s\S]*?)```/gi), (match) => match[1]);
+  for (const candidate of fencedCandidates) {
+    const parsed = tryParseJsonObject(candidate);
+    if (parsed) {
+      return parsed;
+    }
+  }
+
+  const parsed = tryParseJsonObject(content) ?? extractFirstJsonObject(content);
+  if (!parsed) {
     throw new Error("OpenRouter did not return a JSON object");
   }
 
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(jsonMatch[0]);
-  } catch {
-    throw new Error("OpenRouter returned invalid JSON");
-  }
-
-  if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
-    throw new Error("OpenRouter returned an unexpected payload shape");
-  }
-
-  return parsed as Record<string, unknown>;
+  return parsed;
 }
 
 function parseDraftField(record: Record<string, unknown>, fieldName: string) {
@@ -534,7 +598,11 @@ function shouldForceVariantClarification(
   };
 }
 
-async function requestOpenRouter(messages: OpenRouterMessage[], traceId: string, stage: "resolve" | "ambiguity") {
+async function requestOpenRouter(
+  messages: OpenRouterMessage[],
+  traceId: string,
+  stage: "resolve" | "resolve_retry" | "ambiguity",
+) {
   const response = await fetch(OPENROUTER_BASE_URL, {
     method: "POST",
     headers: {
@@ -641,15 +709,24 @@ async function validateModelSource(input: AiWebSearchInput, parsed: Record<strin
   const quotedEvidence = parseDraftField(parsed, "quotedEvidence");
 
   if (!sourceUrl) {
-    throw new AiWebSearchError(traceId, "Model nie zwrócił sourceUrl do weryfikacji");
+    throw new SourceValidationError(traceId, null, "Model nie zwrócił adresu źródła do weryfikacji.");
   }
 
   const normalizedUrl = normalizeUrl(sourceUrl);
   if (!normalizedUrl) {
-    throw new AiWebSearchError(traceId, "Model zwrócił nieprawidłowy sourceUrl");
+    throw new SourceValidationError(traceId, sourceUrl, "Model zwrócił nieprawidłowy adres źródła.");
   }
 
-  const page = await fetchSourcePage(normalizedUrl.toString());
+  let page: Awaited<ReturnType<typeof fetchSourcePage>>;
+  try {
+    page = await fetchSourcePage(normalizedUrl.toString());
+  } catch (error) {
+    throw new SourceValidationError(
+      traceId,
+      normalizedUrl.toString(),
+      `Nie udało się połączyć ze stroną źródłową: ${error instanceof Error ? error.message : "nieznany błąd"}.`,
+    );
+  }
   logAiWebSearch("info", "Fetched source page for validation", {
     traceId,
     sourceUrl: normalizedUrl.toString(),
@@ -658,7 +735,7 @@ async function validateModelSource(input: AiWebSearchInput, parsed: Record<strin
   });
 
   if (!page.ok) {
-    throw new AiWebSearchError(traceId, `Source page validation failed with ${page.status}`);
+    throw new SourceValidationError(traceId, normalizedUrl.toString(), `Strona źródłowa zwróciła HTTP ${page.status}.`);
   }
 
   const sourceType = inferSourceTypeFromHostname(normalizedUrl.hostname, input.brand);
@@ -728,22 +805,55 @@ export async function resolveAiWebSearchDraft(input: AiWebSearchInput): Promise<
         supportingMatch,
       });
 
-  const parsed = await requestOpenRouter(buildMessages(input, supportingContext), traceId, "resolve");
-  const status = parseStatus(parsed.status);
-  const reasoning = parseDraftField(parsed, "reasoning");
-  const matchConfidence = parseMatchConfidence(parsed.matchConfidence);
+  const rejectedSources: RejectedSource[] = [];
+  let parsed: Record<string, unknown> | null = null;
+  let sourceValidation: Awaited<ReturnType<typeof validateModelSource>> | null = null;
 
-  if (status === "ambiguous") {
-    logAiWebSearch("info", "Model returned ambiguous result", {
+  for (let attempt = 0; attempt <= MAX_SOURCE_VALIDATION_RETRIES; attempt += 1) {
+    const nextParsed = await requestOpenRouter(
+      buildMessages(input, supportingContext, rejectedSources),
       traceId,
-      reasoning,
-      matchConfidence,
-    });
-    return resolveAmbiguityResult(input, supportingContext, supportingLookup?.url ?? null, traceId, reasoning);
+      attempt === 0 ? "resolve" : "resolve_retry",
+    );
+    const status = parseStatus(nextParsed.status);
+    const reasoning = parseDraftField(nextParsed, "reasoning");
+    const matchConfidence = parseMatchConfidence(nextParsed.matchConfidence);
+
+    if (status === "ambiguous") {
+      logAiWebSearch("info", "Model returned ambiguous result", {
+        traceId,
+        reasoning,
+        matchConfidence,
+      });
+      return resolveAmbiguityResult(input, supportingContext, supportingLookup?.url ?? null, traceId, reasoning);
+    }
+
+    try {
+      sourceValidation = await validateModelSource(input, nextParsed, traceId);
+      parsed = nextParsed;
+      break;
+    } catch (error) {
+      if (!(error instanceof SourceValidationError) || attempt === MAX_SOURCE_VALIDATION_RETRIES) {
+        throw error;
+      }
+      rejectedSources.push({ sourceUrl: error.sourceUrl, reason: error.reason });
+      logAiWebSearch("warn", "Source validation failed; retrying AI search", {
+        traceId,
+        attempt: attempt + 1,
+        maxRetries: MAX_SOURCE_VALIDATION_RETRIES,
+        rejectedSource: error.sourceUrl,
+        reason: error.reason,
+      });
+    }
   }
 
+  if (!parsed || !sourceValidation) {
+    throw new AiWebSearchError(traceId, "Nie udało się znaleźć działającej strony źródłowej produktu.");
+  }
+
+  const reasoning = parseDraftField(parsed, "reasoning");
+  const matchConfidence = parseMatchConfidence(parsed.matchConfidence);
   const parsedImageUrl = parseDraftField(parsed, "imageUrl");
-  const sourceValidation = await validateModelSource(input, parsed, traceId);
   const exactVariantMatch = parseBooleanField(parsed, "exactVariantMatch");
   const parsedName = parseDraftField(parsed, "name");
   const sourceTitle = normalizeSourceTitle(parseDraftField(parsed, "sourceTitle") || sourceValidation.sourceTitle);
