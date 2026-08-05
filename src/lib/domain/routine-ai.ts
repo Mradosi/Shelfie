@@ -15,6 +15,7 @@ export const MAX_ROUTINE_AI_MISSING_STEPS = 3;
 export const MAX_ROUTINE_AI_CANDIDATES_PER_STEP = 4;
 export const MAX_ROUTINE_AI_CANDIDATES_TOTAL = 12;
 export const MAX_ROUTINE_AI_RECOMMENDATIONS_PER_STEP = 3;
+export const ROUTINE_AI_ASSESSMENT_INPUT_VERSION = "routine-assessment-v4";
 
 export interface RoutineAiEntryReason {
   section: BaseRoutineSectionKey;
@@ -34,11 +35,55 @@ export interface RoutineAiProposal {
   routine: BaseRoutineDraft;
   entryReasons: RoutineAiEntryReason[];
   missingSteps: RoutineAiMissingStep[];
+  assessment: RoutineAiAssessment | null;
 }
 
 export interface RoutineAiShelfInput {
   shelfItem: UserShelfCatalogItem;
+  product: SharedProduct;
   interpretation: UserProductInterpretation;
+}
+
+export const ROUTINE_AI_ASSESSMENT_SEVERITIES = ["high", "medium", "low"] as const;
+export const ROUTINE_AI_ASSESSMENT_STATUSES = ["requires_attention", "considered"] as const;
+export const ROUTINE_AI_PAIR_ASSESSMENT_VERDICTS = [
+  "no_material_interaction",
+  "potential_compatibility_issue",
+  "potential_tolerance_burden",
+  "uncertain",
+] as const;
+
+export type RoutineAiAssessmentSeverity = (typeof ROUTINE_AI_ASSESSMENT_SEVERITIES)[number];
+export type RoutineAiAssessmentStatus = (typeof ROUTINE_AI_ASSESSMENT_STATUSES)[number];
+export type RoutineAiPairAssessmentVerdict = (typeof ROUTINE_AI_PAIR_ASSESSMENT_VERDICTS)[number];
+
+export interface RoutineAiAssessmentIngredientCitation {
+  shelfItemId: string;
+  ingredient: string;
+}
+
+export interface RoutineAiAssessmentFinding {
+  severity: RoutineAiAssessmentSeverity;
+  section: BaseRoutineSectionKey;
+  shelfItemIds: string[];
+  ingredientCitations: RoutineAiAssessmentIngredientCitation[];
+  message: string;
+  recommendation: string;
+}
+
+export interface RoutineAiCompatibilityAudit {
+  section: BaseRoutineSectionKey;
+  shelfItemIds: [string, string];
+  verdict: RoutineAiPairAssessmentVerdict;
+  reason: string;
+  ingredientCitations: RoutineAiAssessmentIngredientCitation[];
+}
+
+export interface RoutineAiAssessment {
+  overallStatus: RoutineAiAssessmentStatus;
+  summary: string;
+  findings: RoutineAiAssessmentFinding[];
+  compatibilityAudit: RoutineAiCompatibilityAudit[];
 }
 
 export interface RoutineAiCatalogCandidate {
@@ -64,6 +109,227 @@ function parseSection(value: unknown, fieldName: string): BaseRoutineSectionKey 
   }
 
   throw new Error(`${fieldName} musi wskazywać sekcję morning albo evening.`);
+}
+
+function normalizeIngredient(value: string) {
+  return value
+    .normalize("NFKC")
+    .replaceAll(/[‐‑‒–—−]/g, "-")
+    .trim()
+    .replaceAll(/\s+/g, " ")
+    .toLocaleLowerCase("en-US");
+}
+
+function parseAssessmentSeverity(value: unknown): RoutineAiAssessmentSeverity {
+  if (typeof value === "string" && (ROUTINE_AI_ASSESSMENT_SEVERITIES as readonly string[]).includes(value)) {
+    return value as RoutineAiAssessmentSeverity;
+  }
+
+  throw new Error("Poziom oceny rutyny musi być jedną z obsługiwanych opcji.");
+}
+
+function parseAssessmentStatus(value: unknown): RoutineAiAssessmentStatus {
+  if (typeof value === "string" && (ROUTINE_AI_ASSESSMENT_STATUSES as readonly string[]).includes(value)) {
+    return value as RoutineAiAssessmentStatus;
+  }
+
+  throw new Error("Status oceny rutyny musi być jedną z obsługiwanych opcji.");
+}
+
+function parsePairAssessmentVerdict(value: unknown): RoutineAiPairAssessmentVerdict {
+  if (typeof value === "string" && (ROUTINE_AI_PAIR_ASSESSMENT_VERDICTS as readonly string[]).includes(value)) {
+    return value as RoutineAiPairAssessmentVerdict;
+  }
+
+  throw new Error("Werdykt pary produktów musi być jedną z obsługiwanych opcji.");
+}
+
+export function parseRoutineAiAssessment(
+  input: unknown,
+  currentDraft: BaseRoutineDraft,
+  shelf: RoutineAiShelfInput[],
+): RoutineAiAssessment {
+  if (!isRecord(input)) {
+    throw new Error("Ocena rutyny musi być obiektem.");
+  }
+
+  const findingsRaw = input.findings;
+  if (!Array.isArray(findingsRaw) || findingsRaw.length > 4) {
+    throw new Error("Ocena rutyny może zawierać maksymalnie cztery ustalenia.");
+  }
+
+  const shelfById = new Map(shelf.map((item) => [item.shelfItem.id, item]));
+  const draftShelfIdsBySection = new Map<BaseRoutineSectionKey, Set<string>>(
+    BASE_ROUTINE_SECTION_KEYS.map((section) => [
+      section,
+      new Set(currentDraft[section].map((entry) => entry.shelfItemId)),
+    ]),
+  );
+  const findings = findingsRaw.map((findingRaw, index) => {
+    if (!isRecord(findingRaw)) {
+      throw new Error(`Ustalenie oceny ${index + 1} musi być obiektem.`);
+    }
+
+    const section = parseSection(findingRaw.section, "Sekcja ustalenia oceny");
+    const shelfItemIdsRaw = findingRaw.shelf_item_ids ?? findingRaw.shelfItemIds;
+    if (!Array.isArray(shelfItemIdsRaw) || shelfItemIdsRaw.length > 4) {
+      throw new Error("Ustalenie oceny może wskazać maksymalnie cztery produkty z tej sekcji.");
+    }
+    const shelfItemIds = shelfItemIdsRaw.map((value) => requiredText(value, "Produkt ustalenia oceny"));
+    const uniqueShelfItemIds = Array.from(new Set(shelfItemIds));
+    if (uniqueShelfItemIds.length !== shelfItemIds.length) {
+      throw new Error("Ustalenie oceny nie może powtarzać produktu.");
+    }
+    const allowedSectionShelfItemIds = draftShelfIdsBySection.get(section) ?? new Set<string>();
+    if (uniqueShelfItemIds.some((shelfItemId) => !allowedSectionShelfItemIds.has(shelfItemId))) {
+      throw new Error("Ustalenie oceny odwołuje się do produktu spoza ocenianej sekcji rutyny.");
+    }
+
+    const citationsRaw = findingRaw.ingredient_citations ?? findingRaw.ingredientCitations ?? [];
+    if (!Array.isArray(citationsRaw) || citationsRaw.length > 8) {
+      throw new Error("Ustalenie oceny zawiera zbyt wiele cytowanych składników.");
+    }
+    if (uniqueShelfItemIds.length === 0 && citationsRaw.length > 0) {
+      throw new Error("Ustalenie bez wskazanego produktu nie może cytować składników.");
+    }
+    const ingredientCitations = citationsRaw.map((citationRaw) => {
+      if (!isRecord(citationRaw)) {
+        throw new Error("Cytowany składnik musi być obiektem.");
+      }
+      const shelfItemId = requiredText(
+        citationRaw.shelf_item_id ?? citationRaw.shelfItemId,
+        "Produkt cytowanego składnika",
+      );
+      const modelIngredient = requiredText(citationRaw.ingredient, "Cytowany składnik");
+      if (!uniqueShelfItemIds.includes(shelfItemId)) {
+        throw new Error("Cytowany składnik musi należeć do produktu wskazanego w ustaleniu.");
+      }
+      const product = shelfById.get(shelfItemId)?.product;
+      const storedIngredient = product?.inciList.find(
+        (ingredient) => normalizeIngredient(ingredient) === normalizeIngredient(modelIngredient),
+      );
+      if (!storedIngredient) {
+        throw new Error("Ocena AI wskazała składnik nieobecny w przekazanym INCI produktu.");
+      }
+
+      return { shelfItemId, ingredient: storedIngredient };
+    });
+
+    return {
+      severity: parseAssessmentSeverity(findingRaw.severity),
+      section,
+      shelfItemIds: uniqueShelfItemIds,
+      ingredientCitations,
+      message: requiredText(findingRaw.message, "Opis ustalenia oceny"),
+      recommendation: requiredText(findingRaw.recommendation, "Zalecenie do ustalenia oceny"),
+    };
+  });
+
+  const expectedPairKeys = new Set<string>();
+  for (const section of BASE_ROUTINE_SECTION_KEYS) {
+    const sectionEntries = currentDraft[section];
+    for (let leftIndex = 0; leftIndex < sectionEntries.length; leftIndex += 1) {
+      for (let rightIndex = leftIndex + 1; rightIndex < sectionEntries.length; rightIndex += 1) {
+        const pair = [sectionEntries[leftIndex].shelfItemId, sectionEntries[rightIndex].shelfItemId].sort();
+        if (pair[0] !== pair[1]) {
+          expectedPairKeys.add(`${section}:${pair.join(":")}`);
+        }
+      }
+    }
+  }
+
+  const compatibilityAuditRaw = input.compatibility_audit ?? input.compatibilityAudit;
+  if (!Array.isArray(compatibilityAuditRaw) || compatibilityAuditRaw.length !== expectedPairKeys.size) {
+    throw new Error("Ocena rutyny musi zawierać werdykt dla każdej pary produktów.");
+  }
+  const compatibilityAudit: RoutineAiCompatibilityAudit[] = [];
+  const reviewedPairKeys = new Set<string>();
+  for (const auditRaw of compatibilityAuditRaw) {
+    if (!isRecord(auditRaw)) {
+      throw new Error("Przegląd zgodności musi zawierać obiekty par produktów.");
+    }
+    const section = parseSection(auditRaw.section, "Sekcja przeglądu zgodności");
+    const pairRaw = auditRaw.shelf_item_ids ?? auditRaw.shelfItemIds;
+    if (!Array.isArray(pairRaw) || pairRaw.length !== 2) {
+      throw new Error("Każdy przegląd zgodności musi wskazać dokładnie dwa produkty.");
+    }
+    const shelfItemIds = [
+      requiredText(pairRaw[0], "Pierwszy produkt sprawdzonej pary"),
+      requiredText(pairRaw[1], "Drugi produkt sprawdzonej pary"),
+    ].sort() as [string, string];
+    const pairKey = `${section}:${shelfItemIds.join(":")}`;
+    if (shelfItemIds[0] === shelfItemIds[1] || !expectedPairKeys.has(pairKey) || reviewedPairKeys.has(pairKey)) {
+      throw new Error("Przegląd zgodności zawiera nieprawidłową lub powtórzoną parę produktów.");
+    }
+
+    const ingredientCitationsRaw = auditRaw.ingredient_citations ?? auditRaw.ingredientCitations ?? [];
+    if (!Array.isArray(ingredientCitationsRaw) || ingredientCitationsRaw.length > 8) {
+      throw new Error("Przegląd zgodności zawiera zbyt wiele cytowanych składników.");
+    }
+    const ingredientCitations = ingredientCitationsRaw.map((citationRaw) => {
+      if (!isRecord(citationRaw)) {
+        throw new Error("Cytowany składnik przeglądu zgodności musi być obiektem.");
+      }
+      const shelfItemId = requiredText(
+        citationRaw.shelf_item_id ?? citationRaw.shelfItemId,
+        "Produkt cytowanego składnika przeglądu zgodności",
+      );
+      if (!shelfItemIds.includes(shelfItemId)) {
+        throw new Error("Cytowany składnik musi należeć do produktu z analizowanej pary.");
+      }
+      const modelIngredient = requiredText(citationRaw.ingredient, "Cytowany składnik przeglądu zgodności");
+      const storedIngredient = shelfById
+        .get(shelfItemId)
+        ?.product.inciList.find(
+          (ingredient) => normalizeIngredient(ingredient) === normalizeIngredient(modelIngredient),
+        );
+      if (!storedIngredient) {
+        throw new Error("Przegląd zgodności wskazał składnik nieobecny w przekazanym INCI produktu.");
+      }
+      return { shelfItemId, ingredient: storedIngredient };
+    });
+    const verdict = parsePairAssessmentVerdict(auditRaw.verdict);
+    if (verdict !== "no_material_interaction" && ingredientCitations.length === 0) {
+      throw new Error("Istotny werdykt pary musi cytować składnik z przekazanego INCI.");
+    }
+    reviewedPairKeys.add(pairKey);
+    compatibilityAudit.push({
+      section,
+      shelfItemIds,
+      verdict,
+      reason: requiredText(auditRaw.reason, "Uzasadnienie przeglądu zgodności"),
+      ingredientCitations,
+    });
+  }
+  if (reviewedPairKeys.size !== expectedPairKeys.size) {
+    throw new Error("Przegląd zgodności musi objąć każdą parę produktów w sekcji.");
+  }
+
+  const materiallyConcerningPairs = compatibilityAudit.filter(
+    (audit) => audit.verdict === "potential_compatibility_issue" || audit.verdict === "potential_tolerance_burden",
+  );
+  for (const audit of materiallyConcerningPairs) {
+    const hasFinding = findings.some(
+      (finding) =>
+        finding.section === audit.section &&
+        audit.shelfItemIds.every((shelfItemId) => finding.shelfItemIds.includes(shelfItemId)),
+    );
+    if (!hasFinding) {
+      throw new Error("Istotny werdykt pary musi pojawić się także w ustaleniach oceny rutyny.");
+    }
+  }
+
+  const overallStatus = parseAssessmentStatus(input.overall_status ?? input.overallStatus);
+  if (materiallyConcerningPairs.length > 0 && overallStatus !== "requires_attention") {
+    throw new Error("Istotny werdykt pary wymaga statusu requires_attention.");
+  }
+
+  return {
+    overallStatus,
+    summary: requiredText(input.summary, "Podsumowanie oceny rutyny"),
+    findings,
+    compatibilityAudit,
+  };
 }
 
 function parseMissingStep(value: unknown, index: number): RoutineAiMissingStep {
@@ -101,7 +367,11 @@ function parseEntryReason(value: unknown, index: number): RoutineAiEntryReason {
   };
 }
 
-export function parseRoutineAiProposal(input: unknown, ownedShelfItemIds: Iterable<string>): RoutineAiProposal {
+export function parseRoutineAiProposal(
+  input: unknown,
+  currentDraft: BaseRoutineDraft,
+  shelf: RoutineAiShelfInput[],
+): RoutineAiProposal {
   if (!isRecord(input)) {
     throw new Error("Propozycja AI musi być obiektem.");
   }
@@ -111,7 +381,7 @@ export function parseRoutineAiProposal(input: unknown, ownedShelfItemIds: Iterab
     throw new Error("Propozycja AI musi zawierać co najmniej jeden krok rutyny.");
   }
 
-  const ownedIds = new Set(ownedShelfItemIds);
+  const ownedIds = new Set(shelf.map((item) => item.shelfItem.id));
   for (const section of BASE_ROUTINE_SECTION_KEYS) {
     for (const entry of routine[section]) {
       if (!ownedIds.has(entry.shelfItemId)) {
@@ -156,11 +426,21 @@ export function parseRoutineAiProposal(input: unknown, ownedShelfItemIds: Iterab
     missingKeys.add(key);
   }
 
+  const assessmentRaw = input.assessment;
+  const assessment =
+    assessmentRaw === null || assessmentRaw === undefined
+      ? null
+      : parseRoutineAiAssessment(assessmentRaw, currentDraft, shelf);
+  if (hasNonEmptyBaseRoutine(currentDraft) && !assessment) {
+    throw new Error("Ocena istniejącej rutyny musi zawierać analizę całego układu.");
+  }
+
   return {
     summary: requiredText(input.summary, "Podsumowanie propozycji"),
     routine,
     entryReasons,
     missingSteps,
+    assessment,
   };
 }
 
@@ -204,9 +484,45 @@ export function createRoutineAiPromptInput(
   currentDraft: BaseRoutineDraft,
   shelf: RoutineAiShelfInput[],
 ) {
+  const shelfById = new Map(shelf.map((item) => [item.shelfItem.id, item]));
+  const routineProducts = BASE_ROUTINE_SECTION_KEYS.flatMap((section) =>
+    currentDraft[section].flatMap((entry) => {
+      const shelfInput = shelfById.get(entry.shelfItemId);
+      if (!shelfInput) {
+        return [];
+      }
+
+      return [
+        {
+          section,
+          shelfItemId: entry.shelfItemId,
+          routineRole: entry.routineRole,
+          product: {
+            name: shelfInput.product.name,
+            brand: shelfInput.product.brand,
+            category: shelfInput.product.category,
+            inciList: shelfInput.product.inciList,
+            inciConfidence: shelfInput.product.inciConfidence,
+          },
+          fit: {
+            status: shelfInput.interpretation.fitStatus,
+            score: shelfInput.interpretation.fitScore,
+            confidence: shelfInput.interpretation.confidence,
+            summary: shelfInput.interpretation.summaryShort,
+            reasoning: shelfInput.interpretation.reasoningShort,
+            recommendedFor: shelfInput.interpretation.recommendedFor,
+            cautionFor: shelfInput.interpretation.cautionFor,
+            warnings: shelfInput.interpretation.warnings,
+          },
+        },
+      ];
+    }),
+  );
+
   return {
     profile,
     currentDraft,
+    routineProducts,
     shelf: shelf.map(({ shelfItem, interpretation }) => ({
       shelfItemId: shelfItem.id,
       product: {

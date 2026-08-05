@@ -438,6 +438,21 @@ export async function getSharedProductById(supabase: ProductDomainClient, produc
   return data ? mapSharedProduct(data) : null;
 }
 
+export async function getSharedProductsByIds(supabase: ProductDomainClient, productIds: string[]) {
+  const uniqueProductIds = Array.from(new Set(productIds.map((productId) => productId.trim()).filter(Boolean)));
+  if (uniqueProductIds.length === 0) {
+    return [];
+  }
+
+  const { data, error } = await supabase.from("products").select(PRODUCT_COLUMNS).in("id", uniqueProductIds);
+
+  if (error) {
+    throw new Error(`Nie udało się wczytać współdzielonych produktów: ${error.message}`);
+  }
+
+  return data.map((row) => mapSharedProduct(row));
+}
+
 export async function saveConfirmedSharedProduct(
   supabase: ProductDomainClient,
   input: ConfirmedProductInput,

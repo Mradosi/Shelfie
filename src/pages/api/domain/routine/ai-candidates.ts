@@ -1,6 +1,7 @@
 import type { APIRoute } from "astro";
 import { getSharedProductById } from "@/lib/domain/product-domain";
 import { isProductCategoryAllowedForRoutineRole, type RoutineAiMissingStep } from "@/lib/domain/routine-ai";
+import { createRoutineGuidanceInput } from "@/lib/domain/routine-guidance";
 import { isRoutineRole } from "@/lib/domain/routine-schedule";
 import { getUserScopedProductDetails } from "@/lib/domain/product-interpretation";
 import { createClient } from "@/lib/supabase";
@@ -79,7 +80,12 @@ export const POST: APIRoute = async (context) => {
       throw new Error("Nie udało się odczytać produktu dodanego do półki.");
     }
 
-    return Response.json({ shelfItem, section: payload.section, routineRole: payload.routineRole });
+    return Response.json({
+      shelfItem,
+      section: payload.section,
+      routineRole: payload.routineRole,
+      guidanceInput: createRoutineGuidanceInput(shelfItem, interpretation),
+    });
   } catch (error) {
     return jsonError(error instanceof Error ? error.message : "Nie udało się dodać rekomendowanego produktu.", 500);
   }

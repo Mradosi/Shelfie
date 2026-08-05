@@ -1,5 +1,14 @@
 import type { APIRoute } from "astro";
-import { listSharedProductsByCategories, type SharedProduct } from "@/lib/domain/product-domain";
+import {
+  getSharedProductsByIds,
+  listSharedProductsByCategories,
+  type SharedProduct,
+} from "@/lib/domain/product-domain";
+import {
+  createRoutineAiAssessmentFingerprint,
+  createRoutineAiShelfInputs,
+  saveUserRoutineAiAssessment,
+} from "@/lib/domain/routine-ai-assessment";
 import {
   getProductCategoriesForRoutineRole,
   MAX_ROUTINE_AI_CANDIDATES_PER_STEP,
@@ -8,17 +17,27 @@ import {
   parseRoutineAiMissingSteps,
   type RoutineAiMissingStep,
 } from "@/lib/domain/routine-ai";
-import { parseBaseRoutineDraft, type BaseRoutineDraft } from "@/lib/domain/routine-schedule";
+import {
+  collapseWeeklyScheduleToBaseRoutine,
+  createEmptyBaseRoutine,
+  parseBaseRoutineDraft,
+  type BaseRoutineDraft,
+} from "@/lib/domain/routine-schedule";
 import {
   getUserProductInterpretation,
   prepareUserProductInterpretations,
   type UserProductInterpretation,
 } from "@/lib/domain/product-interpretation";
-import { generateRoutineDraft } from "@/lib/integrations/openrouter-routine-draft";
+import {
+  generateRoutineDraft,
+  ROUTINE_DRAFT_MODEL_VERSION,
+  ROUTINE_DRAFT_PROMPT_VERSION,
+} from "@/lib/integrations/openrouter-routine-draft";
 import { createClient } from "@/lib/supabase";
 import {
   createUserProfileInterpretationBasis,
   getUserProfile,
+  getUserRoutineConfig,
   isUserProfileComplete,
   listUserShelfCatalog,
 } from "@/lib/domain/user-domain";
@@ -51,6 +70,18 @@ function parseAction(value: unknown): RoutineAiAction {
 
 function parseCurrentDraft(value: unknown): BaseRoutineDraft {
   return parseBaseRoutineDraft(value);
+}
+
+async function isSavedRoutineDraft(
+  supabase: NonNullable<ReturnType<typeof createClient>>,
+  userId: string,
+  draft: BaseRoutineDraft,
+) {
+  const routineConfig = await getUserRoutineConfig(supabase, userId);
+  const savedDraft = routineConfig
+    ? collapseWeeklyScheduleToBaseRoutine(routineConfig.schedule)
+    : createEmptyBaseRoutine();
+  return JSON.stringify(savedDraft) === JSON.stringify(draft);
 }
 
 function getFailurePayload(
@@ -95,20 +126,30 @@ async function loadReadyShelfInputs(
     }
   }
 
-  const interpretations = await Promise.all(
-    shelf.map(async (item) => ({
-      shelfItem: item,
-      interpretation: await getUserProductInterpretation(supabase, userId, item.productId),
-    })),
-  );
+  const [products, interpretations] = await Promise.all([
+    getSharedProductsByIds(
+      supabase,
+      shelf.map((item) => item.productId),
+    ),
+    Promise.all(
+      shelf.map(async (item) => ({
+        shelfItem: item,
+        interpretation: await getUserProductInterpretation(supabase, userId, item.productId),
+      })),
+    ),
+  ]);
   const pendingItems = interpretations.filter((item) => item.interpretation?.status !== "ready");
   if (pendingItems.length > 0) {
     throw new Error("Najpierw przygotuj aktualne analizy wszystkich produktów z półki.");
   }
 
-  const readyShelf = interpretations.flatMap((item) =>
-    item.interpretation?.status === "ready" ? [{ shelfItem: item.shelfItem, interpretation: item.interpretation }] : [],
+  const readyInterpretations = interpretations.flatMap((item) =>
+    item.interpretation?.status === "ready" ? [item.interpretation] : [],
   );
+  const readyShelf = createRoutineAiShelfInputs(shelf, products, readyInterpretations);
+  if (readyShelf.length !== shelf.length) {
+    throw new Error("Brakuje aktualnych danych produktu potrzebnych do oceny rutyny.");
+  }
 
   return {
     profileBasis: createUserProfileInterpretationBasis(profile),
@@ -247,7 +288,25 @@ export const POST: APIRoute = async (context) => {
       const currentDraft = parseCurrentDraft(payload.currentDraft);
       const input = await loadReadyShelfInputs(supabase, user.id, currentDraft);
       const proposal = await generateRoutineDraft(input.profileBasis, currentDraft, input.shelf);
-      return Response.json({ proposal });
+      let assessment = null;
+      if (proposal.assessment && (await isSavedRoutineDraft(supabase, user.id, currentDraft))) {
+        assessment = await saveUserRoutineAiAssessment(supabase, {
+          userId: user.id,
+          inputFingerprint: await createRoutineAiAssessmentFingerprint(input.profileBasis, currentDraft, input.shelf),
+          assessment: proposal.assessment,
+          modelVersion: ROUTINE_DRAFT_MODEL_VERSION,
+          promptVersion: ROUTINE_DRAFT_PROMPT_VERSION,
+        });
+      }
+      return Response.json({
+        proposal,
+        assessment: assessment
+          ? {
+              assessment: proposal.assessment,
+              generatedAt: assessment.generatedAt,
+            }
+          : null,
+      });
     }
 
     const missingSteps = parseRoutineAiMissingSteps(payload.missingSteps);

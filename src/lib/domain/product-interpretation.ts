@@ -358,6 +358,29 @@ export async function getUserProductInterpretation(
   return data ? mapUserProductInterpretation(data as UserProductInterpretationRow) : null;
 }
 
+export async function listUserProductInterpretations(
+  supabase: ProductInterpretationClient,
+  userId: string,
+  productIds: string[],
+) {
+  const uniqueProductIds = Array.from(new Set(productIds.map((productId) => productId.trim()).filter(Boolean)));
+  if (uniqueProductIds.length === 0) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from("user_product_interpretations")
+    .select(USER_PRODUCT_INTERPRETATION_COLUMNS)
+    .eq("user_id", userId)
+    .in("product_id", uniqueProductIds);
+
+  if (error) {
+    throw new Error(`Nie udało się wczytać interpretacji produktów: ${error.message}`);
+  }
+
+  return data.map((row) => mapUserProductInterpretation(row as UserProductInterpretationRow));
+}
+
 export async function ensurePendingUserProductInterpretation(
   supabase: ProductInterpretationClient,
   userId: string,
