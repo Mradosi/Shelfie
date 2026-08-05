@@ -3,7 +3,7 @@ project: Shelfie
 version: 1
 status: draft
 created: 2026-05-28
-updated: 2026-07-30
+updated: 2026-08-05
 prd_version: 1
 main_goal: market-feedback
 top_blocker: decisions
@@ -42,7 +42,7 @@ Shelfie ma pomóc użytkownikowi uporządkować pielęgnację na bazie jego real
 | S-04 | ai-routine-draft-and-review        | user can ask AI for a base-routine draft or improvement suggestions, then review and edit the result before save                    | S-03, S-11       | US-01, FR-008, FR-010                                                              | done     |
 | S-05 | todays-routine-consumption         | user can view today's AM/PM routine from the saved base configuration and make lightweight one-off usage edits from routine screens | S-03             | US-01, FR-009                                                                      | done     |
 | S-09 | day-specific-routine-overrides     | user can override selected weekdays without rebuilding the shared base AM/PM routine                                                | S-05             | US-01, FR-009                                                                      | proposed |
-| S-06 | routine-warnings-and-guidance      | user can review soft warnings about conflicts or overuse, plus product-role and missing-step guidance while adjusting routine usage | S-04, S-05       | US-01, FR-010, FR-011                                                              | proposed |
+| S-06 | routine-warnings-and-guidance      | user can review soft warnings about conflicts or overuse, plus product-role and missing-step guidance while adjusting routine usage | S-04, S-05       | US-01, FR-010, FR-011                                                              | done     |
 | S-07 | shelf-notes-and-skin-checkins      | user can manage the shelf with notes/reactions and log a quick skin check-in for later guidance                                     | S-05             | US-01, FR-006, FR-007, FR-012                                                      | proposed |
 | S-08 | mobile-first-pwa-flow              | user can use the core shelf and routine flow comfortably on mobile and as a PWA                                                     | S-05             | FR-015                                                                             | proposed |
 
@@ -255,7 +255,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Unknowns:**
   - How should conflict detection be split between deterministic rules and AI explanations in the MVP warning flow? — Owner: team. Block: no.
 - **Risk:** If this slice becomes a hard validation engine instead of soft guidance, it will consume disproportionate effort for a secondary success criterion.
-- **Status:** proposed
+- **Status:** done
 
 ### S-07: Shelf notes and skin check-ins
 
@@ -322,6 +322,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 ## Done
 
 (Empty on first generation. `/10x-archive` appends an entry here — and flips that item's `Status` to `done` — when a change whose `Change ID` matches the item is archived.)
+- **S-06: user can review lightweight warnings about conflicts or overuse, plus product-role and missing-step guidance, while adjusting routine usage.** — Archived 2026-08-05 → `context/archive/2026-07-30-routine-warnings-and-guidance/`. Lesson: —.
 - **S-04: user can ask AI to draft the base routine from owned products and skin context, review missing-step or product-role suggestions, and accept or edit the result before saving it into the same base-routine model.** — Archived 2026-07-30 → `context/archive/2026-07-30-ai-routine-draft-and-review/`. Lesson: —.
 
 - **F-01: (foundation) A minimal persistence contract exists for per-user skin context, shelf items, product schedules, and routine configuration, with ownership boundaries that match the authenticated single-user model. This is explicitly a shared domain contract for downstream slices, not a full backend buildout.** — Archived 2026-05-31 → `context/archive/2026-05-30-user-domain-persistence-contract/`. Lesson: —.

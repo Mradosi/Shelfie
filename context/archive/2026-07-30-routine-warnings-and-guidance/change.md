@@ -1,9 +1,10 @@
 ---
 change_id: routine-warnings-and-guidance
 title: Routine warnings and guidance
-status: implementing
+status: archived
 created: 2026-07-30
-updated: 2026-07-30
+updated: 2026-08-05
+archived_at: 2026-08-05T14:05:24Z
 ---
 
 ## Notes
