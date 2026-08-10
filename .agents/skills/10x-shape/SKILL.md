@@ -2,14 +2,9 @@
 name: 10x-shape
 description: >
   Facilitate a structured discovery conversation that turns an idea —
-  greenfield or brownfield — into shape-notes.md, the input to /10x-prd.
-  Auto-detects context type from project markers in cwd (brownfield) or
-  absence thereof (greenfield) and adapts all six discovery phases
-  accordingly. Use when the user is starting a new project from scratch OR
-  shaping a meaningful change to an existing system (new module, significant
-  feature, architectural improvement). Trigger phrases: "new project",
-  "from scratch", "starting an app", "od pomysłu", "shape an idea",
-  "brainstorm a product", "greenfield", "I have an idea", "existing project",
+  greenfield or brownfield, auto-detected from cwd — into shape-notes.md,
+  the input to /10x-prd. Trigger phrases: "new project", "from scratch",
+  "od pomysłu", "shape an idea", "I have an idea", "greenfield",
   "brownfield", "istniejący projekt", "zmiana w projekcie".
   Use BEFORE /10x-prd, not in place of it.
 ---
@@ -32,7 +27,7 @@ The locked schema both this skill and `/10x-prd` conform to lives at `references
 
 - `/10x-init` — scaffolds the `/context` skeleton (`changes/`, `archive/`, `foundation/`) plus universal READMEs in each. `/10x-shape` requires `context/foundation/` to exist; if absent, it delegates to `/10x-init` via a tool call (Step 0 below).
 - `/10x-prd` — consumes `shape-notes.md`. The handoff is the `## Step 8` clipboard write.
-- `/10x-frame` — for _reframing_ small-scope problems within existing systems where a full PRD is overkill. `/10x-shape` is for larger brownfield changes (new modules, significant features) that need structured discovery and a PRD.
+- `/10x-frame` — for *reframing* small-scope problems within existing systems where a full PRD is overkill. `/10x-shape` is for larger brownfield changes (new modules, significant features) that need structured discovery and a PRD.
 - `/10x-stack-assess` — downstream of `/10x-prd` for brownfield projects. Evaluates existing stack against quality gates.
 - `/10x-health-check` — downstream of `/10x-stack-assess` for brownfield. Audits existing project health.
 - `/10x-plan` — downstream of `/10x-prd`, never invoked from here directly.
@@ -73,14 +68,13 @@ test -d context/foundation
 If it exists, proceed to Step 0.5.
 
 If missing, the project has not been initialized for 10xWorkflow. Ask the user:
-Ask the user: "This directory isn't initialized for 10xWorkflow (context/foundation/ is missing). Run /10x-init now?" with options:
-
+"This directory isn't initialized for 10xWorkflow (context/foundation/ is missing). Run /10x-init now?" with options:
 - "Yes — run /10x-init (Recommended)" (description: "Scaffolds the /context skeleton (changes/, archive/, foundation/) with READMEs, then continues shaping.")
 - "No — stop here" (description: "Exit without changes. You'll need to initialize before shape can run.")
 
 On "Yes": invoke `/10x-init` via a tool call (NOT via Bash). When `/10x-init` returns, re-check the precondition; if it now passes, continue to Step 0.5. On "No": print "Stopping. Run `/10x-init` when ready, then re-invoke `/10x-shape`." and STOP.
 
-Do not duplicate `/10x-init`'s scaffold logic. A tool call is the correct delegation path.
+Do not duplicate `/10x-init`'s scaffold logic. A tool call to the skill is the correct delegation path.
 
 ### Step 0.5: Resume detection
 
@@ -107,8 +101,7 @@ Found a prior shape session at context/foundation/shape-notes.md:
 ```
 
 Then ask the user:
-Ask the user: "How would you like to proceed?" with options:
-
+"How would you like to proceed?" with options:
 - "Resume from Phase [next] (Recommended)" (description: "Pick up where the prior session left off. Completed phases are summarized, not replayed.")
 - "Restart from scratch" (description: "Archive the existing shape-notes.md to context/foundation/archive/ and start a new session.")
 - "Cancel" (description: "Exit without changes.")
@@ -166,7 +159,6 @@ Get-ChildItem -Path . -Filter 'vite.config.*' -File -ErrorAction SilentlyContinu
 ```
 
 Scoring:
-
 - **Tier 1 hit** (git history exists) → strong brownfield signal
 - **Tier 2 hit** (lockfile exists) → strong brownfield signal
 - **Tier 1 + Tier 2** → high-confidence brownfield
@@ -174,7 +166,6 @@ Scoring:
 - **No signals** → greenfield
 
 Decision logic:
-
 - **Any Tier 1 or Tier 2 hit** → propose `context_type: brownfield`
 - **Tier 3 only** → propose brownfield but flag the ambiguity: "I found a manifest file but no lockfile or git history — this might be a freshly initialized project rather than a real brownfield."
 - **No signals** → propose `context_type: greenfield`
@@ -182,7 +173,6 @@ Decision logic:
 Print what was detected:
 
 - **High-confidence brownfield** (T1 or T2):
-
   ```
   This looks like an existing project:
     [list detected signals, e.g. "git history (47 commits)", "package-lock.json", "src/ directory"]
@@ -191,7 +181,6 @@ Print what was detected:
   ```
 
 - **Ambiguous** (T3 only):
-
   ```
   I found [manifest file] but no lockfile or git history — this could be a
   freshly initialized project or a real brownfield. I'll propose brownfield
@@ -205,8 +194,7 @@ Print what was detected:
   ```
 
 Then confirm with the user:
-Ask the user: "Detected context: [greenfield|brownfield]. Is this correct?" with options:
-
+"Detected context: [greenfield|brownfield]. Is this correct?" with options:
 - "[Greenfield|Brownfield] — correct (Recommended)" (description: "[Auto-detected mode description]")
 - "[Other mode] — override" (description: "Switch to [other mode] instead.")
 
@@ -221,7 +209,7 @@ Every discovery phase follows the same loop. Internalize this before reading the
 The pattern is **BMAD-Facilitator + GSD-Gray-Area + mattpocock-recommended-answer + Socrates challenge**:
 
 1. **Open the phase** with a one-line statement of what this phase produces, and a single open question to elicit the user's first attempt at it. (BMAD facilitator stance: never generate the content yourself.)
-2. **Surface 3–5 gray areas** as multi-select decisions when the user's first attempt has ambiguities. Ask the user for input. Each option is a real position with a tradeoff, not a placeholder. (GSD gray-area discovery.)
+2. **Surface 3–5 gray areas** as multi-select decisions when the user's first attempt has ambiguities. Use a tool to ask the user a question. Each option is a real position with a tradeoff, not a placeholder. (GSD gray-area discovery.)
 3. **Mark a recommended option** with "(Recommended)" in the label and place it first. Always include a "Not sure / haven't decided" option. (mattpocock-recommended-answer fatigue mitigator.)
 4. **Lock the decision back to the user** as a one-line summary they confirm before you write to disk.
 5. **Write the phase's section(s)** into `shape-notes.md` and bump `checkpoint.current_phase` and `checkpoint.phases_completed` per the schema.
@@ -251,7 +239,7 @@ Cost today:  [what they currently do, and what it costs them]
 
 If any of the four is vague ("everyone", "always", "a lot of pain"), challenge with a Socrates prompt: "What would have to be true about this for it to be the wrong problem to solve?" or "Who specifically have you seen experience this in the last month?"
 
-Then surface gray areas (ask the user for input with 2–4 questions, **multiSelect on questions where multiple positions can co-exist**):
+Then surface gray areas (use a tool to ask the user a question with 2–4 questions, **multiSelect on questions where multiple positions can co-exist**):
 
 - Pain category — what kind of pain is this? (workflow friction / missing capability / data trapped somewhere / decision paralysis / coordination overhead / other)
 - Insight — what does the user know that the status quo doesn't? (use Socrates: "If your idea is obvious, why hasn't this been built?")
@@ -293,7 +281,7 @@ This phase produces the `## Access Control` section. Persona was captured in Ste
 
 Open with: "How does this person get into the app? Login, a local profile, an access key, no auth at all?"
 
-Ask the user for input with options drawn from the most common shapes:
+Use a tool to ask the user a question with options drawn from the most common shapes:
 
 - Login (email + password / OAuth / passwordless) (Recommended for multi-user web/mobile)
 - Local profile (data lives on-device, no server) (Recommended for solo / privacy-first)
@@ -348,7 +336,7 @@ version was too big to finish. Two valid paths from here:
   itself but from the gap between expected and actual effort.
 ```
 
-Ask the user for input with three options:
+Use a tool to ask the user a question with three options:
 
 - **Scope down (Recommended)** — pick this if the cost above is news; we'll restart this step with a smaller first flow.
 - **Commit to the longer timeline — I understand it will take sustained effort** — pick this only if you've genuinely thought about what multi-week, after-hours commitment looks like for you and you're going in eyes-open.
@@ -386,7 +374,7 @@ it half-done — partially modified code is worse than the original. Two paths:
   Commit to the longer timeline — same as greenfield: sustained effort, accepted.
 ```
 
-Same options as greenfield.
+Same options as greenfield for asking the user a question.
 
 #### Both modes
 
@@ -402,7 +390,7 @@ This phase produces the `## Functional Requirements` and `## User Stories` secti
 
 #### Greenfield mode
 
-Open with: "Now let's get concrete. From the MVP flow you sketched, what does the actor have to be _able_ to do? List the capabilities — I'll format them as FRs."
+Open with: "Now let's get concrete. From the MVP flow you sketched, what does the actor have to be *able* to do? List the capabilities — I'll format them as FRs."
 
 Capture each capability as a single FR line per the schema format:
 
@@ -451,7 +439,7 @@ hurt the product instead of help it? OR: what's the strongest counter-argument
 to including this in the MVP?
 ```
 
-Ask the user for input per FR with 2–4 options framed as plausible counter-arguments (drawn from the FR's domain — not generic). Always include a "No counter-argument; it stands as written" option as the LAST option (not first), so the question forces the user to consider the challenge before dismissing it.
+Use a tool to ask the user a question per FR with 2–4 options framed as plausible counter-arguments (drawn from the FR's domain — not generic). Always include a "No counter-argument; it stands as written" option as the LAST option (not first), so the question forces the user to consider the challenge before dismissing it.
 
 Capture each user response as a `> Socrates:` blockquote underneath its FR in `shape-notes.md`:
 
@@ -498,7 +486,7 @@ Common shapes:
 What rule does YOUR app apply?
 ```
 
-Ask the user for input with the rule shapes above as multi-select options (plus "I want to add a rule — give me a moment to think" and "I'm building this as pure CRUD anyway — record it"). If the user picks a rule, return to the one-sentence prompt. If they accept the empty-CRUD label, record it as `# TODO: domain rule — see Open Questions` per the schema and add an entry to a running `## Open Questions` block in shape-notes.md.
+Use a tool to ask the user a question with the rule shapes above as multi-select options (plus "I want to add a rule — give me a moment to think" and "I'm building this as pure CRUD anyway — record it"). If the user picks a rule, return to the one-sentence prompt. If they accept the empty-CRUD label, record it as `# TODO: domain rule — see Open Questions` per the schema and add an entry to a running `## Open Questions` block in shape-notes.md.
 
 #### Brownfield mode
 
@@ -571,7 +559,7 @@ After framing, add: "What constraints does the existing system impose on this ch
 
 #### Both modes
 
-After product framing is locked, run **one** Non-Goals multi-select round. The shape is a multi-select avoid-list — but aimed at _scope_ avoids (capabilities the MVP won't build / change won't touch, quality dimensions it won't aim for), not technology avoids. Ask:
+After product framing is locked, run **one** Non-Goals multi-select round. The shape is a multi-select avoid-list — but aimed at *scope* avoids (capabilities the MVP won't build / change won't touch, quality dimensions it won't aim for), not technology avoids. Ask:
 
 ```
 What is this [MVP/change] explicitly NOT doing? Pick anything that should be
@@ -580,7 +568,7 @@ ruled out *now* so it doesn't sneak back in later. Functional non-goals
 dimensions we won't aim for) both belong here.
 ```
 
-Ask the user for input with `multiSelect: true` and 3–5 options drawn from the user's domain — NOT generic. Examples (regenerate per project):
+Use a tool to ask the user a question with `multiSelect: true` and 3–5 options drawn from the user's domain — NOT generic. Examples (regenerate per project):
 
 - "Avoid: building our own [domain algorithm — e.g., recommendation, scheduling, scoring]" — strong scope avoid; force a buy-vs-build decision now.
 - "Avoid: [expensive infrastructure piece — e.g., local LLM, real-time sync, multi-region]" — strong scope avoid; the absence shapes the data flow.
@@ -606,7 +594,7 @@ Read back the current `shape-notes.md` and check each of the following elements.
 3. **Project artifacts** — `shape-notes.md` itself exists with a valid frontmatter checkpoint. (This is always present at this point.)
 4. **Timeline-cost acknowledged** — either `timeline_budget.mvp_weeks` / `delivery_weeks` ≤ 3, OR a `## Timeline acknowledgment` block exists in shape-notes recording that the user accepted the sustained-effort cost in Step 3. Longer timelines are valid; the gate is that the cost was surfaced and accepted, not that the timeline is short.
 5. **Non-Goals** — `## Non-Goals` block exists with at least one entry.
-6. **Preserved behavior** _(brownfield only)_ — `## Constraints & Preserved Behavior` block exists and explicitly names what must not break. Skip this check for greenfield sessions.
+6. **Preserved behavior** *(brownfield only)* — `## Constraints & Preserved Behavior` block exists and explicitly names what must not break. Skip this check for greenfield sessions.
 
 Do NOT check for `## Testing Strategy`, `## Deployment & CI/CD`, or `## Implementation Decisions` — those are not part of the PRD schema. They sit downstream of stack selection / stack assessment, not in PRD.
 
@@ -630,8 +618,7 @@ Print the result table:
 For each `missing/weak`, **list it by name** with a one-line consequence: "Business Logic: not captured as a one-sentence rule — your PRD will be hollow without a domain decision." Generic "your PRD has gaps" warnings nullify the gate; do not write them.
 
 Then ask the user:
-Ask the user: "How would you like to proceed?" with options:
-
+"How would you like to proceed?" with options:
 - "Address gaps now" (description: "Re-enter the relevant phase to fill in missing elements. Recommended if multiple elements are missing.")
 - "Accept and finish" (description: "Proceed despite the gaps. They will be recorded as warnings in the checkpoint and surfaced in /10x-prd's Open Questions.")
 - "Restart phase [N]" (description: "Go back to a specific phase and rebuild from there.")

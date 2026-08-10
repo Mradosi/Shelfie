@@ -38,6 +38,7 @@ When given a plan path:
 - **Read files fully** - never use limit/offset parameters, you need complete context
 - Think deeply about how the pieces fit together
 - **Update `change.md`**: on entry, set `status: implementing` (only if currently in `{planned, plan_reviewed}`) and `updated: <today>`.
+- **Sync the roadmap** (best effort, once on entry): if `context/foundation/roadmap.md` carries an item whose `Change ID` equals `<change-id>`, flip that item to `Status: in-progress`. See "## Roadmap status sync" below. This is the open-work counterpart to `/10x-archive`'s `done` flip; it never blocks, and most changes won't trace to a roadmap.
 - Count total phases (from `## Phase N:` headers) and create one TaskCreate entry per phase (these appear in the user's status bar):
   - For each phase, create a task with `subject: "Phase N: [Phase Name]"` and `activeForm: "Implementing Phase N"`
   - Set the current phase to `in_progress` via TaskUpdate before starting work
@@ -68,9 +69,7 @@ If you encounter a mismatch:
   Why this matters: [explanation]
   ```
 
-- Then ask the user for a structured decision:
-
-  Ask the user: "How should I handle this mismatch?" with options:
+- Then ask the user: "How should I handle this mismatch?" with the following options:
   - "Adapt and continue" (description: "Adjust the implementation to match reality. I'll explain the adaptation.")
   - "Skip this part" (description: "Move on to the next section/phase. This change isn't needed.")
   - "Stop and re-plan" (description: "This mismatch is too significant. We need to update the plan first.")
@@ -81,7 +80,7 @@ The phase-end commit ritual (see "Verification Approach" below) stages files fro
 
 **Discipline**:
 
-- Every time you modify or create a file during the current phase, add its repo-relative path to the touched-file set.
+- Every time you modify a file using your AI coding assistant during the current phase, add its repo-relative path to the touched-file set.
 - The set always contains `context/changes/<change-id>/plan.md` because each phase produces at least one modification to its `## Progress` section. Add it on entry to a phase even before any checkboxes flip.
 - **Phase 1 bootstrap**: on the first phase of a change, also seed the touched-file set with all untracked or modified files inside `context/changes/<change-id>/` — typically `change.md`, `research.md`, `plan.md`, and any other context files created during planning. These files are part of the change and should land in the first commit rather than being left as untracked stragglers.
 - The set **resets at each phase boundary**. After the phase-end commit completes, clear it before starting the next phase.
@@ -96,6 +95,26 @@ Before proposing any phase-end or epilogue commit message, scan the conversation
 - Do not invent or infer tracking references from the change-id, branch name, or filenames. Only use references visible in the current conversation context or explicitly provided by the user.
 - Apply the same `Refs:` line to every phase-end commit and to the epilogue commit, unless the user narrows a reference to a specific phase.
 
+## Roadmap status sync
+
+`context/foundation/roadmap.md` (produced by `/10x-roadmap`) indexes each Foundation/Slice by a stable **Change ID**. `/10x-archive` already closes the loop on the far end — when a change archives, it flips the matching roadmap item to `Status: done`. This step wires the near end: when implementation *starts*, mark the matching item **`in-progress`** so the roadmap shows live work instead of jumping straight from `ready` to `done`.
+
+Run it **once, on entry** to the change (right after the `change.md` → `implementing` stamp) — not per phase. The lookup is **mandatory**; "best effort" scopes only the *edits* — a missing roadmap or a not-found target is skipped silently and never blocks, prompts, rolls back, or aborts the run. Do not skip the check on the assumption there's no roadmap.
+
+1. Check if `context/foundation/roadmap.md` exists. If absent, skip this step silently.
+2. Capture whether the file is already dirty: `ROADMAP_PREDIRTY=$(git status --porcelain context/foundation/roadmap.md 2>/dev/null)` — used in step 5 to decide staging.
+3. Read the file. Look for `<change-id>` used as a `Change ID`:
+   - in the `## At a glance` table — the row whose **Change ID** column cell equals `<change-id>` exactly;
+   - and in the `## Foundations` / `## Slices` bodies — the `### <ID>: …` block that contains a `- **Change ID:** <change-id>` line.
+
+   `<ID>` is that item's roadmap-local id (`F-NN` or `S-NN`). Match is exact-string only — a slice can spawn several changes, so a near-miss is intentionally *not* touched. **No match** → print `ℹ context/foundation/roadmap.md has no item with Change ID "<change-id>" — roadmap left untouched.` and skip the rest of this step.
+4. **Match found** → read the item's current `- **Status:**`. If it is already `in-progress` or `done`, leave it untouched (**forward-only**: never regress a more-advanced status) and skip to step 5. Otherwise apply both edits with the appropriate tool — each independent and best effort; if a target isn't where the `/10x-roadmap` template puts it (hand-edited or older-format roadmap), skip that sub-edit, keep going, and note what was skipped. Touch only the `Status` field; leave `Outcome`, `Prerequisites`, `Change ID`, etc. alone.
+   1. **`## At a glance`** — in the matched row, set the **Status** column cell to `in-progress`.
+   2. **Item body** — rewrite the item's `- **Status:**` line to `- **Status:** in-progress`.
+
+   Then bump the roadmap frontmatter `updated:` to `<today>` (leave every other key alone; skip this if the file has no frontmatter).
+5. **Fold the flip into this change's history.** If `git` is available **and** `ROADMAP_PREDIRTY` (step 2) was empty, add `context/foundation/roadmap.md` to the current phase's touched-file set so the status flip lands in the phase's commit rather than lingering dirty. If `ROADMAP_PREDIRTY` was non-empty, the file already had uncommitted edits: leave the flip in the working tree, keep `context/foundation/roadmap.md` OUT of the touched-file set, and print `⚠ context/foundation/roadmap.md had pre-existing uncommitted changes — flipped roadmap item <ID> to in-progress in the working tree but did NOT stage it. Commit it yourself.` If `git` is unavailable, the edit simply stays in the working tree.
+
 ## Verification Approach
 
 After implementing a phase:
@@ -103,8 +122,9 @@ After implementing a phase:
 - Run the success criteria checks (usually `make check test` covers everything)
 - Fix any issues before proceeding
 - Update your progress in your todos and in the plan's `## Progress` section
-- **Mutate ONLY the `## Progress` section.** Phase blocks (Overview, Changes Required, Success Criteria) are read-only. Use file editing to flip `- [ ] N.M <title>` → `- [x] N.M <title>` in Progress as each step completes. Do NOT edit Phase block bullets, do NOT add HTML comment progress markers at the bottom of the plan, and do NOT write any state-file sidecar.
+- **Mutate ONLY the `## Progress` section.** Phase blocks (Overview, Changes Required, Success Criteria) are read-only. Use your AI coding assistant to modify the file to flip `- [ ] N.M <title>` → `- [x] N.M <title>` in Progress as each step completes. Do NOT edit Phase block bullets, do NOT add HTML comment progress markers at the bottom of the plan, and do NOT write any state-file sidecar.
 - **Run the phase-end commit ritual**: After all automated checks pass for the phase, walk through this sequenced ritual to author one Conventional-Commits commit and write the closing short SHA back into every Progress row flipped during the phase.
+
   1. **Manual confirmation gate.** Inform the human that automated verification passed and list the manual verification items from the plan. Pause here. Do not proceed until the human confirms manual testing succeeded. Use this format:
 
      ```
@@ -130,16 +150,14 @@ After implementing a phase:
 
   2. **Compute the staging set.** Take the touched-file set maintained during the phase (see "Tracking files touched during a phase" above) and union it with `{context/changes/<change-id>/plan.md}`. The plan file is always staged because each phase produces at least one modification to its `## Progress` section.
 
-  3. **Detect unrelated dirty paths.** Run `git status --porcelain` and intersect with paths _outside_ the staging set. If the dirty-but-untouched set is non-empty, present the offending paths and ask the user:
-
-     Ask the user: "<N> unrelated path(s) are dirty. How should I handle them?" with options:
+  3. **Detect unrelated dirty paths.** Run `git status --porcelain` and intersect with paths *outside* the staging set. If the dirty-but-untouched set is non-empty, present the offending paths and ask the user: "<N> unrelated path(s) are dirty. How should I handle them?" with the following options:
      - "Continue — stage only the planned set (Recommended)" (description: "Commit only files this phase touched. Leave the unrelated paths dirty for you to handle separately.")
      - "Stage all" (description: "Add the unrelated paths to this commit. You take responsibility for the broader scope.")
      - "Abort" (description: "Stop the phase commit. Resolve the dirty paths first, then re-run the ritual.")
 
      If the dirty-but-untouched set is empty, skip this step.
 
-  4. **Stage explicitly by path.** Run `git add` for each file in the chosen set by name. Do NOT use `git add -A` or `git add .` — explicit paths only.
+  4. **Stage explicitly by path.** Execute `git add` for each file in the chosen set by name. Do NOT use `git add -A` or `git add .` — explicit paths only.
 
   5. **Check empty diff.** Run `git diff --cached --quiet`. Exit code 0 means no staged diff. If empty, print:
 
@@ -149,14 +167,12 @@ After implementing a phase:
 
      Set `SHA=""` and skip to step 8.
 
-  6. **Propose a Conventional-Commits message.** Build a subject line in the form `<type>(<change-id>): <phase title> (p<N>)`, where `<type>` is one of `feat / fix / chore / refactor / docs` chosen from the phase's nature (e.g., `feat` for new user-visible behavior, `chore` for prompt/doc edits, `refactor` for restructuring without behavior change). The phase title is the meaningful part and leads; the `(p<N>)` suffix carries the phase index. Build a short body listing the touched files, plus the `Refs:` line from "Tracking issue/task references for commits" when applicable. Ask the user:
-
-     Ask the user: "Approve commit message?" with options:
+  6. **Propose a Conventional-Commits message.** Build a subject line in the form `<type>(<change-id>): <phase title> (p<N>)`, where `<type>` is one of `feat / fix / chore / refactor / docs` chosen from the phase's nature (e.g., `feat` for new user-visible behavior, `chore` for prompt/doc edits, `refactor` for restructuring without behavior change). The phase title is the meaningful part and leads; the `(p<N>)` suffix carries the phase index. Build a short body listing the touched files, plus the `Refs:` line from "Tracking issue/task references for commits" when applicable. Ask the user: "Approve commit message?" with the following options:
      - "Approve as proposed (Recommended)" (description: "Use the message as drafted.")
      - "Edit subject line" (description: "Override the subject; keep the body.")
      - "Override entirely" (description: "Replace both subject and body.")
 
-  7. **Commit via heredoc.** Run `git commit` per the global commit-message protocol:
+  7. **Commit via heredoc.** Execute `git commit` per the global commit-message protocol:
 
      ```bash
      git commit -m "$(cat <<'EOF'
@@ -164,17 +180,16 @@ After implementing a phase:
 
      <short body listing touched files>
      <Refs: issue/task references, if applicable>
-
-     Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>
      EOF
      )"
      ```
 
      Never pass `--no-verify`, `--amend`, or signing-bypass flags. If a pre-commit hook fails, fix the underlying issue and create a NEW commit — the original commit did NOT happen, so amending would touch the previous phase's commit instead.
 
-  8. **Capture the short SHA.** Run `git rev-parse --short HEAD` and store as `SHA`. Skip this step if `SHA=""` was set by step 5.
+  8. **Capture the short SHA.** Execute `git rev-parse --short HEAD` and store as `SHA`. Skip this step if `SHA=""` was set by step 5.
 
-  9. **Write the SHA back into Progress.** For every Progress row flipped during this phase, run a targeted file edit:
+  9. **Write the SHA back into Progress.** For every Progress row flipped during this phase, perform a targeted modification:
+
      - Find: `- [x] N.M <title>` (no existing ` — <sha>` suffix at end of line)
      - Replace with: `- [x] N.M <title> — <SHA>`
 
@@ -186,7 +201,7 @@ After implementing a phase:
 
 - **Next phase decision**: If there is a next phase, help the user decide whether to continue or start fresh.
 
-  Ask the user: "Phase [N] complete. How to proceed?" with options:
+  Ask the user: "Phase [N] complete. How to proceed?" with the following options:
   - "Continue to Phase [N+1]" (description: "Stay in this context and proceed to the next phase.")
   - "Clear context first" (description: "Copy resume command to clipboard. Start fresh for Phase [N+1].")
   - "Review this phase first" (description: "Run /10x-impl-review to verify implementation against the plan before proceeding.")
@@ -197,7 +212,6 @@ After implementing a phase:
 
   **If user chooses to clear**: Copy the resume command to clipboard and display it:
   1. Copy:
-
      ```bash
      echo -n "/10x-implement <change-id> phase [next-phase-number]" | pbcopy 2>/dev/null || echo -n "/10x-implement <change-id> phase [next-phase-number]" | clip.exe 2>/dev/null || echo -n "/10x-implement <change-id> phase [next-phase-number]" | xclip -selection clipboard 2>/dev/null || true
      ```
@@ -206,7 +220,6 @@ After implementing a phase:
      # PowerShell (Windows)
      Set-Clipboard "/10x-implement <change-id> phase [next-phase-number]"
      ```
-
   2. Display:
      ```
      → /10x-implement <change-id> phase [next-phase-number] (✓ copied)
@@ -222,12 +235,12 @@ do not check off items in the manual testing steps until confirmed by the user.
 
 ### After each step
 
-Use file editing to flip exactly one Progress line at a time:
+Use your AI coding assistant to modify the file to flip exactly one Progress line at a time:
 
 - Find: `- [ ] N.M <title>`
 - Replace with: `- [x] N.M <title>`
 
-Do not append the SHA suffix on a per-step edit — the SHA is written back at phase end by the commit ritual (see "Verification Approach" above), and only the closing commit's SHA goes onto every row that flipped during the phase. Mid-phase, completed rows sit `[x]` without a SHA suffix; this is a valid intermediate state.
+Do not append the SHA suffix on a per-step modification — the SHA is written back at phase end by the commit ritual (see "Verification Approach" above), and only the closing commit's SHA goes onto every row that flipped during the phase. Mid-phase, completed rows sit `[x]` without a SHA suffix; this is a valid intermediate state.
 
 ### After each phase
 
@@ -242,9 +255,8 @@ Empty-diff phases (manual-verification-only or no-op adapted phases) commit noth
 
 When every `- [ ]` in the entire `## Progress` section is now `- [x]`:
 
-1. **Defensive pending-items surface.** Re-scan the entire `## Progress` section one last time for any `- [ ]` rows. Under normal flow this is a no-op — the trigger condition for "After all phases" is already "every `- [ ]` is `- [x]`", so the surface should find nothing. It exists to make any unexpected stragglers explicit rather than silently lost (e.g., if a partial run, a manual edit, or a resume path bypassed the trigger). If the count is non-zero, list each row as `<phase>.<index> <title>` grouped by Automated vs Manual subsection in document order, then ask the user:
+1. **Defensive pending-items surface.** Re-scan the entire `## Progress` section one last time for any `- [ ]` rows. Under normal flow this is a no-op — the trigger condition for "After all phases" is already "every `- [ ]` is `- [x]`", so the surface should find nothing. It exists to make any unexpected stragglers explicit rather than silently lost (e.g., if a partial run, a manual edit, or a resume path bypassed the trigger). If the count is non-zero, list each row as `<phase>.<index> <title>` grouped by Automated vs Manual subsection in document order, then ask the user: "<N> Progress item(s) still pending. How to proceed?" with the following options:
 
-   Ask the user: "<N> Progress item(s) still pending. How to proceed?" with options:
    - "Pause (Recommended)" (description: "STOP without flipping change.md.status. Address the stragglers manually, then re-enter the epilogue path.")
    - "Proceed to epilogue" (description: "Flip status: implemented and run the epilogue commit anyway. Stragglers will surface as warnings under /10x-archive.")
 
@@ -256,7 +268,7 @@ When every `- [ ]` in the entire `## Progress` section is now `- [x]`:
    1. Stage exactly `context/changes/<change-id>/plan.md` and `context/changes/<change-id>/change.md` (explicit paths, no `git add -A`).
    2. Run `git diff --cached --quiet`; if exit code 0, skip the epilogue (nothing trailing to commit) and stop here.
    3. Propose subject `chore(<change-id>): close out plan (epilogue)` with a short body noting the plan's final SHA write-back + change.md → implemented, plus the `Refs:` line from "Tracking issue/task references for commits" when applicable. Ask the user to approve as proposed / edit subject / override entirely (same options as the phase ritual).
-   4. Commit via heredoc per the global protocol (`Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>` trailer; never `--no-verify` / `--amend`).
+   4. Commit via heredoc per the global protocol (never `--no-verify` / `--amend`).
    5. Do NOT write the epilogue's own SHA back into the plan — its only job is to land the trailing edits cleanly.
 
 ### "Where am I?" — derived, not stored
@@ -278,11 +290,9 @@ Summary:
 - Files changed: [list key files]
 ```
 
-Ask the user:
-"Plan complete. Would you like a final implementation review?" with options:
-
-- "Run full review (/10x-impl-review)" (description: "Comprehensive review of all phases against the plan. Catches cross-phase issues.")
-- "Skip review — I'm satisfied" (description: "No review needed. Mark the plan as done.")
+Ask the user: "Plan complete. Would you like a final implementation review?" with the following options:
+  - "Run full review (/10x-impl-review)" (description: "Comprehensive review of all phases against the plan. Catches cross-phase issues.")
+  - "Skip review — I'm satisfied" (description: "No review needed. Mark the plan as done.")
 
 If user chooses review → run `/10x-impl-review <change-id>` (no phase number = full plan review).
 

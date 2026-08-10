@@ -2,16 +2,11 @@
 name: 10x-bootstrapper
 description: >
   Scaffold a project into the current working directory after the tech stack
-  has been picked. Reads context/foundation/tech-stack.md (the hand-off written
-  by /10x-tech-stack-selector), looks up the chosen card in the starter
-  registry, and runs its CLI through one of three cwd strategies
-  (subdir-then-move, native-cwd, git-clone) with a strict conflict policy that
-  always preserves context/. Two verification slots flank the scaffold: a
-  light pre-scaffold recency check and a deeper post-scaffold audit. Writes a
-  verification log to context/changes/bootstrap-verification/verification.md.
-  Use when the user says "bootstrap the project", "scaffold the app", "set up
-  the codebase", "let's start the project", or naturally follows
-  /10x-tech-stack-selector. Use AFTER /10x-tech-stack-selector.
+  is picked. Reads context/foundation/tech-stack.md, runs the chosen starter's
+  CLI with a strict conflict policy that always preserves context/, and writes
+  a verification log. Use when the user says "bootstrap the project",
+  "scaffold the app", "set up the codebase", "let's start the project".
+  Use AFTER /10x-tech-stack-selector.
 ---
 
 # Bootstrapper: From Tech Stack to Scaffolded Project
@@ -102,10 +97,7 @@ Hand-off received:
   Feature flags:  <comma list of has_* set to true, or "none">
 ```
 
-Ask one confirmation:
-
 Ask the user:
-
 - question: "Proceed with this hand-off, or correct something first?"
   header: "Hand-off"
   options:
@@ -115,7 +107,7 @@ Ask the user:
     description: "I'll ask which field to override for this run; the file on disk is unchanged."
   - label: "Stop — fix the hand-off first"
     description: "Exit. Re-run /10x-tech-stack-selector to update tech-stack.md, then re-invoke."
-    multiSelect: false
+  multiSelect: false
 
 If "Correct a value": ask which field, capture an override, proceed with the override applied for this session only. Then run the populated-cwd guard from `references/refusal-protocol.md` (warn-and-confirm if cwd already carries a scaffold-shaped fingerprint such as `package.json`, `Cargo.toml`, `Gemfile`, `pyproject.toml`, etc.).
 

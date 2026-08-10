@@ -1,18 +1,12 @@
 ---
 name: 10x-health-check
 description: >
-  Run a health check on an existing project: dependency audit, security scan,
-  test runner detection, CI/CD evaluation, and missing configuration analysis.
-  Maps the three execution gates (pre/in/post) from /10x-bootstrapper to an
-  assessment framework for existing codebases. Reads optional
-  context/foundation/stack-assessment.md from /10x-stack-assess to focus checks
-  on identified gaps. Writes context/foundation/health-check.md with findings,
-  prioritized fixes, and an agent-readiness verdict. Use when the user has an
-  existing project and wants to verify its health before working with an agent.
-  Trigger phrases: "health check", "check my project", "audit my project",
-  "is my project healthy", "sprawdź projekt", "audyt projektu",
-  "health-check", "project health".
-  Use AFTER /10x-stack-assess (brownfield chain), BEFORE agent onboarding (m1-l4).
+  Health-check an existing project: dependency audit, security scan, test
+  runner detection, CI/CD and missing-config analysis. Writes
+  context/foundation/health-check.md with prioritized fixes and an
+  agent-readiness verdict. Trigger phrases: "health check", "audit my project",
+  "is my project healthy", "sprawdź projekt", "audyt projektu". Use AFTER
+  /10x-stack-assess (brownfield chain), BEFORE agent onboarding.
 ---
 
 # Health Check: Audit an Existing Project for Agent-Readiness
@@ -21,7 +15,7 @@ This skill is the brownfield counterpart to `/10x-bootstrapper`. Where bootstrap
 
 The skill sits in the brownfield chain: `/10x-shape → /10x-prd → /10x-stack-assess → /10x-health-check`. Its single job: audit the project's dependency health, test infrastructure, CI/CD configuration, and configuration completeness, then produce a structured report with prioritized fixes and an agent-readiness verdict.
 
-When `context/foundation/stack-assessment.md` exists (from `/10x-stack-assess`), health-check links its findings to the quality-gate gaps identified there. The two reports are complementary: stack-assess evaluates the _stack choice_ against quality gates; health-check evaluates the _project state_ against operational health criteria.
+When `context/foundation/stack-assessment.md` exists (from `/10x-stack-assess`), health-check links its findings to the quality-gate gaps identified there. The two reports are complementary: stack-assess evaluates the *stack choice* against quality gates; health-check evaluates the *project state* against operational health criteria.
 
 ## When to use, when to skip
 
@@ -55,7 +49,7 @@ When this skill is invoked:
 
 ### Step 0 — Cwd precondition
 
-Detect project markers:
+Detect project markers by executing a shell command:
 
 ```bash
 find . -maxdepth 1 \( -name "package.json" -o -name "Cargo.toml" -o -name "pyproject.toml" -o -name "go.mod" -o -name "Gemfile" -o -name "composer.json" -o -name "*.csproj" -o -name "pubspec.yaml" \) 2>/dev/null
@@ -80,16 +74,16 @@ If markers are found, detect the language family from the marker (same detection
 
 Check for a lockfile matching the detected language family:
 
-| Language family | Expected lockfiles                                                                    |
-| --------------- | ------------------------------------------------------------------------------------- |
-| JS/TS           | `package-lock.json`, `yarn.lock`, `pnpm-lock.yaml`, `bun.lockb`                       |
-| Python          | `poetry.lock`, `uv.lock`, `Pipfile.lock`, `requirements.txt` (weak — not a true lock) |
-| Rust            | `Cargo.lock`                                                                          |
-| Go              | `go.sum`                                                                              |
-| Ruby            | `Gemfile.lock`                                                                        |
-| PHP             | `composer.lock`                                                                       |
-| .NET            | `packages.lock.json` (NuGet)                                                          |
-| Dart            | `pubspec.lock`                                                                        |
+| Language family | Expected lockfiles |
+|---|---|
+| JS/TS | `package-lock.json`, `yarn.lock`, `pnpm-lock.yaml`, `bun.lockb` |
+| Python | `poetry.lock`, `uv.lock`, `Pipfile.lock`, `requirements.txt` (weak — not a true lock) |
+| Rust | `Cargo.lock` |
+| Go | `go.sum` |
+| Ruby | `Gemfile.lock` |
+| PHP | `composer.lock` |
+| .NET | `packages.lock.json` (NuGet) |
+| Dart | `pubspec.lock` |
 
 If no lockfile is found, flag as a finding:
 
@@ -103,18 +97,18 @@ If no lockfile is found, flag as a finding:
 
 Dispatch to the ecosystem's audit tool by language family. The dispatch table matches the bootstrapper's `audit_commands` pattern:
 
-| Language family | Audit command                                           | Notes                                                              |
-| --------------- | ------------------------------------------------------- | ------------------------------------------------------------------ |
-| JS/TS           | `npm audit --json`                                      | Exits non-zero when vulnerabilities exist — not a halt condition   |
-| Python          | `pip-audit --format json`                               | Falls back to skip if pip-audit not installed                      |
-| Rust            | `cargo audit --json`                                    | Falls back to skip if cargo-audit not installed                    |
-| Go              | `govulncheck -json ./...`                               | Falls back to skip if govulncheck not installed                    |
-| Ruby            | `bundle audit check --update`                           | Human-readable output, parse line-by-line                          |
-| PHP             | `composer audit --format json`                          | Requires Composer 2.4+                                             |
-| .NET            | `dotnet list package --vulnerable --include-transitive` | Human-readable, parse for severity markers                         |
-| Java, Dart      | (skip)                                                  | No built-in audit tool; note the skip and recommend external tools |
+| Language family | Audit command | Notes |
+|---|---|---|
+| JS/TS | `npm audit --json` | Exits non-zero when vulnerabilities exist — not a halt condition |
+| Python | `pip-audit --format json` | Falls back to skip if pip-audit not installed |
+| Rust | `cargo audit --json` | Falls back to skip if cargo-audit not installed |
+| Go | `govulncheck -json ./...` | Falls back to skip if govulncheck not installed |
+| Ruby | `bundle audit check --update` | Human-readable output, parse line-by-line |
+| PHP | `composer audit --format json` | Requires Composer 2.4+ |
+| .NET | `dotnet list package --vulnerable --include-transitive` | Human-readable, parse for severity markers |
+| Java, Dart | (skip) | No built-in audit tool; note the skip and recommend external tools |
 
-Run the resolved command from cwd. Capture stdout, stderr, and exit code. The audit tool's exit code is informational — health-check does NOT halt on a non-zero audit exit.
+Run the resolved command from cwd using a shell command. Capture stdout, stderr, and exit code. The audit tool's exit code is informational — health-check does NOT halt on a non-zero audit exit.
 
 **Severity tiering** (same as bootstrapper's post-scaffold verification):
 
@@ -131,12 +125,12 @@ When the tool distinguishes direct from transitive dependencies, surface the bre
 
 If the language family supports it, run a quick staleness check:
 
-| Language family | Command                                          | What it shows                                |
-| --------------- | ------------------------------------------------ | -------------------------------------------- |
-| JS/TS           | `npm outdated --json`                            | Current vs wanted vs latest for each package |
-| Python          | `pip list --outdated --format json`              | Current vs latest                            |
-| Rust            | `cargo outdated --root-deps-only` (if installed) | Outdated direct deps                         |
-| Ruby            | `bundle outdated --only-explicit`                | Outdated direct gems                         |
+| Language family | Command | What it shows |
+|---|---|---|
+| JS/TS | `npm outdated --json` | Current vs wanted vs latest for each package |
+| Python | `pip list --outdated --format json` | Current vs latest |
+| Rust | `cargo outdated --root-deps-only` (if installed) | Outdated direct deps |
+| Ruby | `bundle outdated --only-explicit` | Outdated direct gems |
 
 This check is informational — surface major version gaps and packages more than 2 major versions behind. Do not report every minor version bump.
 
@@ -157,17 +151,17 @@ Outdated: <N> packages with major version gaps.
 
 Detect the test runner from configuration files:
 
-| Language family | Detection sources                                                                                             | Test runners                             |
-| --------------- | ------------------------------------------------------------------------------------------------------------- | ---------------------------------------- |
-| JS/TS           | `package.json` scripts/devDeps, `vitest.config.*`, `jest.config.*`, `playwright.config.*`, `cypress.config.*` | Vitest, Jest, Playwright, Cypress, Mocha |
-| Python          | `pyproject.toml [tool.pytest]`, `setup.cfg [tool:pytest]`, `tox.ini`, `pytest.ini`                            | pytest, unittest, tox                    |
-| Rust            | `Cargo.toml` (built-in `cargo test`)                                                                          | cargo test                               |
-| Go              | (built-in `go test`)                                                                                          | go test                                  |
-| Ruby            | `Gemfile` deps, `.rspec`, `Rakefile`                                                                          | RSpec, Minitest                          |
-| PHP             | `phpunit.xml*`, `composer.json` deps                                                                          | PHPUnit, Pest                            |
-| .NET            | `*.csproj` references                                                                                         | xUnit, NUnit, MSTest                     |
+| Language family | Detection sources | Test runners |
+|---|---|---|
+| JS/TS | `package.json` scripts/devDeps, `vitest.config.*`, `jest.config.*`, `playwright.config.*`, `cypress.config.*` | Vitest, Jest, Playwright, Cypress, Mocha |
+| Python | `pyproject.toml [tool.pytest]`, `setup.cfg [tool:pytest]`, `tox.ini`, `pytest.ini` | pytest, unittest, tox |
+| Rust | `Cargo.toml` (built-in `cargo test`) | cargo test |
+| Go | (built-in `go test`) | go test |
+| Ruby | `Gemfile` deps, `.rspec`, `Rakefile` | RSpec, Minitest |
+| PHP | `phpunit.xml*`, `composer.json` deps | PHPUnit, Pest |
+| .NET | `*.csproj` references | xUnit, NUnit, MSTest |
 
-If a test runner is detected, attempt a dry run to verify tests can execute:
+If a test runner is detected, attempt a dry run to verify tests can execute by running a shell command:
 
 ```bash
 # JS/TS examples:
@@ -192,7 +186,7 @@ Surface findings:
 
 #### 2b. CI/CD configuration evaluation
 
-Check for CI/CD configuration files:
+Check for CI/CD configuration files by running a shell command:
 
 ```bash
 find . -maxdepth 2 \( -name ".github" -o -name ".gitlab-ci.yml" -o -name "Jenkinsfile" -o -name ".circleci" -o -name "cloudbuild.yaml" -o -name "bitbucket-pipelines.yml" -o -name ".travis.yml" \) 2>/dev/null
@@ -200,13 +194,13 @@ find . -maxdepth 2 \( -name ".github" -o -name ".gitlab-ci.yml" -o -name "Jenkin
 
 If a CI configuration is found, read it and evaluate coverage:
 
-| Stage      | What to check                                                              |
-| ---------- | -------------------------------------------------------------------------- |
-| Lint       | Is there a lint step? (eslint, ruff, clippy, rubocop, phpstan, etc.)       |
-| Test       | Is there a test step? Does it match the detected test runner?              |
-| Build      | Is there a build/compile step?                                             |
-| Type check | Is there a type-check step? (tsc, mypy, pyright, etc.)                     |
-| Security   | Is there a security scan step? (npm audit, Snyk, CodeQL, Dependabot, etc.) |
+| Stage | What to check |
+|---|---|
+| Lint | Is there a lint step? (eslint, ruff, clippy, rubocop, phpstan, etc.) |
+| Test | Is there a test step? Does it match the detected test runner? |
+| Build | Is there a build/compile step? |
+| Type check | Is there a type-check step? (tsc, mypy, pyright, etc.) |
+| Security | Is there a security scan step? (npm audit, Snyk, CodeQL, Dependabot, etc.) |
 
 Surface a coverage summary:
 
@@ -221,15 +215,15 @@ If no CI configuration is found, note it as a Category B item — the learner wi
 
 Check for common development configuration:
 
-| File                                     | Purpose                              | Severity if missing                      |
-| ---------------------------------------- | ------------------------------------ | ---------------------------------------- |
-| `.editorconfig`                          | Consistent formatting across editors | low                                      |
-| `.prettierrc*` / `biome.json` (JS/TS)    | Code formatting                      | medium (if no formatter configured)      |
-| `.eslintrc*` / `eslint.config.*` (JS/TS) | Linting                              | medium                                   |
-| `tsconfig.json` with `strict: true` (TS) | Type strictness                      | high (if TS project without strict)      |
-| `.gitignore`                             | Tracked file exclusions              | high                                     |
-| `.env.example` / `.env.template`         | Environment variable documentation   | low                                      |
-| `AGENTS.md`                              | AI assistant instruction files       | Category B — covered in agent onboarding |
+| File | Purpose | Severity if missing |
+|---|---|---|
+| `.editorconfig` | Consistent formatting across editors | low |
+| `.prettierrc*` / `biome.json` (JS/TS) | Code formatting | medium (if no formatter configured) |
+| `.eslintrc*` / `eslint.config.*` (JS/TS) | Linting | medium |
+| `tsconfig.json` with `strict: true` (TS) | Type strictness | high (if TS project without strict) |
+| `.gitignore` | Tracked file exclusions | high |
+| `.env.example` / `.env.template` | Environment variable documentation | low |
+| `CLAUDE.md` / `AGENTS.md` | Agent instruction files | Category B — covered in agent onboarding |
 
 Surface missing files grouped by severity.
 
@@ -248,10 +242,10 @@ In-check: test runner <detected/not detected>, CI <provider/not detected>,
 
 #### 3a. Cross-reference with stack-assessment
 
-If `context/foundation/stack-assessment.md` exists, read it and link findings:
+If `context/foundation/stack-assessment.md` exists, read its content and link findings:
 
 - If stack-assess identified a quality-gate failure (e.g., "typed: fail"), and health-check found no type-checking in CI → reinforce: "the stack lacks type safety AND CI doesn't enforce types — compensation is doubly important"
-- If stack-assess identified compensation strategies → check whether the recommended instruction-file entries exist (are `AGENTS.md` present? Do they contain the recommended rules?)
+- If stack-assess identified compensation strategies → check whether the recommended instruction-file entries exist (are `CLAUDE.md` / `AGENTS.md` present? Do they contain the recommended rules?)
 - If stack-assess gave a `ready-with-compensation` verdict but the compensation entries are missing → flag as a gap
 
 #### 3b. Determine overall health status
@@ -286,11 +280,10 @@ Split findings into two categories:
 These findings are real but the learner will set them up in upcoming steps. Frame them as "coming up next," not as problems:
 
 - **No CI pipeline** → covered in the infrastructure/deployment lesson. Note the gap, point forward: "You'll set up CI in an upcoming lesson. For now, local test runner coverage is what matters for AI assistant collaboration."
-- **Missing AI assistant instruction files** (AGENTS.md) → covered in the AI assistant onboarding lesson. Do not recommend creating them now: "AI assistant onboarding walks you through building these with the right content. Generating a stub now would be premature."
+- **Missing AI assistant instruction files** (CLAUDE.md / AGENTS.md) → covered in the AI assistant onboarding lesson. Do not recommend creating them now: "AI assistant onboarding walks you through building these with the right content. Generating a stub now would be premature."
 - **Missing deployment configuration** → covered in the infrastructure lesson. Acknowledge, don't prioritize.
 
 When the health-check runs standalone (outside the course chain), all findings go into a single ranked list without the A/B split — the course-context framing only applies when the user is progressing through the brownfield chain. When running inside the 10xDevs course chain, enrich forward-references with lesson titles and links:
-
 - agent onboarding = [Agent Onboarding: Agents.md, AI Rules i feedback loops (M1L4)](https://platforma.przeprogramowani.pl/external/10xdevs-3/m1-l4)
 - infrastructure & CI/CD = [Sprint Zero z Agentem: infrastruktura, walking skeleton i pierwszy deploy (M1L5)](https://platforma.przeprogramowani.pl/external/10xdevs-3/m1-l5)
 
@@ -303,16 +296,9 @@ Each fix entry (in both categories) must include:
 
 ### Step 4 — Write health-check.md
 
-Check for collision:
+Check for collision by checking if the file `context/foundation/health-check.md` exists.
 
-```bash
-test -f context/foundation/health-check.md
-```
-
-If the file exists, ask:
-
-Ask the user:
-
+If the file exists, ask the user:
 - question: "context/foundation/health-check.md already exists. How would you like to proceed?"
   header: "Collision"
   options:
@@ -322,11 +308,11 @@ Ask the user:
     description: "Preserve history. New report lands at the next available version slot."
   - label: "Abort"
     description: "Exit without writing. The conversation findings are preserved in chat only."
-    multiSelect: false
+  multiSelect: false
 
 Build the output file per `references/health-check-schema.md`.
 
-Write to `context/foundation/health-check.md` (creating `context/foundation/` if it doesn't exist).
+Write the content to `context/foundation/health-check.md` (creating `context/foundation/` if it doesn't exist).
 
 After the write, print the closing summary:
 
@@ -374,6 +360,6 @@ Single file written: `context/foundation/health-check.md` (or `health-check-vN.m
 
 7. **Skill-internal labels stay internal.** When speaking to the user, never reference step numbers, gate names as technical terms, or internal field names. Use plain language: "dependency audit", "test infrastructure check", "overall health."
 
-8. **Course-context awareness.** The health-check sits in a learning path. Missing CI/CD, missing the project's AI configuration file (AGENTS.md), and missing deployment config are expected gaps at this stage — frame them as "coming up next," not as failures. The verdict must not penalize the learner for things they haven't been taught yet.
+8. **Course-context awareness.** The health-check sits in a learning path. Missing CI/CD, missing AGENTS.md, and missing deployment config are expected gaps at this stage — frame them as "coming up next," not as failures. The verdict must not penalize the learner for things they haven't been taught yet.
 
 9. **Universal language only.** No private vault paths or organization-specific branding in shipped content.

@@ -8,12 +8,10 @@ description: Review implementation against plan for drift, dangerous decisions, 
 Compare actual implementation work against the original plan to catch drift, dangerous decisions, architecture violations, and pattern misuse before they compound.
 
 Two granularities:
-
 - **Phase review**: after a single phase — fast, focused on that phase's changes
 - **Full plan review**: after all phases — comprehensive sweep
 
 Two modes:
-
 - **Fresh review**: analyze → findings → interactive triage
 - **Resume triage**: load a saved report and jump to per-issue triage
 
@@ -29,7 +27,7 @@ If the resolved plan path starts with `context/archive/`, refuse: print "This ch
 
 ## Step 1: Load plan and detect change scope
 
-Create a task named "Implementation Review" with active form "Loading context"
+Create a task: "Implementation Review" / activeForm "Loading context"
 
 1. **Read the plan file fully** — no limit/offset.
 2. **Read `context/foundation/lessons.md` if present** and use accepted rules as priors when scanning for findings — a deviation that violates a known recurring rule is a stronger signal than a generic style nit.
@@ -45,7 +43,6 @@ Create a task named "Implementation Review" with active form "Loading context"
    If the range can't be cleanly determined, fall back to commits whose messages reference the plan/feature.
 
 Compare changed-file list against plan-file list:
-
 - **In plan AND in diff** → expected change, verify content matches intent
 - **In diff but NOT in plan** → unplanned change, investigate and flag
 - **In plan but NOT in diff** → potentially missing implementation
@@ -54,7 +51,7 @@ Don't pre-read every changed file into the main context — let the sub-agents r
 
 ## Step 2: Parallel review via sub-agents
 
-Update the task's active form to "Gathering evidence"
+Update the task: activeForm "Gathering evidence"
 
 Launch **two** sub-agents simultaneously. Each gets targeted context — don't dump the full plan into both.
 
@@ -63,7 +60,6 @@ Launch **two** sub-agents simultaneously. Each gets targeted context — don't d
 Give it: the "Changes Required" text for the reviewed phases, the list of file paths to read.
 
 Instructions: for each planned change, read the actual file and verify implementation matches intent. Check for:
-
 - Changes implemented differently than planned (intent mismatch, not formatting)
 - Planned items skipped without documentation
 - Additions not described in the plan (scope creep)
@@ -90,20 +86,19 @@ Report each finding with: file, line number, category, severity (CRITICAL / WARN
 
 ## Step 3: Verify success criteria
 
-Update the task's active form to "Verifying success criteria"
+Update the task: activeForm "Verifying success criteria"
 
 For each reviewed phase:
 
-**Automated**: run each command from the "Automated Verification" checkboxes using a bash shell. Record command, pass/fail, actual output (truncate if huge).
+**Automated**: run each command from the "Automated Verification" checkboxes using a shell. Record command, pass/fail, actual output (truncate if huge).
 
 **Manual**: in the `## Progress` section, check Manual items as `- [x]` vs `- [ ]`. Flag items marked complete that lack observable evidence in the diff (possible rubber-stamping); acknowledge unchecked items as pending.
 
 ## Step 4: Compile findings and present report
 
-Update the task's active form to "Compiling findings"
+Update the task: activeForm "Compiling findings"
 
 Each finding has:
-
 - **ID**: F1, F2, F3…
 - **Severity**: CRITICAL / WARNING / OBSERVATION (how bad if ignored)
 - **Impact**: LOW / MEDIUM / HIGH (how much focus the decision needs)
@@ -117,11 +112,11 @@ Each finding has:
 
 Orthogonal to severity. A CRITICAL with LOW impact (obvious one-line fix) is cheap; a WARNING with HIGH impact (architectural rework) deserves careful thought.
 
-| Impact        | Meaning                                                                                |
-| ------------- | -------------------------------------------------------------------------------------- |
-| 🏃 **LOW**    | Quick decision. Fix is obvious and narrowly scoped. Safe to batch.                     |
-| 🔎 **MEDIUM** | Worth pausing. Real tradeoff or non-trivial edit — think before deciding.              |
-| 🔬 **HIGH**   | Architectural stakes. Wide blast radius, strategic implications, or unclear best path. |
+| Impact | Meaning |
+|---|---|
+| 🏃 **LOW** | Quick decision. Fix is obvious and narrowly scoped. Safe to batch. |
+| 🔎 **MEDIUM** | Worth pausing. Real tradeoff or non-trivial edit — think before deciding. |
+| 🔬 **HIGH** | Architectural stakes. Wide blast radius, strategic implications, or unclear best path. |
 
 ### Fix options
 
@@ -130,7 +125,6 @@ Default to **one** fix. Only offer two when there's a genuine tradeoff a smart r
 **LOW-impact findings**: just `Fix: [one line]`. Noise isn't helpful when the answer is obvious.
 
 **MEDIUM/HIGH-impact findings**: each option gets:
-
 ```
 [1-sentence approach] · Strength: [advantage, ideally grounded in code/plan evidence] · Tradeoff: [cost or risk] · Confidence: HIGH|MED|LOW — [1-line why] · Blind spot: [what we haven't verified, or "None significant"]
 ```
@@ -140,7 +134,6 @@ When offering two options, mark exactly one `⭐ Recommended`.
 ### Dimension verdicts
 
 PASS / WARNING / FAIL per dimension:
-
 - **Plan Adherence** — planned changes implemented as described? FAIL on MISSING or major DRIFT.
 - **Scope Discipline** — "not doing" boundaries respected? WARNING if EXTRA changes exist but are benign.
 - **Safety & Quality** — security, performance, reliability, data safety. FAIL on any CRITICAL finding.
@@ -254,28 +247,16 @@ Plain text, box-drawing. PASS dimensions appear only in the verdicts table, neve
 - **Impact always carries its one-line meaning** (copy from the Impact table — "architectural stakes; think carefully before deciding" / "real tradeoff; pause to reason through it" / "quick decision; fix is obvious and narrowly scoped"). This makes LOW/MEDIUM/HIGH self-explanatory at the point of use instead of relying on the user to remember the table.
 - Severity, Impact, Dimension, Location are each on their own line with aligned labels. Detail starts on its own line under a `Detail:` label so it can wrap naturally.
 
-After the report, ask the user:
+### Saving the report (always)
 
-```
-question: "Review complete. How would you like to proceed?"
-header: "Implementation Review — [N] findings"
-options:
-  - label: "Triage findings"
-    description: "Walk through each finding and decide."
-  - label: "Save report & triage later"
-    description: "Save the full report. Resume with /10x-impl-review <report-path>."
-  - label: "Save report only"
-    description: "Save and finish — I'll handle the findings myself."
-multiSelect: false
-```
+**Every path through this skill persists the report and stamps the change** — Triage now, Triage later, and Done all write the file. This is what lets `/10x-archive` and `/10x-status` see the review and keeps `change.md.status` correct. Do this *before* presenting the proceed options — never conditionally, and never only on the "save" branches.
 
-### Saving the report
-
-Save to `context/changes/<change-id>/reviews/impl-review.md` (or `context/changes/<change-id>/reviews/impl-review-phase-N.md` for a phase-scoped review). Update `change.md`: set `status: impl_reviewed` and `updated: <today>`. If the user opts to triage, queue any "fix in plan/code" follow-ups into `context/changes/<change-id>/follow-ups/review-fixes.md`.
+1. **Write the report file** to `context/changes/<change-id>/reviews/impl-review.md` (or `context/changes/<change-id>/reviews/impl-review-phase-N.md` for a phase-scoped review), using the format below. Create the `reviews/` directory if absent.
+2. **Stamp `change.md`**: set `status: impl_reviewed` and `updated: <today>`. Once, here — independent of which proceed option the user picks. (If a `change.md` field is already `impl_reviewed`, just refresh `updated`.)
+3. If the user later triages, the on-disk report is the working copy: its `Decision:` fields are updated in place as each finding is decided (Step 5), and any "fix in plan/code" follow-ups are queued into `context/changes/<change-id>/follow-ups/review-fixes.md`.
 
 ```markdown
 <!-- IMPL-REVIEW-REPORT -->
-
 # Implementation Review: [Plan Title]
 
 - **Plan**: [plan file path]
@@ -286,14 +267,14 @@ Save to `context/changes/<change-id>/reviews/impl-review.md` (or `context/change
 
 ## Verdicts
 
-| Dimension           | Verdict           |
-| ------------------- | ----------------- |
-| Plan Adherence      | PASS/WARNING/FAIL |
-| Scope Discipline    | PASS/WARNING/FAIL |
-| Safety & Quality    | PASS/WARNING/FAIL |
-| Architecture        | PASS/WARNING/FAIL |
+| Dimension | Verdict |
+|-----------|---------|
+| Plan Adherence | PASS/WARNING/FAIL |
+| Scope Discipline | PASS/WARNING/FAIL |
+| Safety & Quality | PASS/WARNING/FAIL |
+| Architecture | PASS/WARNING/FAIL |
 | Pattern Consistency | PASS/WARNING/FAIL |
-| Success Criteria    | PASS/WARNING/FAIL |
+| Success Criteria | PASS/WARNING/FAIL |
 
 ## Findings
 
@@ -343,12 +324,30 @@ Save to `context/changes/<change-id>/reviews/impl-review.md` (or `context/change
 
 The `<!-- IMPL-REVIEW-REPORT -->` marker and `Decision: PENDING` fields enable resume mode.
 
-"Save & triage later" → save, print the path, remind them to run `/10x-impl-review <saved-report-path>`.
-"Triage" → proceed to Step 5.
+### Proceed options
+
+With the report already saved and `change.md` already stamped, ask how to proceed:
+
+Ask the user: "Review saved to <report-path>. How would you like to proceed?"
+header: "Implementation Review — [N] findings"
+options:
+  - label: "Triage findings now"
+    description: "Walk through each finding and decide. Decisions are written back to the saved report."
+  - label: "Triage later"
+    description: "Resume with /10x-impl-review <report-path>."
+  - label: "Done"
+    description: "Report saved — I'll handle the findings myself."
+multiSelect: false
+
+- **Triage findings now** → proceed to Step 5; the saved report is the working copy.
+- **Triage later** → print the saved report path and remind them to run `/10x-impl-review <report-path>`.
+- **Done** → print the saved report path and STOP.
+
+Whichever they pick, the report file and the `impl_reviewed` stamp already exist on disk — the choice only decides whether triage happens now, later, or is left to the user.
 
 ## Step 5: Interactive triage
 
-Update the task's active form to "Triage"
+Update the task: activeForm "Triage"
 
 ### Resume mode
 
@@ -359,10 +358,7 @@ If entered via saved file: read it, parse `### F` headers, filter to `Decision: 
 Walk findings in severity order (CRITICAL → WARNING → OBSERVATION). For each:
 
 **With 2 fix options:**
-Ask the user:
-
-```
-question: "F[N] — [title]\n\nSeverity: [sev icon] [SEV]\nImpact: [impact icon] [LEVEL] — [meaning]\nDimension: [dim]\nLocation: [loc]\n\nDetail: [detail]\n\n[Fix A block]\n\n[Fix B block]"
+Ask the user: "F[N] — [title]\n\nSeverity: [sev icon] [SEV]\nImpact: [impact icon] [LEVEL] — [meaning]\nDimension: [dim]\nLocation: [loc]\n\nDetail: [detail]\n\n[Fix A block]\n\n[Fix B block]"
 header: "Finding [current] of [total remaining]"
 options:
   - label: "Apply Fix A ⭐"
@@ -374,13 +370,9 @@ options:
   - label: "Record as lesson"
     description: "Save as a recurring project rule via /10x-lesson."
 multiSelect: false
-```
 
 **With 1 fix option:**
-Ask the user:
-
-```
-question: "F[N] — [title]\n\nSeverity: [sev icon] [SEV]\nImpact: [impact icon] [LEVEL] — [meaning]\nDimension: [dim]\nLocation: [loc]\n\nDetail: [detail]\n\n[Fix block]"
+Ask the user: "F[N] — [title]\n\nSeverity: [sev icon] [SEV]\nImpact: [impact icon] [LEVEL] — [meaning]\nDimension: [dim]\nLocation: [loc]\n\nDetail: [detail]\n\n[Fix block]"
 header: "Finding [current] of [total remaining]"
 options:
   - label: "Fix now"
@@ -392,12 +384,10 @@ options:
   - label: "Record as lesson"
     description: "Save as a recurring project rule via /10x-lesson."
 multiSelect: false
-```
 
 **Handling responses:**
-
-- **Apply Fix A/B / Fix now**: show the exact before/after code change. Ask for confirmation ("Apply this?"), then perform the edit. Mark FIXED (record which option, e.g. "Fixed via Fix A").
-- **Fix differently**: Ask the user for the preferred approach, perform the edit, mark FIXED.
+- **Apply Fix A/B / Fix now**: show the exact before/after code change. Brief confirmation ("Apply this?"), then edit the code. Mark FIXED (record which option, e.g. "Fixed via Fix A").
+- **Fix differently**: ask the preferred approach, apply the fix, mark FIXED.
 - **Record as lesson**: pre-fill four lessons-entry fields directly from the finding — `Context` from the finding's Location, `Problem` from the finding's Detail, `Rule` and `Applies to` left as empty placeholders for the user to fill. Show the proposed entry as a complete markdown block and ask the user to edit / confirm via Ask the user: ("Approve this entry?" / "Edit before saving" / "Cancel"). On confirm, append the entry as a new H2 section to `context/foundation/lessons.md` — if the file does not exist, create it first with this canonical 5-line header (no separate template file; the header is embedded inline here):
 
   ```
@@ -407,12 +397,11 @@ multiSelect: false
 
   ```
 
-  The pre-fill-then-confirm flow is the load-bearing UX detail; the user must see the full proposed entry with the pre-filled Context/Problem and have a chance to edit Rule and Applies-to before append. After the append succeeds, **always** ask a follow-up via Ask the user: "Lesson saved. Also apply the fix to the current code?" with options "Yes — fix now" / "No — lesson only". **Never skip this question or decide on the user's behalf** — whether the fix is trivial, out of scope, or spans many files, the decision belongs to the user. If yes: show the before/after code change, perform the edit, mark `FIXED + ACCEPTED-AS-RULE: <rule title>`. If no: mark `ACCEPTED-AS-RULE: <rule title>` (finding stays unfixed, rule is recorded for future work).
-
+  The pre-fill-then-confirm flow is the load-bearing UX detail; the user must see the full proposed entry with the pre-filled Context/Problem and have a chance to edit Rule and Applies-to before append. After the append succeeds, **always** ask a follow-up via Ask the user: "Lesson saved. Also apply the fix to the current code?" with options "Yes — fix now" / "No — lesson only". **Never skip this question or decide on the user's behalf** — whether the fix is trivial, out of scope, or spans many files, the decision belongs to the user. If yes: show the before/after code change, apply the fix, mark `FIXED + ACCEPTED-AS-RULE: <rule title>`. If no: mark `ACCEPTED-AS-RULE: <rule title>` (finding stays unfixed, rule is recorded for future work).
 - **Skip** → SKIPPED. Move on, don't argue.
-- **Other (free text)**: interpret the user's intent. Common intents: "fix differently" (especially in dual-fix context) → Ask the user for the preferred approach, perform the edit, mark FIXED; "accept risk" → mark ACCEPTED with the user's justification; "dismiss"/"disagree" → mark DISMISSED.
+- **Other (free text)**: interpret the user's intent. Common intents: "fix differently" (especially in dual-fix context) → ask the preferred approach, apply the fix, mark FIXED; "accept risk" → mark ACCEPTED with the user's justification; "dismiss"/"disagree" → mark DISMISSED.
 
-After each decision, if working from a saved file, update its `Decision:` field.
+After each decision, update the saved report's `Decision:` field for that finding (the report always exists on disk — see Step 4).
 
 ### Summary
 
@@ -429,7 +418,7 @@ After each decision, if working from a saved file, update its `Decision:` field.
 ═══════════════════════════════════════════════════════════
 ```
 
-If there's a saved report, update it with final decisions. Mark the review task completed.
+Update the saved report with the final decisions. Mark the review task completed.
 
 ## Notes
 
@@ -437,7 +426,7 @@ If there's a saved report, update it with final decisions. Mark the review task 
 - Be specific. "src/auth/handler.ts:42 — SQL query built with string concatenation, vulnerable to injection" — not "there might be a security issue somewhere".
 - Don't flag style preferences unless they matter. If the code works and follows the plan, minor style differences from existing code are observations, not warnings.
 - If the plan itself was flawed (e.g., planned an insecure approach), flag it — this review catches plan issues too.
-- Impact is about _decision effort_, not _severity_. LOW impact on a CRITICAL finding means the fix is obvious; HIGH impact on a WARNING means the tradeoff is real.
+- Impact is about *decision effort*, not *severity*. LOW impact on a CRITICAL finding means the fix is obvious; HIGH impact on a WARNING means the tradeoff is real.
 - Two fix options only when there's a genuine tradeoff. Don't invent alternatives for trivial fixes.
 - When reviewing a single phase, still check if changes from that phase broke assumptions of previous phases. Phases can interact.
 - During triage, keep momentum. User already read the report.
