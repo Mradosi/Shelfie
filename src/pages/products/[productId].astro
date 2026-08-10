@@ -1,9 +1,20 @@
 ---
 import ProductInterpretationPanel from "@/components/products/ProductInterpretationPanel";
+import IngredientGlossaryPanel from "@/components/products/IngredientGlossaryPanel";
 import RemoveShelfItemForm from "@/components/products/RemoveShelfItemForm.astro";
 import Layout from "@/layouts/Layout.astro";
 import { consumeFlashMessage } from "@/lib/flash-message";
+import {
+  createIngredientGlossaryItems,
+  createIngredientGlossaryRequests,
+  listIngredientGlossaryEntries,
+  type IngredientGlossaryItem,
+} from "@/lib/domain/ingredient-glossary";
 import { getUserScopedProductDetails } from "@/lib/domain/product-interpretation";
+import {
+  INGREDIENT_GLOSSARY_MODEL_VERSION,
+  INGREDIENT_GLOSSARY_PROMPT_VERSION,
+} from "@/lib/integrations/openrouter-ingredient-glossary";
 import { createClient } from "@/lib/supabase";
 import {
   getMissingUserDomainContractMessage,
@@ -30,6 +41,8 @@ let routeError: string | null = null;
 let details: Awaited<ReturnType<typeof getUserScopedProductDetails>> | null = null;
 let isOnShelf = false;
 let shelfItemId: string | null = null;
+let ingredientGlossaryItems: IngredientGlossaryItem[] = [];
+let ingredientGlossaryError: string | null = null;
 
 if (!supabase) {
   routeError = "Supabase nie jest skonfigurowane.";
@@ -48,6 +61,18 @@ if (!supabase) {
     const shelfItem = shelfItems.find((item) => item.productId === loadedDetails.product.id);
     isOnShelf = Boolean(shelfItem);
     shelfItemId = shelfItem?.id ?? null;
+
+    try {
+      const requests = createIngredientGlossaryRequests(loadedDetails.product.inciList);
+      const entries = await listIngredientGlossaryEntries(supabase, requests, {
+        modelVersion: INGREDIENT_GLOSSARY_MODEL_VERSION,
+        promptVersion: INGREDIENT_GLOSSARY_PROMPT_VERSION,
+      });
+      ingredientGlossaryItems = createIngredientGlossaryItems(loadedDetails.product.inciList, entries);
+    } catch (error) {
+      ingredientGlossaryError = error instanceof Error ? error.message : "Nie udało się wczytać opisów składników.";
+      ingredientGlossaryItems = createIngredientGlossaryItems(loadedDetails.product.inciList, []);
+    }
   } catch (error) {
     routeError = isMissingUserDomainContractError(error)
       ? getMissingUserDomainContractMessage()
@@ -177,24 +202,12 @@ const provenance = [product?.inciSource, product?.inciConfidence ? `pewność: $
 
             <ProductInterpretationPanel client:load initialInterpretation={details.interpretation} />
 
-            <section class="rounded-[1.75rem] border border-white/12 bg-slate-950/30 p-5 sm:p-6">
-              <div class="flex flex-col gap-2 border-b border-white/10 pb-5">
-                <p class="text-sm tracking-[0.2em] text-cyan-100/55 uppercase">Skład produktu</p>
-                <h2 class="text-2xl font-semibold text-white">INCI</h2>
-              </div>
-              {product.inciList.length > 0 ? (
-                <ol class="mt-5 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                  {product.inciList.map((ingredient, index) => (
-                    <li class="rounded-xl border border-white/8 bg-white/4 px-3 py-2.5 text-sm text-blue-100/80">
-                      <span class="mr-2 text-cyan-100/45">{index + 1}.</span>
-                      {ingredient}
-                    </li>
-                  ))}
-                </ol>
-              ) : (
-                <p class="mt-5 text-sm leading-6 text-blue-100/65">Brak listy składników dla tego produktu.</p>
-              )}
-            </section>
+            <IngredientGlossaryPanel
+              client:load
+              productId={product.id}
+              initialItems={ingredientGlossaryItems}
+              initialError={ingredientGlossaryError}
+            />
           </div>
         )
       }

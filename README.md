@@ -107,15 +107,18 @@ npx supabase start
 ```
 SUPABASE_URL=http://127.0.0.1:54321
 SUPABASE_KEY=<anon key from CLI output>
+SUPABASE_SERVICE_ROLE_KEY=<service_role key from CLI output>
 ```
 
-5. Apply the repo migrations and seed/reset contract:
+`SUPABASE_SERVICE_ROLE_KEY` is server-only. Never prefix it with `PUBLIC_`, put it in browser code, or commit its real value.
+
+5. Apply the repo migrations without clearing local users or products:
 
 ```bash
-npx supabase db reset
+npx supabase migration up
 ```
 
-This applies the domain tables in `supabase/migrations/` and the seed/reset compatibility file in `supabase/seed.sql`.
+This applies pending domain migrations in `supabase/migrations/` while preserving local test data.
 
 6. To stop the stack when done:
 
@@ -131,14 +134,16 @@ Local verification now depends on the domain schema being present. In addition t
 
 If you prefer to use a hosted Supabase project, add these variables to your `.env` and `.dev.vars` files:
 
-| Variable       | Description                                                |
-| -------------- | ---------------------------------------------------------- |
-| `SUPABASE_URL` | Project URL from Supabase dashboard → Settings → API       |
-| `SUPABASE_KEY` | `anon` public key from Supabase dashboard → Settings → API |
+| Variable                    | Description                                                                       |
+| --------------------------- | --------------------------------------------------------------------------------- |
+| `SUPABASE_URL`              | Project URL from Supabase dashboard → Settings → API                              |
+| `SUPABASE_KEY`              | `anon` public key from Supabase dashboard → Settings → API                        |
+| `SUPABASE_SERVICE_ROLE_KEY` | Server-only service-role key from Settings → API; never expose it to browser code |
 
 ```
 SUPABASE_URL=https://<project-ref>.supabase.co
 SUPABASE_KEY=<anon-key>
+SUPABASE_SERVICE_ROLE_KEY=<service-role-key>
 ```
 
 ### Email confirmation in local development
@@ -164,7 +169,7 @@ Route protection is handled in `src/middleware.ts`. Add paths to the `PROTECTED_
 
 ### Local verification flow
 
-After `npx supabase start`, `npx supabase db reset`, and `npm run dev`, verify the current slice like this:
+After `npx supabase start`, `npx supabase migration up`, and `npm run dev`, verify the current slice like this:
 
 1. Sign up or sign in and open `/dashboard`.
 2. Save a sample skin profile.
@@ -196,11 +201,11 @@ npm run build
 npx wrangler deploy
 ```
 
-Set `SUPABASE_URL` and `SUPABASE_KEY` as secrets in your Cloudflare dashboard or via `npx wrangler secret put`.
+Set `SUPABASE_URL`, `SUPABASE_KEY`, and server-only `SUPABASE_SERVICE_ROLE_KEY` as secrets in your Cloudflare dashboard or via `npx wrangler secret put`.
 
 ## CI
 
-GitHub Actions runs lint + build on every push and PR to `master`. Configure `SUPABASE_URL` and `SUPABASE_KEY` as repository secrets in GitHub for the build step.
+GitHub Actions runs lint + build on every push and PR to `master`. Configure `SUPABASE_URL`, `SUPABASE_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` as repository secrets in GitHub for the build step.
 
 ## License
 
