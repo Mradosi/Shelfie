@@ -38,13 +38,9 @@ Shelfie ma pomóc użytkownikowi uporządkować pielęgnację na bazie jego real
 | S-11 | personalized-product-fit-analysis  | user can open any known product's details and see a cached AI analysis of how it fits their skin profile                         | S-01, S-02, F-02 | US-01, FR-010                                                                      | done     |
 | S-13 | shelf-catalog-and-navigation       | user can browse their shelf, open product details, and move through the core product-to-routine flow from one clear navigation     | S-02, S-11      | US-01, FR-003, FR-008, FR-009                                                      | done     |
 | S-12 | ingredient-details-and-glossary    | user can expand an INCI ingredient on product details and read a cached, plain-language description of its cosmetic role and caveats | S-11, F-02      | FR-004, FR-010                                                                      | done     |
-| S-14 | admin-catalog-batch-import         | administrator can curate and confirm batches of AI-assisted product candidates before they enter the shared catalog                 | F-02, S-10      | FR-003, FR-004, FR-016, FR-017                                                      | proposed |
 | S-04 | ai-routine-draft-and-review        | user can ask AI for a base-routine draft or improvement suggestions, then review and edit the result before save                    | S-03, S-11       | US-01, FR-008, FR-010                                                              | done     |
 | S-05 | todays-routine-consumption         | user can view today's AM/PM routine from the saved base configuration and make lightweight one-off usage edits from routine screens | S-03             | US-01, FR-009                                                                      | done     |
-| S-09 | day-specific-routine-overrides     | user can override selected weekdays without rebuilding the shared base AM/PM routine                                                | S-05             | US-01, FR-009                                                                      | proposed |
 | S-06 | routine-warnings-and-guidance      | user can review soft warnings about conflicts or overuse, plus product-role and missing-step guidance while adjusting routine usage | S-04, S-05       | US-01, FR-010, FR-011                                                              | done     |
-| S-07 | shelf-notes-and-skin-checkins      | user can manage the shelf with notes/reactions and log a quick skin check-in for later guidance                                     | S-05             | US-01, FR-006, FR-007, FR-012                                                      | proposed |
-| S-08 | mobile-first-pwa-flow              | user can use the core shelf and routine flow comfortably on mobile and as a PWA                                                     | S-05             | FR-015                                                                             | proposed |
 
 ## Streams
 
@@ -54,13 +50,20 @@ Navigation aid — groups items that share a Prerequisites chain. Canonical orde
 | ------ | ----------------------- | ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | A      | Core routine loop       | `F-01` → `S-01` → `S-02` → `S-03` → `S-05` | This is the main market-feedback path; `S-05` is the first daily-consumption checkpoint after the user proves they can manage a base routine without AI. |
 | B      | AI assistance layer     | `F-02` → `S-11` → `S-04` → `S-06`          | This stream first establishes per-user product interpretation, then lets AI use that cached understanding to draft and explain routines more consistently. |
-| I      | Catalog curation        | `F-02` → `S-10` → `S-14`                  | This internal-only stream grows the shared catalog through sourced, human-approved imports; it can later expand the choice available to routine AI without blocking its shelf-based flow. |
 | G      | Ingredient explainability | `F-02` → `S-11` → `S-12`                  | This extension makes existing INCI lists understandable through a shared, cacheable ingredient glossary without adding per-click AI calls. |
-| H      | Shelf navigation         | `S-02` → `S-11` → `S-13` → `S-07`         | This stream turns stored shelf membership into a usable product hub before adding notes, reactions, or check-ins. |
+| H      | Shelf navigation         | `S-02` → `S-11` → `S-13`                  | This stream turns stored shelf membership into a usable product hub. |
 | F      | Intake resilience       | `S-02` → `S-10`                            | This slice hardens the existing AI web search fallback so broken source URLs trigger bounded self-healing retries instead of user-visible dead-end errors. |
-| C      | Weekly overrides        | `S-05` → `S-09`                            | This extension adds selected-day flexibility only after the base routine and today's routine have already proved their value.                             |
-| D      | Post-routine adaptation | `S-07`                                     | This slice branches after `S-05` and keeps lightweight feedback separate from the core routine-validation path.                                          |
-| E      | Mobile shell            | `S-08`                                     | This slice also branches after `S-05`, so mobile/PWA polish follows a proven daily-use loop.                                                             |
+
+## Post-MVP
+
+The MVP scope is complete: it covers the profile, product intake and shelf, product-fit and ingredient explanations, manual and AI-assisted routine management, today's routine, and contextual warnings. The following slices remain intentionally deferred until feedback on that core flow justifies the additional scope.
+
+| ID   | Change ID                          | Deferred outcome                                                                                         | Why deferred |
+| ---- | ---------------------------------- | -------------------------------------------------------------------------------------------------------- | ------------ |
+| S-14 | admin-catalog-batch-import         | Administrator-curated, AI-assisted batch imports into the shared catalog.                              | Internal operational tooling is not needed to validate the current personal-product flow. |
+| S-09 | day-specific-routine-overrides     | Different AM/PM routine entries on selected weekdays.                                                   | The shared base routine and today's view are sufficient until real usage proves a recurring need. |
+| S-07 | shelf-notes-and-skin-checkins      | Product notes, reactions, and lightweight skin check-ins.                                               | Useful feedback enrichment, but not required for the initial routine and guidance loop. |
+| S-08 | mobile-first-pwa-flow              | PWA installation and dedicated mobile-flow polish.                                                      | Defer platform packaging until the current responsive flow has been validated with users. |
 
 ## Baseline
 
@@ -205,7 +208,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
   - Which initial import scopes should be supported beyond a single brand: product category, popularity-based discovery, or both? — Owner: team. Block: no.
   - What is the minimal administrator authorization boundary for the internal panel in the MVP? — Owner: team. Block: implementation.
 - **Risk:** This slice must remain a bounded, human-in-the-loop catalog curation flow. AI may discover, extract, and prefill candidates, but it must never fabricate ingredients or publish products without a reviewable source and an explicit administrator decision. It must not become an unrestricted crawler, a general marketplace integration, or a user-facing shopping feature.
-- **Status:** proposed
+- **Status:** post-mvp
 
 ### S-04: AI routine draft and review
 
@@ -242,7 +245,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Blockers:** —
 - **Unknowns:** —
 - **Risk:** If this slice grows into a general overlay engine, routine version history, or temporary-protocol framework, it will absorb complexity that the MVP explicitly tries to postpone.
-- **Status:** proposed
+- **Status:** post-mvp
 
 ### S-06: Routine warnings and guidance
 
@@ -267,7 +270,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Blockers:** —
 - **Unknowns:** —
 - **Risk:** If this slice drifts into heavy analytics or journaling, it stops being lightweight support for adaptation and becomes a different product surface.
-- **Status:** proposed
+- **Status:** post-mvp
 
 ### S-08: Mobile-first PWA flow
 
@@ -279,7 +282,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Blockers:** —
 - **Unknowns:** —
 - **Risk:** If this ships before the core routine flow stabilizes, the team will polish the shell before learning whether the core behavior deserves polishing.
-- **Status:** proposed
+- **Status:** post-mvp
 
 ## Backlog Handoff
 
@@ -294,13 +297,9 @@ Foundations below assume these are present and do NOT re-scaffold them.
 | S-11       | personalized-product-fit-analysis  | Add cached per-user product interpretation and product-details analysis | no                    | Implemented; archive before starting a new change.                                                    |
 | S-13       | shelf-catalog-and-navigation       | Add a “Moja półka” catalog and core product navigation                  | yes                   | All prerequisites are complete; keep scope to catalog, details links, shelf membership actions, and primary navigation. |
 | S-12       | ingredient-details-and-glossary    | Add expandable, cached ingredient descriptions on product details       | yes                   | All prerequisites are complete; use shared ingredient records keyed by normalized INCI name, not AI calls on click. |
-| S-14       | admin-catalog-batch-import         | Add an internal, review-first batch import for shared catalog products  | yes                   | Keep imports source-backed and administrator-confirmed; use it to seed catalog coverage before AI recommends products from outside the shelf. |
 | S-04       | ai-routine-draft-and-review        | Add AI draft and review flow on top of the manual base-routine model    | yes                   | All prerequisites are complete; start with the current catalog and let S-14 expand later recommendation coverage. |
 | S-05       | todays-routine-consumption         | Ship today's AM/PM routine consumption flow from the saved base routine | yes                   | All prerequisites are complete; this is the first daily-use slice.                                   |
-| S-09       | day-specific-routine-overrides     | Add selected-day overrides on top of the shared base AM/PM routine      | no                    | Wait for S-05 so overrides extend a proven base-and-today flow instead of expanding S-03.          |
 | S-06       | routine-warnings-and-guidance      | Add soft routine warnings and guidance during routine use               | no                    | Wait for S-04 and S-05.                                                                             |
-| S-07       | shelf-notes-and-skin-checkins      | Add shelf notes, reactions, and lightweight skin check-ins              | no                    | Wait for S-05.                                                                                      |
-| S-08       | mobile-first-pwa-flow              | Polish the core flow for mobile and PWA use                             | no                    | Wait for S-05 so polish follows proven behavior.                                                    |
 
 ## Open Roadmap Questions
 
