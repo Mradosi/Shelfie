@@ -3,7 +3,7 @@ project: Shelfie
 version: 1
 status: draft
 created: 2026-05-28
-updated: 2026-08-05
+updated: 2026-08-10
 prd_version: 1
 main_goal: market-feedback
 top_blocker: decisions
@@ -37,7 +37,7 @@ Shelfie ma pomóc użytkownikowi uporządkować pielęgnację na bazie jego real
 | S-03 | first-manual-routine-management    | user can create, edit, and delete the first base AM/PM routine from owned products and assigned routine roles                      | S-01, S-02       | US-01, FR-008, FR-009, FR-010                                                      | done     |
 | S-11 | personalized-product-fit-analysis  | user can open any known product's details and see a cached AI analysis of how it fits their skin profile                         | S-01, S-02, F-02 | US-01, FR-010                                                                      | done     |
 | S-13 | shelf-catalog-and-navigation       | user can browse their shelf, open product details, and move through the core product-to-routine flow from one clear navigation     | S-02, S-11      | US-01, FR-003, FR-008, FR-009                                                      | done     |
-| S-12 | ingredient-details-and-glossary    | user can expand an INCI ingredient on product details and read a cached, plain-language description of its cosmetic role and caveats | S-11, F-02      | FR-004, FR-010                                                                      | proposed |
+| S-12 | ingredient-details-and-glossary    | user can expand an INCI ingredient on product details and read a cached, plain-language description of its cosmetic role and caveats | S-11, F-02      | FR-004, FR-010                                                                      | done     |
 | S-14 | admin-catalog-batch-import         | administrator can curate and confirm batches of AI-assisted product candidates before they enter the shared catalog                 | F-02, S-10      | FR-003, FR-004, FR-016, FR-017                                                      | proposed |
 | S-04 | ai-routine-draft-and-review        | user can ask AI for a base-routine draft or improvement suggestions, then review and edit the result before save                    | S-03, S-11       | US-01, FR-008, FR-010                                                              | done     |
 | S-05 | todays-routine-consumption         | user can view today's AM/PM routine from the saved base configuration and make lightweight one-off usage edits from routine screens | S-03             | US-01, FR-009                                                                      | done     |
@@ -191,7 +191,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
   - Which shared ingredient source should supply the initial glossary and what fields can be treated as trustworthy enough for user-facing copy? — Owner: team. Block: no.
   - Should missing ingredient entries use a bounded on-demand enrichment flow or show a transparent “description unavailable” state in MVP? — Owner: team. Block: no.
 - **Risk:** This slice must keep ingredient knowledge shared and cacheable by normalized INCI name. If every click invokes AI, the details screen becomes slow, costly, and inconsistent; if it becomes a full ingredient-science database, it will delay the core product and routine flows.
-- **Status:** proposed
+- **Status:** done
 
 ### S-14: Admin catalog batch import
 
@@ -322,6 +322,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 ## Done
 
 (Empty on first generation. `/10x-archive` appends an entry here — and flips that item's `Status` to `done` — when a change whose `Change ID` matches the item is archived.)
+- **S-12: user can expand any displayed INCI ingredient on a canonical product details screen and read a concise, plain-language explanation of its cosmetic role, likely benefits, and relevant caveats.** — Archived 2026-08-10 → `context/archive/2026-08-05-ingredient-details-and-glossary/`. Lesson: —.
 - **S-06: user can review lightweight warnings about conflicts or overuse, plus product-role and missing-step guidance, while adjusting routine usage.** — Archived 2026-08-05 → `context/archive/2026-07-30-routine-warnings-and-guidance/`. Lesson: —.
 - **S-04: user can ask AI to draft the base routine from owned products and skin context, review missing-step or product-role suggestions, and accept or edit the result before saving it into the same base-routine model.** — Archived 2026-07-30 → `context/archive/2026-07-30-ai-routine-draft-and-review/`. Lesson: —.
 

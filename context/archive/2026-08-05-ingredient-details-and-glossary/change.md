@@ -1,10 +1,10 @@
 ---
 change_id: ingredient-details-and-glossary
 title: Ingredient details and glossary
-status: implemented
+status: archived
 created: 2026-08-05
 updated: 2026-08-10
-archived_at: null
+archived_at: 2026-08-10T06:49:10Z
 ---
 
 ## Notes
