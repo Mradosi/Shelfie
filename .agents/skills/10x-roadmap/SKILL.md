@@ -263,7 +263,7 @@ Rules for the options block:
 
 **5d. Derive investment areas (no question).**
 
-After the 2-3 anchor answers land, derive investment areas from: (1) the chosen `main_goal`, (2) PRD NFRs that gate launch in a layer, (3) baseline gaps mapped to must-have FRs, (4) Open-Question concentration. Announce the derived investment in the synthesis recap (5e). The user can override in one line; they are not asked to pick.
+After the 2-3 anchor answers land, derive investment areas from: (1) the chosen `main_goal`, (2) PRD NFRs gating launch in a layer, (3) baseline gaps mapped to must-have FRs, (4) Open-Question concentration. Announce the derived investment in the synthesis recap (5e). The user can override in one line; they are not asked to pick.
 
 **5e. Synthesis recap — confirm without asking.**
 
@@ -558,7 +558,7 @@ This table is the clean handoff to Jira/Linear or any MCP-backed backlog. Includ
 - **Blockers** is *external pending* only (vendor, design, stakeholder decision). Things the team can't unilaterally resolve. If the team CAN resolve it, it's an Unknown, not a Blocker.
 - **Unknowns** is questions to research. Each carries Owner and Block flag. Block=yes promotes the slice's Status to `blocked`.
 - **Risk** is one line: why sequenced here, what could go wrong, why this is the safer order than alternatives. Not a postmortem. Not catastrophizing. Just the load-bearing reason a future reader needs to understand the sequence.
-- **Status** lifecycle: `proposed` (default on first generation) | `ready` (Prerequisites all met, no blocking unknowns — `/10x-plan` can run) | `planning` | `in-progress` | `done` | `blocked` (one or more unknowns with `Block: yes`). This skill emits only `proposed`, `ready`, and `blocked` on generation. The rest are written downstream as the change advances, each matched by `Change ID`: `/10x-plan` → `planning`, `/10x-implement` (and `/10x-goal-implement`) → `in-progress`, `/10x-archive` → `done`. Downstream flips are best-effort and forward-only (an item is never regressed to an earlier state).
+- **Status** lifecycle: `proposed` (default on first generation) | `ready` (Prerequisites all met, no blocking unknowns — `/10x-plan` can run) | `planning` | `in-progress` | `done` | `blocked` (one or more unknowns with `Block: yes`). This skill emits only `proposed`, `ready`, and `blocked` on generation. The rest are written downstream as the change advances, each matched by `Change ID`: `/10x-plan` → `planning`, `/10x-implement` (and `/10x-goal-implement`) → `in-progress`, `/10x-archive` → `done`. Downstream flips are best-effort and forward-only (a roadmap is optional; a no-match is a silent skip) and forward-only (an item is never regressed to an earlier state).
 - **Frontmatter `main_goal` / `top_blocker`** record Step 5 answers so a future re-read (or a reviewer) can see the sequencing bias at a glance without opening the conversation history.
 
 **Hard rule — never invent slices.** Every slice must trace to a PRD US-NN or FR-NNN. If the interview surfaced something that isn't in the PRD ("oh and we also need offline mode"), it does NOT become a slice. It becomes either an Open Roadmap Question (if it's a real gap) or a Parked entry (if the user explicitly chose to defer it). The roadmap's job is to sequence what the PRD declares, not to grow the PRD.
@@ -709,7 +709,7 @@ STOP. Do not chain into another skill automatically — the user picks when to p
 
 4. **Foundations are minimal unlocks, not layer-completion projects.** A foundation may create the smallest prerequisite needed before vertical work can proceed. It may not prebuild the whole database/API/UI/auth layer. If a technical element can be introduced inside the first user-facing slice that needs it, put it there; this keeps integration vertical and progressively reveals only the needed elements.
 
-5. **No estimates, no time units.** No "Day 1", no "2 weeks", no "small/medium/large", no points. The AI assistant execution is non-linear and time-budgeted estimates lie. Order is encoded in Prerequisites; pacing surfaces via Blockers and Unknowns. The roadmap describes shape, not schedule.
+5. **No estimates, no time units.** No "Day 1", no "2 weeks", no "small/medium/large", no points. AI-agent execution is non-linear and time-budgeted estimates lie. Order is encoded in Prerequisites; pacing surfaces via Blockers and Unknowns. The roadmap describes shape, not schedule.
 
 6. **No low-level technical details.** No frameworks named (those live in `tech-stack.md`), no file paths, no schema definitions, no code, no library choices. If you find yourself writing those, you've crossed into `/10x-plan`'s territory — stop and let `/10x-plan` do its job downstream.
 

@@ -108,7 +108,7 @@ Run it **once, on entry** to the change (right after the `change.md` → `implem
    - and in the `## Foundations` / `## Slices` bodies — the `### <ID>: …` block that contains a `- **Change ID:** <change-id>` line.
 
    `<ID>` is that item's roadmap-local id (`F-NN` or `S-NN`). Match is exact-string only — a slice can spawn several changes, so a near-miss is intentionally *not* touched. **No match** → print `ℹ context/foundation/roadmap.md has no item with Change ID "<change-id>" — roadmap left untouched.` and skip the rest of this step.
-4. **Match found** → read the item's current `- **Status:**`. If it is already `in-progress` or `done`, leave it untouched (**forward-only**: never regress a more-advanced status) and skip to step 5. Otherwise apply both edits with the appropriate tool — each independent and best effort; if a target isn't where the `/10x-roadmap` template puts it (hand-edited or older-format roadmap), skip that sub-edit, keep going, and note what was skipped. Touch only the `Status` field; leave `Outcome`, `Prerequisites`, `Change ID`, etc. alone.
+4. **Match found** → read the item's current `- **Status:**`. If it is already `in-progress` or `done`, leave it untouched (**forward-only**: never regress a more-advanced status) and skip to step 5. Otherwise apply both edits with your AI coding assistant — each independent and best effort; if a target isn't where the `/10x-roadmap` template puts it (hand-edited or older-format roadmap), skip that sub-edit, keep going, and note what was skipped. Touch only the `Status` field; leave `Outcome`, `Prerequisites`, `Change ID`, etc. alone.
    1. **`## At a glance`** — in the matched row, set the **Status** column cell to `in-progress`.
    2. **Item body** — rewrite the item's `- **Status:**` line to `- **Status:** in-progress`.
 
@@ -122,7 +122,7 @@ After implementing a phase:
 - Run the success criteria checks (usually `make check test` covers everything)
 - Fix any issues before proceeding
 - Update your progress in your todos and in the plan's `## Progress` section
-- **Mutate ONLY the `## Progress` section.** Phase blocks (Overview, Changes Required, Success Criteria) are read-only. Use your AI coding assistant to modify the file to flip `- [ ] N.M <title>` → `- [x] N.M <title>` in Progress as each step completes. Do NOT edit Phase block bullets, do NOT add HTML comment progress markers at the bottom of the plan, and do NOT write any state-file sidecar.
+- **Mutate ONLY the `## Progress` section.** Phase blocks (Overview, Changes Required, Success Criteria) are read-only. Use your AI coding assistant to flip `- [ ] N.M <title>` → `- [x] N.M <title>` in Progress as each step completes. Do NOT edit Phase block bullets, do NOT add HTML comment progress markers at the bottom of the plan, and do NOT write any state-file sidecar.
 - **Run the phase-end commit ritual**: After all automated checks pass for the phase, walk through this sequenced ritual to author one Conventional-Commits commit and write the closing short SHA back into every Progress row flipped during the phase.
 
   1. **Manual confirmation gate.** Inform the human that automated verification passed and list the manual verification items from the plan. Pause here. Do not proceed until the human confirms manual testing succeeded. Use this format:
@@ -188,7 +188,7 @@ After implementing a phase:
 
   8. **Capture the short SHA.** Execute `git rev-parse --short HEAD` and store as `SHA`. Skip this step if `SHA=""` was set by step 5.
 
-  9. **Write the SHA back into Progress.** For every Progress row flipped during this phase, perform a targeted modification:
+  9. **Write the SHA back into Progress.** For every Progress row flipped during this phase, execute a targeted modification:
 
      - Find: `- [x] N.M <title>` (no existing ` — <sha>` suffix at end of line)
      - Replace with: `- [x] N.M <title> — <SHA>`
@@ -235,7 +235,7 @@ do not check off items in the manual testing steps until confirmed by the user.
 
 ### After each step
 
-Use your AI coding assistant to modify the file to flip exactly one Progress line at a time:
+Use your AI coding assistant to flip exactly one Progress line at a time:
 
 - Find: `- [ ] N.M <title>`
 - Replace with: `- [x] N.M <title>`
@@ -256,7 +256,6 @@ Empty-diff phases (manual-verification-only or no-op adapted phases) commit noth
 When every `- [ ]` in the entire `## Progress` section is now `- [x]`:
 
 1. **Defensive pending-items surface.** Re-scan the entire `## Progress` section one last time for any `- [ ]` rows. Under normal flow this is a no-op — the trigger condition for "After all phases" is already "every `- [ ]` is `- [x]`", so the surface should find nothing. It exists to make any unexpected stragglers explicit rather than silently lost (e.g., if a partial run, a manual edit, or a resume path bypassed the trigger). If the count is non-zero, list each row as `<phase>.<index> <title>` grouped by Automated vs Manual subsection in document order, then ask the user: "<N> Progress item(s) still pending. How to proceed?" with the following options:
-
    - "Pause (Recommended)" (description: "STOP without flipping change.md.status. Address the stragglers manually, then re-enter the epilogue path.")
    - "Proceed to epilogue" (description: "Flip status: implemented and run the epilogue commit anyway. Stragglers will surface as warnings under /10x-archive.")
 
