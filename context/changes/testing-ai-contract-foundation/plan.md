@@ -241,9 +241,9 @@ Brak zmian schematu i migracji. Plan nie uruchamia `supabase db reset` ani `supa
 
 #### Automated
 
-- [x] 1.1 Add Vitest configuration and local test scripts
-- [x] 1.2 Add reusable AI contract fixtures
-- [x] 1.3 Verify test runner, Astro sync, lint, and production build
+- [x] 1.1 Add Vitest configuration and local test scripts — 7e8f555
+- [x] 1.2 Add reusable AI contract fixtures — 7e8f555
+- [x] 1.3 Verify test runner, Astro sync, lint, and production build — 7e8f555
 
 ### Phase 2: Safe AI Error Contract
 
