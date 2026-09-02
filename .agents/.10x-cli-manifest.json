@@ -1,9 +1,9 @@
 {
   "package": "@przeprogramowani/10x-cli",
-  "version": "1.11.0",
+  "version": "1.20.0",
   "manifestVersion": 3,
-  "lastApplied": "2026-08-10T09:35:48.805Z",
-  "lessonId": "m3l2",
+  "lastApplied": "2026-09-01T12:55:09.552Z",
+  "lessonId": "m5l2",
   "course": "10xdevs3",
   "tool": "codex",
   "files": {
@@ -223,6 +223,22 @@
         "contentHashes": {
           "SKILL.md": "c3aa51ab44003644563b7d962009b5bd8456899bf4ac3983716dfef43d0c8a7a"
         }
+      },
+      "10x-opportunity-map": {
+        "files": [
+          "SKILL.md"
+        ],
+        "contentHashes": {
+          "SKILL.md": "ea554afefdc2ee755c332cf76769c68bb942c597441ec0c422259ef898f2b353"
+        }
+      },
+      "10x-mom-test": {
+        "files": [
+          "SKILL.md"
+        ],
+        "contentHashes": {
+          "SKILL.md": "6b50b17ee0906b01a2bd12d858bab3691fa395d425d0bfeea817c1c78c4f2f88"
+        }
       }
     },
     "prompts": [
@@ -231,7 +247,8 @@
       "m1l5-2-constrain-approach.md",
       "m1l5-3-extend-prerequisites.md",
       "m1l5-4-store-plan.md",
-      "m3l2-ad-hoc-testing.md"
+      "m3l2-ad-hoc-testing.md",
+      "m5l2-agent.md"
     ],
     "configs": [],
     "promptHashes": {
@@ -240,7 +257,8 @@
       "m1l5-2-constrain-approach.md": "b6c16b551c7f07996c2800c3f9b2f2a60929059425a35608c1ceca5966ee44ef",
       "m1l5-3-extend-prerequisites.md": "d7e20964986be981a46b63346e3623b2f03deff8970dfbc4d60b89d657788e80",
       "m1l5-4-store-plan.md": "adcc1fc02f2943618fc3c190323b1eef44039727632117acaf4791175dc09c44",
-      "m3l2-ad-hoc-testing.md": "6a4509b6b90d3ea9229d19dbec77aea0c6812d0d706144006f9465e195f5387f"
+      "m3l2-ad-hoc-testing.md": "6a4509b6b90d3ea9229d19dbec77aea0c6812d0d706144006f9465e195f5387f",
+      "m5l2-agent.md": "e0079b7393c49b1f37790026d60e3b2af11dda8cb0e9964bc03e613d855c08bc"
     }
   },
   "lessons": {
@@ -935,6 +953,31 @@
         "m1l5-3-extend-prerequisites.md",
         "m1l5-4-store-plan.md",
         "m3l2-ad-hoc-testing.md"
+      ],
+      "configs": []
+    },
+    "m5l1": {
+      "appliedAt": "2026-09-01T09:43:15.089Z",
+      "skills": {
+        "10x-opportunity-map": {
+          "files": [
+            "SKILL.md"
+          ]
+        },
+        "10x-mom-test": {
+          "files": [
+            "SKILL.md"
+          ]
+        }
+      },
+      "prompts": [],
+      "configs": []
+    },
+    "m5l2": {
+      "appliedAt": "2026-09-01T12:55:09.551Z",
+      "skills": {},
+      "prompts": [
+        "m5l2-agent.md"
       ],
       "configs": []
     }

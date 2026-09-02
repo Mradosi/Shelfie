@@ -1,15 +1,10 @@
 import type { APIRoute } from "astro";
+import {
+  createAiErrorResponse,
+  createAiErrorResponseFromException,
+} from "@/lib/domain/ai-error-contract";
 import { resolveAiWebSearchDraft } from "@/lib/integrations/openrouter";
 import { createClient } from "@/lib/supabase";
-
-function toJsonError(message: string, status = 400) {
-  return new Response(JSON.stringify({ error: message }), {
-    status,
-    headers: {
-      "Content-Type": "application/json",
-    },
-  });
-}
 
 function parseOptionalText(value: unknown) {
   return typeof value === "string" && value.trim() ? value.trim() : null;
@@ -23,7 +18,7 @@ function logAiWebSearchRoute(message: string, payload: Record<string, unknown>) 
 export const POST: APIRoute = async (context) => {
   const supabase = createClient(context.request.headers, context.cookies);
   if (!supabase) {
-    return toJsonError("Supabase nie jest skonfigurowane", 500);
+    return createAiErrorResponse("provider_unavailable");
   }
 
   const {
@@ -32,18 +27,18 @@ export const POST: APIRoute = async (context) => {
   } = await supabase.auth.getUser();
 
   if (authError) {
-    return toJsonError(authError.message, 401);
+    return createAiErrorResponse("unauthorized", 401);
   }
 
   if (!user) {
-    return toJsonError("Musisz być zalogowany, żeby użyć AI web search", 401);
+    return createAiErrorResponse("unauthorized", 401);
   }
 
   let payload: unknown;
   try {
     payload = await context.request.json();
   } catch {
-    return toJsonError("Nieprawidłowy payload AI web search");
+    return createAiErrorResponse("invalid_request", 400);
   }
 
   const record = typeof payload === "object" && payload !== null ? payload : {};
@@ -53,7 +48,7 @@ export const POST: APIRoute = async (context) => {
   const barcode = parseOptionalText((record as Record<string, unknown>).barcode);
 
   if (!name) {
-    return toJsonError("Podaj nazwę produktu, żeby uruchomić AI web search");
+    return createAiErrorResponse("invalid_request", 400);
   }
 
   try {
@@ -72,6 +67,6 @@ export const POST: APIRoute = async (context) => {
       message,
       error,
     });
-    return toJsonError(message, 500);
+    return createAiErrorResponseFromException(error);
   }
 };

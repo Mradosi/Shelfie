@@ -1,4 +1,8 @@
 import type { APIRoute } from "astro";
+import {
+  createAiErrorResponse,
+  createAiErrorResponseFromException,
+} from "@/lib/domain/ai-error-contract";
 import { getSharedProductById } from "@/lib/domain/product-domain";
 import { getUserProductInterpretation } from "@/lib/domain/product-interpretation";
 import {
@@ -12,13 +16,6 @@ import {
 } from "@/lib/domain/routine-schedule";
 import { createClient } from "@/lib/supabase";
 import { listUserShelfCatalog, type UserShelfCatalogItem } from "@/lib/domain/user-domain";
-
-function jsonError(message: string, status = 400) {
-  return new Response(JSON.stringify({ error: message }), {
-    status,
-    headers: { "Content-Type": "application/json" },
-  });
-}
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -92,7 +89,7 @@ async function loadRoutineContext(
 export const POST: APIRoute = async (context) => {
   const supabase = createClient(context.request.headers, context.cookies);
   if (!supabase) {
-    return jsonError("Supabase nie jest skonfigurowane", 500);
+    return createAiErrorResponse("provider_unavailable");
   }
 
   const {
@@ -100,10 +97,10 @@ export const POST: APIRoute = async (context) => {
     error: authError,
   } = await supabase.auth.getUser();
   if (authError) {
-    return jsonError(authError.message, 401);
+    return createAiErrorResponse("unauthorized", 401);
   }
   if (!user) {
-    return jsonError("Musisz być zalogowany, żeby poprosić AI o wyjaśnienie.", 401);
+    return createAiErrorResponse("unauthorized", 401);
   }
 
   try {
@@ -115,12 +112,12 @@ export const POST: APIRoute = async (context) => {
     const routineContext = parseRoutineContext(body.routineContext);
     const shelf = await listUserShelfCatalog(supabase, user.id);
     if (!shelf.some((item) => item.productId === productId)) {
-      return jsonError("Ten produkt nie znajduje się na Twojej półce.", 404);
+      return createAiErrorResponse("not_found", 404);
     }
     const ownedShelfItemIds = new Set(shelf.map((item) => item.id));
     for (const section of ["morning", "evening"] as const) {
       if (routineContext[section].some((entry) => !ownedShelfItemIds.has(entry.shelfItemId))) {
-        return jsonError("Aktualna rutyna zawiera produkt spoza Twojej półki.", 403);
+        return createAiErrorResponse("invalid_request", 403);
       }
     }
 
@@ -129,10 +126,10 @@ export const POST: APIRoute = async (context) => {
       getUserProductInterpretation(supabase, user.id, productId),
     ]);
     if (!product || interpretation?.status !== "ready") {
-      return jsonError("Brakuje aktualnej analizy produktu potrzebnej do wyjaśnienia.", 409);
+      return createAiErrorResponse("conflict", 409);
     }
     if (interpretation.cautionFor.length === 0 && interpretation.warnings.length === 0) {
-      return jsonError("Ten produkt nie ma obecnie wskazówek do wyjaśnienia.", 409);
+      return createAiErrorResponse("conflict", 409);
     }
 
     const contextItems = await loadRoutineContext(supabase, productId, shelf, routineContext);
@@ -142,6 +139,6 @@ export const POST: APIRoute = async (context) => {
     const message = error instanceof Error ? error.message : "Nie udało się przygotować wyjaśnienia AI.";
     // eslint-disable-next-line no-console -- deliberate server-side trace for AI explanation failures
     console.error("[routine-guidance-explanation] Request failed", { userId: user.id, message, error });
-    return jsonError(message, 500);
+    return createAiErrorResponseFromException(error);
   }
 };

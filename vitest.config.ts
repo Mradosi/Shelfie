@@ -8,6 +8,7 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": resolve(sourceRoot),
+      "astro:env/server": resolve(sourceRoot, "test/mocks/astro-env-server.ts"),
     },
   },
   test: {

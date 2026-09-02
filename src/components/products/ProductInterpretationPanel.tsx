@@ -1,5 +1,6 @@
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { AlertTriangle, CheckCircle2, CircleAlert, Clock3, RefreshCw, Sparkles } from "lucide-react";
+import { getApiErrorMessage } from "@/lib/client/api-error";
 import type { UserProductInterpretation } from "@/lib/domain/product-interpretation";
 
 interface ProductInterpretationPanelProps {
@@ -24,14 +25,6 @@ const WARNING_SEVERITY_LABELS = {
   medium: "Warto uważać",
   high: "Ważne ostrzeżenie",
 } as const;
-
-function getErrorMessage(payload: unknown) {
-  if (typeof payload === "object" && payload !== null && "error" in payload && typeof payload.error === "string") {
-    return payload.error;
-  }
-
-  return "Nie udało się połączyć z analizą produktu.";
-}
 
 function FitBadge({ interpretation }: { interpretation: UserProductInterpretation }) {
   if (!interpretation.fitStatus) {
@@ -127,7 +120,7 @@ export default function ProductInterpretationPanel({ initialInterpretation }: Pr
       });
       const payload: unknown = await response.json();
       if (!response.ok || typeof payload !== "object" || payload === null || !("interpretation" in payload)) {
-        throw new Error(getErrorMessage(payload));
+        throw new Error(getApiErrorMessage(payload, "Nie udało się połączyć z analizą produktu."));
       }
 
       setInterpretation(payload.interpretation as UserProductInterpretation);

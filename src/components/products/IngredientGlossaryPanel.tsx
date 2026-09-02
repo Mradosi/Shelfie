@@ -9,6 +9,7 @@ import {
   RefreshCw,
   Sparkles,
 } from "lucide-react";
+import { getApiErrorMessage } from "@/lib/client/api-error";
 import type {
   IngredientGlossaryAction,
   IngredientGlossaryEntry,
@@ -24,14 +25,6 @@ interface IngredientGlossaryPanelProps {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-function getErrorMessage(payload: unknown) {
-  if (isRecord(payload) && typeof payload.error === "string") {
-    return payload.error;
-  }
-
-  return "Nie udało się przygotować opisów składników.";
 }
 
 function getStatusLabel(item: IngredientGlossaryItem) {
@@ -171,7 +164,7 @@ export default function IngredientGlossaryPanel({
       });
       const payload: unknown = await response.json();
       if (!response.ok || !isRecord(payload) || !Array.isArray(payload.entries)) {
-        throw new Error(getErrorMessage(payload));
+        throw new Error(getApiErrorMessage(payload, "Nie udało się przygotować opisów składników."));
       }
 
       const result = payload as unknown as IngredientGlossaryPreparationResult;

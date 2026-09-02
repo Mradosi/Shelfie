@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { Check, CircleAlert, LoaderCircle, RefreshCw, Sparkles, X } from "lucide-react";
+import { getApiErrorMessage } from "@/lib/client/api-error";
 import type { RoutineAiAssessment, RoutineAiMissingStep, RoutineAiProposal } from "@/lib/domain/routine-ai";
 import {
   hasNonEmptyBaseRoutine,
@@ -54,14 +55,6 @@ const SECTION_LABELS: Record<BaseRoutineSectionKey, string> = {
   evening: "Rutyna wieczorna",
 };
 
-function getErrorMessage(payload: unknown) {
-  if (typeof payload === "object" && payload !== null && "error" in payload && typeof payload.error === "string") {
-    return payload.error;
-  }
-
-  return "Nie udało się połączyć z asystentem AI.";
-}
-
 async function postJson<T>(url: string, body: Record<string, unknown>): Promise<T> {
   const response = await fetch(url, {
     method: "POST",
@@ -73,7 +66,7 @@ async function postJson<T>(url: string, body: Record<string, unknown>): Promise<
   });
   const payload: unknown = await response.json();
   if (!response.ok) {
-    throw new Error(getErrorMessage(payload));
+    throw new Error(getApiErrorMessage(payload, "Nie udało się połączyć z asystentem AI."));
   }
 
   return payload as T;

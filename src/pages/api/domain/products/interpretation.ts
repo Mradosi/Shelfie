@@ -1,5 +1,9 @@
 import type { APIRoute } from "astro";
 import {
+  createAiErrorResponse,
+  createAiErrorResponseFromException,
+} from "@/lib/domain/ai-error-contract";
+import {
   getUserScopedProductDetails,
   refreshStaleInterpretation,
   retryFailedInterpretation,
@@ -7,13 +11,6 @@ import {
   type InterpretationGenerationAction,
 } from "@/lib/domain/product-interpretation";
 import { createClient } from "@/lib/supabase";
-
-function jsonError(message: string, status = 400) {
-  return new Response(JSON.stringify({ error: message }), {
-    status,
-    headers: { "Content-Type": "application/json" },
-  });
-}
 
 function parseProductId(value: unknown) {
   if (typeof value !== "string" || !value.trim()) {
@@ -38,7 +35,7 @@ function serializeInterpretation(interpretation: Awaited<ReturnType<typeof start
 export const GET: APIRoute = async (context) => {
   const supabase = createClient(context.request.headers, context.cookies);
   if (!supabase) {
-    return jsonError("Supabase nie jest skonfigurowane", 500);
+    return createAiErrorResponse("provider_unavailable");
   }
 
   const {
@@ -46,10 +43,10 @@ export const GET: APIRoute = async (context) => {
     error: authError,
   } = await supabase.auth.getUser();
   if (authError) {
-    return jsonError(authError.message, 401);
+    return createAiErrorResponse("unauthorized", 401);
   }
   if (!user) {
-    return jsonError("Musisz być zalogowany, żeby odczytać analizę produktu", 401);
+    return createAiErrorResponse("unauthorized", 401);
   }
 
   try {
@@ -60,14 +57,14 @@ export const GET: APIRoute = async (context) => {
     );
     return Response.json({ product: details.product, interpretation: details.interpretation });
   } catch (error) {
-    return jsonError(error instanceof Error ? error.message : "Nie udało się wczytać analizy produktu", 500);
+    return createAiErrorResponseFromException(error);
   }
 };
 
 export const POST: APIRoute = async (context) => {
   const supabase = createClient(context.request.headers, context.cookies);
   if (!supabase) {
-    return jsonError("Supabase nie jest skonfigurowane", 500);
+    return createAiErrorResponse("provider_unavailable");
   }
 
   const {
@@ -75,10 +72,10 @@ export const POST: APIRoute = async (context) => {
     error: authError,
   } = await supabase.auth.getUser();
   if (authError) {
-    return jsonError(authError.message, 401);
+    return createAiErrorResponse("unauthorized", 401);
   }
   if (!user) {
-    return jsonError("Musisz być zalogowany, żeby uruchomić analizę produktu", 401);
+    return createAiErrorResponse("unauthorized", 401);
   }
 
   let payload: Record<string, unknown>;
@@ -89,7 +86,7 @@ export const POST: APIRoute = async (context) => {
     }
     payload = body as Record<string, unknown>;
   } catch (error) {
-    return jsonError(error instanceof Error ? error.message : "Nieprawidłowy payload analizy produktu");
+    return createAiErrorResponse("invalid_request", 400);
   }
 
   try {
@@ -104,6 +101,6 @@ export const POST: APIRoute = async (context) => {
 
     return Response.json({ interpretation: serializeInterpretation(interpretation) });
   } catch (error) {
-    return jsonError(error instanceof Error ? error.message : "Nie udało się uruchomić analizy produktu", 500);
+    return createAiErrorResponseFromException(error);
   }
 };

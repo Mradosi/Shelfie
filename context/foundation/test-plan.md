@@ -6,7 +6,7 @@
 >
 > Refresh: re-run `/10x-test-plan --refresh` when stale (see §8).
 >
-> Last updated: 2026-08-10
+> Last updated: 2026-08-12
 
 ## 1. Strategy
 
@@ -48,7 +48,7 @@ Each row opens its own change folder. Status moves only through the fixed vocabu
 
 | #   | Phase name                                     | Goal (one line)                                                                                                | Risks covered  | Test types                    | Status       | Change folder                    |
 | --- | ---------------------------------------------- | -------------------------------------------------------------------------------------------------------------- | -------------- | ----------------------------- | ------------ | -------------------------------- |
-| 1   | Test foundation and deterministic AI contracts | Bootstrap a TypeScript test base and prove safe handling of AI output, cache lifecycle, and error contracts.   | #1, #3, #5     | unit + contract integration   | implementing | `testing-ai-contract-foundation` |
+| 1   | Test foundation and deterministic AI contracts | Bootstrap a TypeScript test base and prove safe handling of AI output, cache lifecycle, and error contracts.   | #1, #3, #5     | unit + contract integration   | complete     | `testing-ai-contract-foundation` |
 | 2   | Ownership and intake integration               | Prove product intake, persistence, and authenticated ownership boundaries through realistic server-side paths. | #2, #3, #4     | integration                   | not started  | —                                |
 | 3   | Critical browser flows and AI rubric           | Prove the smallest end-to-end product/routine flows and selectively review AI guidance quality.                | #1, #2, #5, #6 | e2e + AI-native rubric review | not started  | —                                |
 | 4   | Cookbook and quality-gate adoption             | Document shipped test patterns and make the required local test commands part of the delivery contract.        | cross-cutting  | quality gates + documentation | not started  | —                                |
@@ -59,7 +59,7 @@ Status vocabulary: `not started` → `change opened` → `researched` → `plann
 
 | Layer               | Tool                           | Version                              | Notes                                                                                                                              |
 | ------------------- | ------------------------------ | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
-| unit + integration  | Vitest                         | none yet - select and pin in Phase 1 | Vite-native TypeScript runner; use for pure contracts and server-boundary tests.                                                   |
+| unit + integration  | Vitest                         | 4.1.10                              | Vite-native TypeScript runner; use for pure contracts and server-boundary tests.                                                   |
 | component rendering | Astro Container                | Astro 6.3.1                          | Consider only where an Astro component needs isolated rendering; do not use for static copy.                                       |
 | e2e                 | Playwright                     | none yet - select and pin in Phase 3 | Limit to critical cross-route flows that cannot be proved cheaper.                                                                 |
 | accessibility       | none yet                       | —                                    | Reassess in Phase 3 for the two e2e flows, not every screen.                                                                       |
@@ -86,7 +86,9 @@ Status vocabulary: `not started` → `change opened` → `researched` → `plann
 
 ### 6.1 Adding a unit or contract test
 
-TBD - see §3 Phase 1 for test location, naming, reference test, and local command.
+Umieszczaj test obok modułu jako `*.test.ts`; reusable fixture'y są w `src/test/fixtures/` i nie mogą zawierać danych z lokalnej bazy. Importuj je przez `@/test/fixtures`, a zależności Astro/sekrety zastępuj mockiem w `src/test/mocks/`.
+
+Test ma sprawdzać obserwowalny kontrakt, np. `src/lib/domain/ai-error-contract.test.ts` potwierdza dokładny, polski payload publicznego błędu, bez kopiowania implementacji mappera. Uruchom `npm test` jednorazowo albo `npm run test:watch` podczas pracy. Mockuj wyłącznie granicę providera lub klienta Supabase; test nigdy nie może wykonać requestu do OpenRoutera ani połączyć się z Supabase.
 
 ### 6.2 Adding an integration test for an authenticated flow
 
@@ -102,7 +104,7 @@ TBD - see §3 Phase 3 for the curated scenario format and human-review rubric.
 
 ### 6.5 Per-rollout-phase notes
 
-TBD - each completed rollout adds only the reusable pattern it established.
+- Faza 1: Vitest działa w Node i obejmuje czyste kontrakty domenowe, parsery oraz reprezentatywne endpointy z mockowanymi granicami AI i autoryzacji. `astro:env/server` jest zastąpione testową wartością bez sekretu, aby import adaptera nie zależał od lokalnego `.env`.
 
 ## 7. What We Deliberately Don't Test
 
