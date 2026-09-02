@@ -483,7 +483,7 @@ function extractFirstJsonObject(content: string) {
   return null;
 }
 
-function parseJsonObject(content: string) {
+export function parseOpenRouterJsonObject(content: string) {
   const fencedCandidates = Array.from(content.matchAll(/```(?:json)?\s*([\s\S]*?)```/gi), (match) => match[1]);
   for (const candidate of fencedCandidates) {
     const parsed = tryParseJsonObject(candidate);
@@ -656,7 +656,7 @@ async function requestOpenRouter(
     webSearchRequests: payload.usage?.server_tool_use?.web_search_requests ?? 0,
   });
 
-  return parseJsonObject(content);
+  return parseOpenRouterJsonObject(content);
 }
 
 async function resolveAmbiguityResult(

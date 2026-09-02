@@ -1,9 +1,9 @@
 ---
 change_id: testing-ai-contract-foundation
 title: Test foundation and deterministic AI contracts
-status: implementing
+status: implemented
 created: 2026-08-10
-updated: 2026-08-10
+updated: 2026-08-12
 archived_at: null
 ---
 

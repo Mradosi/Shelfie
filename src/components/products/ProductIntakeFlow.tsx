@@ -8,6 +8,7 @@ import {
   type SyntheticEvent,
 } from "react";
 import { navigate } from "astro:transitions/client";
+import { getApiErrorMessage } from "@/lib/client/api-error";
 import { PRODUCT_CATEGORY_LABELS, PRODUCT_CATEGORY_OPTIONS, type ProductCategory } from "@/lib/domain/product-domain";
 import {
   buildManualDraft,
@@ -141,7 +142,7 @@ export default function ProductIntakeFlow({ serverError }: ProductIntakeFlowProp
 
       const payload = (await response.json()) as SearchResponse;
       if (!response.ok) {
-        throw new Error(payload.error ?? "Nie udało się pobrać wyników wyszukiwania.");
+        throw new Error(getApiErrorMessage(payload, "Nie udało się pobrać wyników wyszukiwania."));
       }
 
       startTransition(() => {
@@ -468,7 +469,7 @@ export default function ProductIntakeFlow({ serverError }: ProductIntakeFlowProp
 
       const payload = (await response.json()) as AiWebSearchResponse;
       if (!response.ok) {
-        throw new Error(payload.error ?? "AI web search nie zwrócił draftu do review.");
+        throw new Error(getApiErrorMessage(payload, "AI web search nie zwrócił draftu do review."));
       }
 
       if (payload.status === "ambiguous" && payload.ambiguity) {
@@ -487,7 +488,7 @@ export default function ProductIntakeFlow({ serverError }: ProductIntakeFlowProp
       }
 
       if (!payload.draft) {
-        throw new Error(payload.error ?? "AI web search nie zwrócił draftu do review.");
+        throw new Error(getApiErrorMessage(payload, "AI web search nie zwrócił draftu do review."));
       }
 
       setAiSearchAmbiguity(null);
@@ -562,7 +563,7 @@ export default function ProductIntakeFlow({ serverError }: ProductIntakeFlowProp
 
       const payload = (await response.json()) as PhotoVisionResponse;
       if (!response.ok || !payload.draft) {
-        throw new Error(payload.error ?? "Nie udało się odczytać danych ze zdjęcia.");
+        throw new Error(getApiErrorMessage(payload, "Nie udało się odczytać danych ze zdjęcia."));
       }
 
       navigateToNewDraftReview(payload.draft);

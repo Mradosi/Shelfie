@@ -1,4 +1,8 @@
 import type { APIRoute } from "astro";
+import {
+  createAiErrorResponse,
+  createAiErrorResponseFromException,
+} from "@/lib/domain/ai-error-contract";
 import { isProductCategory, type ProductCategory } from "@/lib/domain/product-domain";
 import { resolveAiWebSearchDraft } from "@/lib/integrations/openrouter";
 import { resolvePhotoVisionDraft } from "@/lib/integrations/openrouter-vision";
@@ -6,15 +10,6 @@ import { createClient } from "@/lib/supabase";
 
 const PHOTO_BUCKET = "product-images";
 const MAX_PHOTO_SIZE_BYTES = 10 * 1024 * 1024;
-
-function jsonError(message: string, status = 400) {
-  return new Response(JSON.stringify({ error: message }), {
-    status,
-    headers: {
-      "Content-Type": "application/json",
-    },
-  });
-}
 
 function normalizeOptionalText(value: FormDataEntryValue | null) {
   return typeof value === "string" && value.trim() ? value.trim() : null;
@@ -83,7 +78,7 @@ async function uploadPhoto(
 export const POST: APIRoute = async (context) => {
   const supabase = createClient(context.request.headers, context.cookies);
   if (!supabase) {
-    return jsonError("Supabase nie jest skonfigurowane", 500);
+    return createAiErrorResponse("provider_unavailable");
   }
 
   const {
@@ -92,11 +87,11 @@ export const POST: APIRoute = async (context) => {
   } = await supabase.auth.getUser();
 
   if (authError) {
-    return jsonError(authError.message, 401);
+    return createAiErrorResponse("unauthorized", 401);
   }
 
   if (!user) {
-    return jsonError("Musisz być zalogowany, żeby użyć photo extraction", 401);
+    return createAiErrorResponse("unauthorized", 401);
   }
 
   const form = await context.request.formData();
@@ -104,7 +99,7 @@ export const POST: APIRoute = async (context) => {
   const backPhoto = form.get("backPhoto");
 
   if (!isImageFile(frontPhoto) && !isImageFile(backPhoto)) {
-    return jsonError("Dodaj co najmniej jedno zdjęcie produktu lub etykiety.");
+    return createAiErrorResponse("invalid_request", 400);
   }
 
   let uploadedFrontPhoto: Awaited<ReturnType<typeof uploadPhoto>> | null = null;
@@ -119,14 +114,13 @@ export const POST: APIRoute = async (context) => {
       uploadedBackPhoto = await uploadPhoto(supabase, user.id, backPhoto, "back");
     }
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Nie udało się zapisać zdjęcia produktu.";
-    return jsonError(message, 500);
+    return createAiErrorResponseFromException(error);
   }
 
   try {
     const primaryPhoto = uploadedBackPhoto ?? uploadedFrontPhoto;
     if (!primaryPhoto) {
-      return jsonError("Dodaj co najmniej jedno zdjęcie produktu lub etykiety.");
+      return createAiErrorResponse("invalid_request", 400);
     }
 
     const visionResult = await resolvePhotoVisionDraft({
@@ -198,7 +192,6 @@ export const POST: APIRoute = async (context) => {
       },
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Nie udało się odczytać danych ze zdjęcia.";
-    return jsonError(message, 500);
+    return createAiErrorResponseFromException(error);
   }
 };

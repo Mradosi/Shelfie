@@ -1,5 +1,9 @@
 import type { APIRoute } from "astro";
 import {
+  createAiErrorResponse,
+  createAiErrorResponseFromException,
+} from "@/lib/domain/ai-error-contract";
+import {
   getSharedProductsByIds,
   listSharedProductsByCategories,
   type SharedProduct,
@@ -43,13 +47,6 @@ import {
 } from "@/lib/domain/user-domain";
 
 type RoutineAiAction = "prepare_shelf" | "generate_proposal" | "evaluate_candidates";
-
-function jsonError(message: string, status = 400) {
-  return new Response(JSON.stringify({ error: message }), {
-    status,
-    headers: { "Content-Type": "application/json" },
-  });
-}
 
 function logRoutineAiRoute(message: string, payload: Record<string, unknown>) {
   // eslint-disable-next-line no-console -- deliberate server-side trace for routine AI debugging
@@ -232,7 +229,7 @@ async function evaluateCandidates(
 export const POST: APIRoute = async (context) => {
   const supabase = createClient(context.request.headers, context.cookies);
   if (!supabase) {
-    return jsonError("Supabase nie jest skonfigurowane", 500);
+    return createAiErrorResponse("provider_unavailable");
   }
 
   const {
@@ -240,10 +237,10 @@ export const POST: APIRoute = async (context) => {
     error: authError,
   } = await supabase.auth.getUser();
   if (authError) {
-    return jsonError(authError.message, 401);
+    return createAiErrorResponse("unauthorized", 401);
   }
   if (!user) {
-    return jsonError("Musisz być zalogowany, żeby użyć AI do rutyny.", 401);
+    return createAiErrorResponse("unauthorized", 401);
   }
 
   let payload: Record<string, unknown>;
@@ -254,7 +251,7 @@ export const POST: APIRoute = async (context) => {
     }
     payload = body;
   } catch (error) {
-    return jsonError(error instanceof Error ? error.message : "Nieprawidłowy payload AI rutyny.");
+    return createAiErrorResponse("invalid_request", 400);
   }
 
   let action: RoutineAiAction | null = null;
@@ -320,6 +317,6 @@ export const POST: APIRoute = async (context) => {
       message,
       error,
     });
-    return jsonError(message, 500);
+    return createAiErrorResponseFromException(error);
   }
 };

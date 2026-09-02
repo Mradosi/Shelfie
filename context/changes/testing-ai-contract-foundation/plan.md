@@ -249,23 +249,23 @@ Brak zmian schematu i migracji. Plan nie uruchamia `supabase db reset` ani `supa
 
 #### Automated
 
-- [ ] 2.1 Define shared AI error contract and client payload parser
-- [ ] 2.2 Apply safe AI error responses to provider-facing endpoints
-- [ ] 2.3 Update React consumers and add error-contract route tests
-- [ ] 2.4 Verify error contract tests, Astro sync, lint, and production build
+- [x] 2.1 Define shared AI error contract and client payload parser
+- [x] 2.2 Apply safe AI error responses to provider-facing endpoints
+- [x] 2.3 Update React consumers and add error-contract route tests
+- [x] 2.4 Verify error contract tests, Astro sync, lint, and production build
 
 ### Phase 3: Deterministic AI and Freshness Contracts
 
 #### Automated
 
-- [ ] 3.1 Add routine proposal and compatibility-audit contract tests
-- [ ] 3.2 Add product and routine cache-freshness tests
-- [ ] 3.3 Add intake parser and representative provider-adapter tests
-- [ ] 3.4 Verify deterministic contract tests, Astro sync, lint, and production build
+- [x] 3.1 Add routine proposal and compatibility-audit contract tests
+- [x] 3.2 Add product and routine cache-freshness tests
+- [x] 3.3 Add intake parser and representative provider-adapter tests
+- [x] 3.4 Verify deterministic contract tests, Astro sync, lint, and production build
 
 ### Phase 4: Verification and Test Cookbook
 
 #### Automated
 
-- [ ] 4.1 Document the unit and contract-test cookbook patterns
-- [ ] 4.2 Run the complete local quality sequence without external services
+- [x] 4.1 Document the unit and contract-test cookbook patterns
+- [x] 4.2 Run the complete local quality sequence without external services

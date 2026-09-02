@@ -9,6 +9,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { useState } from "react";
+import { getApiErrorMessage } from "@/lib/client/api-error";
 import type { InterpretationWarningSeverity } from "@/lib/domain/product-interpretation";
 import type { RoutineGuidance, RoutineGuidanceIssue, RoutineGuidanceProduct } from "@/lib/domain/routine-guidance";
 import type { BaseRoutineDraft } from "@/lib/domain/routine-schedule";
@@ -119,11 +120,15 @@ export default function RoutineGuidancePanel({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ productId: product.productId, routineContext }),
       });
-      const payload = (await response.json()) as { explanation?: RoutineGuidanceExplanation; error?: string };
-      if (!response.ok || !payload.explanation) {
-        throw new Error(payload.error ?? "Nie udało się przygotować wyjaśnienia AI.");
+      const payload: unknown = await response.json();
+      const explanation =
+        typeof payload === "object" && payload !== null && "explanation" in payload
+          ? (payload.explanation as RoutineGuidanceExplanation | undefined)
+          : undefined;
+      if (!response.ok || !explanation) {
+        throw new Error(getApiErrorMessage(payload, "Nie udało się przygotować wyjaśnienia AI."));
       }
-      setExplanations((current) => ({ ...current, [issue.id]: payload.explanation }));
+      setExplanations((current) => ({ ...current, [issue.id]: explanation }));
     } catch (error) {
       setExplanationErrors((current) => ({
         ...current,
