@@ -4,6 +4,7 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
+    "format-pr-comment": "tsx src/format-pr-comment-cli.ts",
     "review": "tsx src/review.ts",
     "test": "vitest run",
     "test:watch": "vitest",

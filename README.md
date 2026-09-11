@@ -207,6 +207,14 @@ Set `SUPABASE_URL`, `SUPABASE_KEY`, and server-only `SUPABASE_SERVICE_ROLE_KEY` 
 
 GitHub Actions runs lint + build on every push and PR to `master`. Configure `SUPABASE_URL`, `SUPABASE_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` as repository secrets in GitHub for the build step.
 
+### AI code review for pull requests
+
+The separate `AI code review` workflow runs on PRs from branches in this repository targeting `master`. Before enabling it, add `OPENAI_API_KEY` as a repository secret in GitHub. The workflow checks out only the exact base-branch SHA, retrieves PR metadata and diff through the GitHub API, and runs the trusted local reviewer. It never checks out or executes PR-head code in the job that has the secret.
+
+Fork PRs are intentionally skipped in v1, so their diffs are not sent to the model provider. A report is published as one updatable PR comment and exactly one result label: `ai-cr:passed` or `ai-cr:failed`. Add `ai-cr:review` to request another review; the workflow removes that retry label after handling it. `needs_changes` and `fail` make the workflow fail, while `pass` succeeds.
+
+After a successful test PR from this repository, an administrator may configure `AI code review` as a required branch-protection check. Do this only after confirming the repository secret, comment, labels, and retry behavior work as expected.
+
 ## License
 
 MIT

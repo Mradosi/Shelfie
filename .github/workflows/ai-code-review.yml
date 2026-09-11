@@ -1,0 +1,119 @@
+name: AI code review
+
+on:
+  pull_request_target:
+    branches: [master]
+    types: [opened, reopened, synchronize, labeled]
+
+permissions: {}
+
+jobs:
+  ai-code-review:
+    if: >-
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      (github.event.action != 'labeled' || github.event.label.name == 'ai-cr:review')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    concurrency:
+      group: ai-code-review-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+    steps:
+      - name: Check out trusted base revision
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Run trusted review action
+        id: review
+        uses: ./.github/actions/ai-code-review
+        with:
+          github-token: ${{ github.token }}
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          pr-number: ${{ github.event.pull_request.number }}
+
+      - name: Render PR comment
+        shell: bash
+        run: npm run --prefix tools/code-review-agent format-pr-comment -- ai-code-review-report.json > ai-code-review-comment.md
+
+      - name: Update PR comment and labels
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          EVENT_ACTION: ${{ github.event.action }}
+          VERDICT: ${{ steps.review.outputs.verdict }}
+          COMMENT_PATH: ${{ github.workspace }}/ai-code-review-comment.md
+        run: |
+          set -euo pipefail
+
+          work_dir=$(mktemp -d)
+          trap 'rm -rf -- "$work_dir"' EXIT
+          issue_path="repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}"
+
+          gh api --paginate "${issue_path}/comments?per_page=100" --jq \
+            '.[] | select(.body | contains("<!-- shelfie-ai-code-review -->")) | .id' > "$work_dir/comment-ids"
+          comment_id="$(sed -n '1p' "$work_dir/comment-ids")"
+          jq -n --rawfile body "$COMMENT_PATH" '{body: $body}' > "$work_dir/comment-payload.json"
+
+          if [[ -n "$comment_id" ]]; then
+            gh api --method PATCH "repos/${GITHUB_REPOSITORY}/issues/comments/${comment_id}" --input "$work_dir/comment-payload.json" > /dev/null
+          else
+            gh api --method POST "${issue_path}/comments" --input "$work_dir/comment-payload.json" > /dev/null
+          fi
+
+          gh api --paginate "repos/${GITHUB_REPOSITORY}/labels?per_page=100" --jq '.[].name' > "$work_dir/repository-labels"
+          gh api --paginate "${issue_path}/labels?per_page=100" --jq '.[].name' > "$work_dir/current-labels"
+
+          ensure_label() {
+            local name="$1" color="$2" description="$3"
+            if ! grep -Fxq "$name" "$work_dir/repository-labels"; then
+              jq -n --arg name "$name" --arg color "$color" --arg description "$description" \
+                '{name: $name, color: $color, description: $description}' > "$work_dir/label-payload.json"
+              gh api --method POST "repos/${GITHUB_REPOSITORY}/labels" --input "$work_dir/label-payload.json" > /dev/null
+            fi
+          }
+
+          ensure_label "ai-cr:passed" "0E8A16" "AI code review passed"
+          ensure_label "ai-cr:failed" "B60205" "AI code review requires changes"
+          ensure_label "ai-cr:review" "1D76DB" "Request another AI code review"
+
+          case "$VERDICT" in
+            pass) result_label="ai-cr:passed" ;;
+            needs_changes | fail) result_label="ai-cr:failed" ;;
+            *)
+              echo "Unsupported review verdict." >&2
+              exit 1
+              ;;
+          esac
+
+          for label in ai-cr:passed ai-cr:failed; do
+            if [[ "$label" != "$result_label" ]] && grep -Fxq "$label" "$work_dir/current-labels"; then
+              gh api --method DELETE "${issue_path}/labels/${label/:/%3A}" > /dev/null
+            fi
+          done
+
+          jq -n --arg label "$result_label" '{labels: [$label]}' > "$work_dir/result-label.json"
+          gh api --method POST "${issue_path}/labels" --input "$work_dir/result-label.json" > /dev/null
+
+          if [[ "$EVENT_ACTION" == "labeled" ]] && grep -Fxq "ai-cr:review" "$work_dir/current-labels"; then
+            gh api --method DELETE "${issue_path}/labels/ai-cr%3Areview" > /dev/null
+          fi
+
+      - name: Fail non-passing review
+        if: steps.review.outputs.verdict != 'pass'
+        shell: bash
+        env:
+          VERDICT: ${{ steps.review.outputs.verdict }}
+        run: |
+          echo "AI code review ended with ${VERDICT}." >&2
+          exit 1
