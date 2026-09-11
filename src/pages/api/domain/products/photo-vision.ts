@@ -1,8 +1,5 @@
 import type { APIRoute } from "astro";
-import {
-  createAiErrorResponse,
-  createAiErrorResponseFromException,
-} from "@/lib/domain/ai-error-contract";
+import { createAiErrorResponse, createAiErrorResponseFromException } from "@/lib/domain/ai-error-contract";
 import { isProductCategory, type ProductCategory } from "@/lib/domain/product-domain";
 import { resolveAiWebSearchDraft } from "@/lib/integrations/openrouter";
 import { resolvePhotoVisionDraft } from "@/lib/integrations/openrouter-vision";

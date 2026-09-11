@@ -1,9 +1,4 @@
-import {
-  AI_ERROR_ACTIONS,
-  AI_ERROR_CODES,
-  type AiErrorAction,
-  type AiErrorCode,
-} from "@/lib/domain/ai-error-contract";
+import { AI_ERROR_ACTIONS, AI_ERROR_CODES, type AiErrorAction, type AiErrorCode } from "@/lib/domain/ai-error-contract";
 
 export interface ApiError {
   code: AiErrorCode | "unknown";
@@ -32,12 +27,7 @@ function isAiErrorAction(value: unknown): value is AiErrorAction {
 export function getApiError(payload: unknown, fallbackMessage = FALLBACK_ERROR.message): ApiError {
   if (isRecord(payload) && isRecord(payload.error)) {
     const { code, message, action } = payload.error;
-    if (
-      isAiErrorCode(code) &&
-      typeof message === "string" &&
-      message.trim() &&
-      isAiErrorAction(action)
-    ) {
+    if (isAiErrorCode(code) && typeof message === "string" && message.trim() && isAiErrorAction(action)) {
       return {
         code,
         message: message.trim(),

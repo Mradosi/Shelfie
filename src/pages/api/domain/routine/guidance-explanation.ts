@@ -1,8 +1,5 @@
 import type { APIRoute } from "astro";
-import {
-  createAiErrorResponse,
-  createAiErrorResponseFromException,
-} from "@/lib/domain/ai-error-contract";
+import { createAiErrorResponse, createAiErrorResponseFromException } from "@/lib/domain/ai-error-contract";
 import { getSharedProductById } from "@/lib/domain/product-domain";
 import { getUserProductInterpretation } from "@/lib/domain/product-interpretation";
 import {

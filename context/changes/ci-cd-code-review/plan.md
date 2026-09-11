@@ -264,13 +264,13 @@ Po wyniku job tworzy albo aktualizuje komentarz z markerem, zapewnia istnienie e
 
 #### Automatyczne
 
-- [ ] 2.1 Dodaj composite action pobierającą dane PR przez API i uruchamiającą wyłącznie zaufany pakiet agenta.
-- [ ] 2.2 Dodaj formatter komentarza, jego testy oraz dokumentację action.
-- [ ] 2.3 Zweryfikuj manifest action, typecheck i testy pakietu oraz repozytoryjne sync, lint i build.
+- [x] 2.1 Dodaj composite action pobierającą dane PR przez API i uruchamiającą wyłącznie zaufany pakiet agenta.
+- [x] 2.2 Dodaj formatter komentarza, jego testy oraz dokumentację action.
+- [x] 2.3 Zweryfikuj manifest action, typecheck i testy pakietu oraz repozytoryjne sync, lint i build.
 
 #### Ręczne
 
-- [ ] 2.4 Potwierdź, że action nie checkoutuje ani nie wykonuje head SHA PR-a.
+- [x] 2.4 Potwierdź, że action nie checkoutuje ani nie wykonuje head SHA PR-a.
 
 ### Faza 3: Workflow PR, bramka merge i obsługa retry
 

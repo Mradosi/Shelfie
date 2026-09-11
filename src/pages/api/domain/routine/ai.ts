@@ -1,8 +1,5 @@
 import type { APIRoute } from "astro";
-import {
-  createAiErrorResponse,
-  createAiErrorResponseFromException,
-} from "@/lib/domain/ai-error-contract";
+import { createAiErrorResponse, createAiErrorResponseFromException } from "@/lib/domain/ai-error-contract";
 import {
   getSharedProductsByIds,
   listSharedProductsByCategories,
@@ -250,7 +247,7 @@ export const POST: APIRoute = async (context) => {
       throw new Error("Payload AI rutyny musi być obiektem.");
     }
     payload = body;
-  } catch (error) {
+  } catch (_error) {
     return createAiErrorResponse("invalid_request", 400);
   }
 
