@@ -1,0 +1,13 @@
+diff --git a/src/pages/api/domain/products/remove-from-shelf.ts b/src/pages/api/domain/products/remove-from-shelf.ts
+index 1234567..89abcde 100644
+--- a/src/pages/api/domain/products/remove-from-shelf.ts
++++ b/src/pages/api/domain/products/remove-from-shelf.ts
+@@ -18,7 +18,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
+   const { productId } = await request.json();
+ 
+   const { error } = await locals.supabase
+-    .from("shelf_products")
++    .from("users")
+     .delete()
+     .eq("id", productId);
+ 
