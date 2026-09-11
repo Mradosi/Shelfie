@@ -264,21 +264,21 @@ Po wyniku job tworzy albo aktualizuje komentarz z markerem, zapewnia istnienie e
 
 #### Automatyczne
 
-- [x] 2.1 Dodaj composite action pobierającą dane PR przez API i uruchamiającą wyłącznie zaufany pakiet agenta.
-- [x] 2.2 Dodaj formatter komentarza, jego testy oraz dokumentację action.
-- [x] 2.3 Zweryfikuj manifest action, typecheck i testy pakietu oraz repozytoryjne sync, lint i build.
+- [x] 2.1 Dodaj composite action pobierającą dane PR przez API i uruchamiającą wyłącznie zaufany pakiet agenta. — 2207d8d
+- [x] 2.2 Dodaj formatter komentarza, jego testy oraz dokumentację action. — 2207d8d
+- [x] 2.3 Zweryfikuj manifest action, typecheck i testy pakietu oraz repozytoryjne sync, lint i build. — 2207d8d
 
 #### Ręczne
 
-- [x] 2.4 Potwierdź, że action nie checkoutuje ani nie wykonuje head SHA PR-a.
+- [x] 2.4 Potwierdź, że action nie checkoutuje ani nie wykonuje head SHA PR-a. — 2207d8d
 
 ### Faza 3: Workflow PR, bramka merge i obsługa retry
 
 #### Automatyczne
 
-- [ ] 3.1 Dodaj workflow `pull_request_target` z minimalnymi uprawnieniami, trusted-base checkoutem i warunkiem retry.
-- [ ] 3.2 Dodaj idempotentny komentarz, wzajemnie wykluczające się etykiety oraz blokujący wynik dla non-pass.
-- [ ] 3.3 Zweryfikuj YAML workflow i pełną lokalną bramkę jakości bez modyfikacji istniejącego `ci.yml`.
+- [x] 3.1 Dodaj workflow `pull_request_target` z minimalnymi uprawnieniami, trusted-base checkoutem i warunkiem retry.
+- [x] 3.2 Dodaj idempotentny komentarz, wzajemnie wykluczające się etykiety oraz blokujący wynik dla non-pass.
+- [x] 3.3 Zweryfikuj YAML workflow i pełną lokalną bramkę jakości bez modyfikacji istniejącego `ci.yml`.
 
 #### Ręczne
 
