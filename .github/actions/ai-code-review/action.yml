@@ -1,0 +1,62 @@
+name: AI code review
+description: Runs the trusted Shelfie reviewer against pull-request metadata and diff retrieved through the GitHub API.
+
+inputs:
+  github-token:
+    description: GitHub token allowed to read the pull request.
+    required: true
+  openai-api-key:
+    description: OpenAI API key used only by the trusted reviewer package.
+    required: true
+  pr-number:
+    description: Numeric pull request number to review.
+    required: true
+
+outputs:
+  verdict:
+    description: "Deterministic reviewer verdict: pass, needs_changes, or fail."
+    value: ${{ steps.review.outputs.verdict }}
+
+runs:
+  using: composite
+  steps:
+    - name: Install reviewer dependencies and run review
+      id: review
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+        OPENAI_API_KEY: ${{ inputs.openai-api-key }}
+        PR_NUMBER: ${{ inputs.pr-number }}
+        REPORT_PATH: ${{ github.workspace }}/ai-code-review-report.json
+      run: |
+        set -euo pipefail
+
+        if [[ ! "$PR_NUMBER" =~ ^[1-9][0-9]*$ ]]; then
+          echo "Pull request number must be a positive integer." >&2
+          exit 1
+        fi
+
+        umask 077
+        review_data_dir=$(mktemp -d)
+        trap 'rm -rf -- "$review_data_dir"' EXIT
+
+        gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}" > "$review_data_dir/pull-request.json"
+        jq -er '.title | strings | select(length > 0)' "$review_data_dir/pull-request.json" > "$review_data_dir/title"
+        jq -r '.body // ""' "$review_data_dir/pull-request.json" > "$review_data_dir/description"
+        gh api --header 'Accept: application/vnd.github.v3.diff' "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}" > "$review_data_dir/diff"
+
+        npm ci --prefix tools/code-review-agent
+        export SHELFIE_REVIEW_PR_TITLE="$(< "$review_data_dir/title")"
+        export SHELFIE_REVIEW_PR_DESCRIPTION="$(< "$review_data_dir/description")"
+        npm run --prefix tools/code-review-agent review < "$review_data_dir/diff" > "$REPORT_PATH"
+
+        verdict=$(jq -er '.verdict' "$REPORT_PATH")
+        case "$verdict" in
+          pass | needs_changes | fail) ;;
+          *)
+            echo "Reviewer returned an unsupported verdict." >&2
+            exit 1
+            ;;
+        esac
+
+        echo "verdict=$verdict" >> "$GITHUB_OUTPUT"

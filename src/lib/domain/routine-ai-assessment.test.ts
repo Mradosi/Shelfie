@@ -8,7 +8,11 @@ describe("createRoutineAiAssessmentFingerprint", () => {
     const shelf = createRoutineAiShelfInputs(fixtures.shelfCatalog, fixtures.products, fixtures.interpretations);
     const first = await createRoutineAiAssessmentFingerprint(fixtures.profileBasis, fixtures.currentDraft, shelf);
     const second = await createRoutineAiAssessmentFingerprint(fixtures.profileBasis, fixtures.currentDraft, shelf);
-    const changed = await createRoutineAiAssessmentFingerprint(fixtures.profileBasis, { ...fixtures.currentDraft, evening: fixtures.currentDraft.morning }, shelf);
+    const changed = await createRoutineAiAssessmentFingerprint(
+      fixtures.profileBasis,
+      { ...fixtures.currentDraft, evening: fixtures.currentDraft.morning },
+      shelf,
+    );
 
     expect(first).toBe(second);
     expect(changed).not.toBe(first);

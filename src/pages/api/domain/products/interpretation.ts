@@ -1,8 +1,5 @@
 import type { APIRoute } from "astro";
-import {
-  createAiErrorResponse,
-  createAiErrorResponseFromException,
-} from "@/lib/domain/ai-error-contract";
+import { createAiErrorResponse, createAiErrorResponseFromException } from "@/lib/domain/ai-error-contract";
 import {
   getUserScopedProductDetails,
   refreshStaleInterpretation,
@@ -56,7 +53,7 @@ export const GET: APIRoute = async (context) => {
       parseProductId(context.url.searchParams.get("productId")),
     );
     return Response.json({ product: details.product, interpretation: details.interpretation });
-  } catch (error) {
+  } catch (_error) {
     return createAiErrorResponseFromException(error);
   }
 };
@@ -85,7 +82,7 @@ export const POST: APIRoute = async (context) => {
       throw new Error("Payload analizy produktu musi być obiektem");
     }
     payload = body as Record<string, unknown>;
-  } catch (error) {
+  } catch (_error) {
     return createAiErrorResponse("invalid_request", 400);
   }
 

@@ -82,10 +82,18 @@ export function classifyAiError(error: unknown): AiErrorCode {
   if (/Nie znaleziono|nie znaleźliśmy/i.test(message)) {
     return "not_found";
   }
-  if (/Najpierw przygotuj|Brakuje aktualnych|nie ma listy składników|nie ma obecnie wskazówek|Ponowienie jest dostępne|Odświeżenie jest dostępne/i.test(message)) {
+  if (
+    /Najpierw przygotuj|Brakuje aktualnych|nie ma listy składników|nie ma obecnie wskazówek|Ponowienie jest dostępne|Odświeżenie jest dostępne/i.test(
+      message,
+    )
+  ) {
     return "conflict";
   }
-  if (/Uzupełnij profil|Dodaj co najmniej jeden produkt|spoza Twojej półki|Brakuje identyfikatora|Akcja |Payload/i.test(message)) {
+  if (
+    /Uzupełnij profil|Dodaj co najmniej jeden produkt|spoza Twojej półki|Brakuje identyfikatora|Akcja |Payload/i.test(
+      message,
+    )
+  ) {
     return "invalid_request";
   }
   if (/SourceValidationError|źródł|source page/i.test(`${name} ${message}`)) {

@@ -1,8 +1,5 @@
 import type { APIRoute } from "astro";
-import {
-  createAiErrorResponse,
-  createAiErrorResponseFromException,
-} from "@/lib/domain/ai-error-contract";
+import { createAiErrorResponse, createAiErrorResponseFromException } from "@/lib/domain/ai-error-contract";
 import {
   isIngredientGlossaryAction,
   prepareIngredientGlossaryEntries,
@@ -57,7 +54,7 @@ export const POST: APIRoute = async (context) => {
     }
     productId = parseProductId(body.productId);
     action = parseAction(body.action);
-  } catch (error) {
+  } catch (_error) {
     return createAiErrorResponse("invalid_request", 400);
   }
 

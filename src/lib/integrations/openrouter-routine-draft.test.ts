@@ -25,7 +25,9 @@ describe("generateRoutineDraft", () => {
       missing_steps: [],
       assessment: fixtures.validAssessment,
     };
-    const fetchMock = vi.fn().mockResolvedValue(Response.json({ choices: [{ message: { content: JSON.stringify(modelResponse) } }] }));
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(Response.json({ choices: [{ message: { content: JSON.stringify(modelResponse) } }] }));
     vi.stubGlobal("fetch", fetchMock);
 
     await expect(generateRoutineDraft(fixtures.profileBasis, fixtures.currentDraft, shelf)).resolves.toMatchObject({

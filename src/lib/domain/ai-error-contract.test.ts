@@ -1,9 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  classifyAiError,
-  createAiErrorDetails,
-  createAiErrorResponse,
-} from "@/lib/domain/ai-error-contract";
+import { classifyAiError, createAiErrorDetails, createAiErrorResponse } from "@/lib/domain/ai-error-contract";
 
 describe("AI error contract", () => {
   it("returns a stable Polish public payload without provider details", async () => {
@@ -22,7 +18,10 @@ describe("AI error contract", () => {
   it.each([
     [new TypeError("fetch failed"), "network_failure"],
     [new Error("Model returned invalid JSON: token=secret"), "invalid_model_output"],
-    [Object.assign(new Error("source page returned 404"), { name: "SourceValidationError" }), "source_validation_failed"],
+    [
+      Object.assign(new Error("source page returned 404"), { name: "SourceValidationError" }),
+      "source_validation_failed",
+    ],
     [new Error("Uzupełnij profil skóry"), "invalid_request"],
     [new Error("Najpierw przygotuj aktualne analizy"), "conflict"],
     [new Error("unexpected provider detail https://example.test/token"), "unknown"],
