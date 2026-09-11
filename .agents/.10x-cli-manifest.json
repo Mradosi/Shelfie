@@ -2,8 +2,8 @@
   "package": "@przeprogramowani/10x-cli",
   "version": "1.20.0",
   "manifestVersion": 3,
-  "lastApplied": "2026-09-01T12:55:09.552Z",
-  "lessonId": "m5l2",
+  "lastApplied": "2026-09-06T07:30:47.709Z",
+  "lessonId": "m5l3",
   "course": "10xdevs3",
   "tool": "codex",
   "files": {
@@ -239,6 +239,18 @@
         "contentHashes": {
           "SKILL.md": "6b50b17ee0906b01a2bd12d858bab3691fa395d425d0bfeea817c1c78c4f2f88"
         }
+      },
+      "10x-impl-review-ci": {
+        "files": [
+          "references/impl-review-instructions.md",
+          "references/workflow-template.yml",
+          "SKILL.md"
+        ],
+        "contentHashes": {
+          "references/impl-review-instructions.md": "b045095889ac573f6f03b6e4d5c79f0bf199bb530a2dd40b3fee319d44af1cee",
+          "references/workflow-template.yml": "f9c039b74d595790ebb931876e08b30061d2f4d4064d0cb5466c52a064d64904",
+          "SKILL.md": "6d33bf8017b01da9e27da54b5b56cedf0ee8850c58520745503e2a570b69197b"
+        }
       }
     },
     "prompts": [
@@ -248,7 +260,10 @@
       "m1l5-3-extend-prerequisites.md",
       "m1l5-4-store-plan.md",
       "m3l2-ad-hoc-testing.md",
-      "m5l2-agent.md"
+      "m5l2-agent.md",
+      "m5l3-requirements.md",
+      "m5l3-cicd.md",
+      "m5l3-promptfoo.md"
     ],
     "configs": [],
     "promptHashes": {
@@ -258,7 +273,10 @@
       "m1l5-3-extend-prerequisites.md": "d7e20964986be981a46b63346e3623b2f03deff8970dfbc4d60b89d657788e80",
       "m1l5-4-store-plan.md": "adcc1fc02f2943618fc3c190323b1eef44039727632117acaf4791175dc09c44",
       "m3l2-ad-hoc-testing.md": "6a4509b6b90d3ea9229d19dbec77aea0c6812d0d706144006f9465e195f5387f",
-      "m5l2-agent.md": "e0079b7393c49b1f37790026d60e3b2af11dda8cb0e9964bc03e613d855c08bc"
+      "m5l2-agent.md": "e0079b7393c49b1f37790026d60e3b2af11dda8cb0e9964bc03e613d855c08bc",
+      "m5l3-requirements.md": "9afb43da9b7b35370c0a2e0f540e279911062cd4978e1f7ef8778eb2a9aaaa12",
+      "m5l3-cicd.md": "872a98942779fbb17172920e1c61d4f69a3397d7fb19231a2cd05ef0c3ae2767",
+      "m5l3-promptfoo.md": "806be147011125baf15437661ead810aa24bdb55e80089aa185ed6fd4894ae7f"
     }
   },
   "lessons": {
@@ -978,6 +996,24 @@
       "skills": {},
       "prompts": [
         "m5l2-agent.md"
+      ],
+      "configs": []
+    },
+    "m5l3": {
+      "appliedAt": "2026-09-06T07:30:47.708Z",
+      "skills": {
+        "10x-impl-review-ci": {
+          "files": [
+            "references/impl-review-instructions.md",
+            "references/workflow-template.yml",
+            "SKILL.md"
+          ]
+        }
+      },
+      "prompts": [
+        "m5l3-requirements.md",
+        "m5l3-cicd.md",
+        "m5l3-promptfoo.md"
       ],
       "configs": []
     }
