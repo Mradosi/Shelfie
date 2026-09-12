@@ -48,7 +48,7 @@ runs:
         npm ci --prefix tools/code-review-agent
         export SHELFIE_REVIEW_PR_TITLE="$(< "$review_data_dir/title")"
         export SHELFIE_REVIEW_PR_DESCRIPTION="$(< "$review_data_dir/description")"
-        npm run --prefix tools/code-review-agent review < "$review_data_dir/diff" > "$REPORT_PATH"
+        tools/code-review-agent/node_modules/.bin/tsx tools/code-review-agent/src/review.ts < "$review_data_dir/diff" > "$REPORT_PATH"
 
         verdict=$(jq -er '.verdict' "$REPORT_PATH")
         case "$verdict" in
