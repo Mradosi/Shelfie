@@ -16,6 +16,9 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - run: npm ci --prefix tools/code-review-agent
+      - run: npm run --prefix tools/code-review-agent typecheck
+      - run: npm run --prefix tools/code-review-agent test
       - run: npx astro sync
       - run: npm run lint
       - run: npm run build
