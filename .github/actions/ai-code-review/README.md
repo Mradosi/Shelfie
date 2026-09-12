@@ -1,15 +1,16 @@
 # AI code review action
 
-Ta composite action uruchamia zaufany pakiet `tools/code-review-agent` dla wskazanego pull requestu. Pobiera tytuł, opis i diff przez GitHub API do plików tymczasowych, przekazuje diff wyłącznie przez standardowe wejście reviewera, a wynik zapisuje jako `ai-code-review-report.json` w katalogu roboczym workflowu.
+Ta composite action uruchamia zaufany pakiet `tools/code-review-agent` dla wskazanego pull requestu. Pobiera tytuł, opis i diff przez GitHub API do plików tymczasowych, przekazuje diff wyłącznie przez standardowe wejście reviewera, a wynik zapisuje w tymczasowym katalogu runnera.
 
 ## Wejścia i output
 
 - `github-token` — token z uprawnieniem do odczytu PR-a;
 - `openai-api-key` — sekret przekazywany wyłącznie do procesu reviewera;
 - `pr-number` — dodatni numer pull requestu;
-- `verdict` — output `pass`, `needs_changes` albo `fail`.
+- `verdict` — output `pass`, `needs_changes` albo `fail`;
+- `report-path` — jednolinijkowa ścieżka do pełnego raportu JSON w tymczasowym katalogu runnera.
 
-Pełny raport JSON nie jest przekazywany przez `GITHUB_OUTPUT`; następny krok workflowu odczytuje go z `ai-code-review-report.json`.
+Pełny raport JSON nie jest przekazywany przez `GITHUB_OUTPUT`; następny krok workflowu odczytuje go z `report-path`.
 
 ## Granica zaufania
 

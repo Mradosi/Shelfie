@@ -43,7 +43,9 @@ jobs:
 
       - name: Render PR comment
         shell: bash
-        run: npm run --prefix tools/code-review-agent format-pr-comment -- ai-code-review-report.json > ai-code-review-comment.md
+        env:
+          REPORT_PATH: ${{ steps.review.outputs.report-path }}
+        run: tools/code-review-agent/node_modules/.bin/tsx tools/code-review-agent/src/format-pr-comment-cli.ts "$REPORT_PATH" > ai-code-review-comment.md
 
       - name: Update PR comment and labels
         shell: bash

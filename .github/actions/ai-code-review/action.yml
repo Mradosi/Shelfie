@@ -16,6 +16,9 @@ outputs:
   verdict:
     description: "Deterministic reviewer verdict: pass, needs_changes, or fail."
     value: ${{ steps.review.outputs.verdict }}
+  report-path:
+    description: Absolute runner-temporary path of the validated review report JSON.
+    value: ${{ steps.review.outputs.report-path }}
 
 runs:
   using: composite
@@ -27,7 +30,7 @@ runs:
         GH_TOKEN: ${{ inputs.github-token }}
         OPENAI_API_KEY: ${{ inputs.openai-api-key }}
         PR_NUMBER: ${{ inputs.pr-number }}
-        REPORT_PATH: ${{ github.workspace }}/ai-code-review-report.json
+        REPORT_PATH: ${{ runner.temp }}/ai-code-review-report-${{ inputs.pr-number }}.json
       run: |
         set -euo pipefail
 
@@ -60,3 +63,4 @@ runs:
         esac
 
         echo "verdict=$verdict" >> "$GITHUB_OUTPUT"
+        echo "report-path=$REPORT_PATH" >> "$GITHUB_OUTPUT"
