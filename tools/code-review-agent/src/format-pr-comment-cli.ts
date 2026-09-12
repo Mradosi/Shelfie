@@ -24,6 +24,7 @@ async function main(): Promise<void> {
     throw new Error("Werdykt raportu nie zgadza się z lokalną polityką.");
   }
 
+  // eslint-disable-next-line no-console -- CLI returns the rendered PR comment on stdout.
   console.log(formatPrComment(finalReview));
 }
 
@@ -31,6 +32,7 @@ try {
   await main();
 } catch (error: unknown) {
   const message = error instanceof Error ? error.message : "Nie udało się sformatować komentarza PR.";
+  // eslint-disable-next-line no-console -- CLI reports formatting failures to stderr.
   console.error(`Formatowanie komentarza PR nie powiodło się: ${message}`);
   process.exitCode = 1;
 }
