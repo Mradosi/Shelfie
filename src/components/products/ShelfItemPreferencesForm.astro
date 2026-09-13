@@ -1,0 +1,65 @@
+---
+import { MAX_SHELF_ITEM_NOTE_LENGTH, type UserShelfItem } from "@/lib/domain/user-domain";
+
+interface Props {
+  shelfItem: UserShelfItem;
+  successRedirectTo: string;
+  errorRedirectTo: string;
+}
+
+const { shelfItem, successRedirectTo, errorRedirectTo } = Astro.props;
+---
+
+<section class="rounded-[2rem] border border-violet-200/20 bg-violet-300/8 p-6 sm:p-8">
+  <div class="max-w-3xl">
+    <p class="text-sm tracking-[0.22em] text-violet-100/65 uppercase">Twoje preferencje</p>
+    <h2 class="mt-2 text-2xl font-semibold text-white">Notatka i ustawienia AI</h2>
+    <p class="mt-3 text-sm leading-6 text-blue-100/75">
+      Ta notatka jest prywatna. Przy produkcie dostępnym dla AI może zostać użyta wyłącznie jako kontekst Twoich
+      doświadczeń, np. podrażnienia. Nie zastępuje porady medycznej.
+    </p>
+  </div>
+
+  <form method="POST" action="/api/domain/products/shelf-preferences" class="mt-6 space-y-5">
+    <input type="hidden" name="shelfItemId" value={shelfItem.id} />
+    <input type="hidden" name="successRedirectTo" value={successRedirectTo} />
+    <input type="hidden" name="errorRedirectTo" value={errorRedirectTo} />
+
+    <label class="block">
+      <span class="mb-2 block text-sm font-medium text-blue-100/85">Prywatna notatka o produkcie</span>
+      <textarea
+        name="note"
+        rows="4"
+        maxlength={MAX_SHELF_ITEM_NOTE_LENGTH}
+        placeholder="Np. podrażnia mnie przy częstym użyciu — nie chcę go w propozycjach AI."
+        class="w-full rounded-2xl border border-white/12 bg-slate-950/35 px-4 py-3 text-sm leading-6 text-white placeholder:text-blue-100/35 focus:border-cyan-300/60 focus:outline-none"
+        >{shelfItem.note ?? ""}</textarea
+      >
+      <p class="mt-2 text-xs leading-5 text-blue-100/55">Maksymalnie {MAX_SHELF_ITEM_NOTE_LENGTH} znaków.</p>
+    </label>
+
+    <div class="flex gap-3 rounded-2xl border border-white/12 bg-slate-950/25 p-4">
+      <input
+        id="exclude-from-ai-routines"
+        type="checkbox"
+        name="excludeFromAiRoutines"
+        checked={shelfItem.excludeFromAiRoutines}
+        class="mt-1 size-4 rounded border-white/30 bg-slate-950 text-cyan-300 focus:ring-cyan-300"
+      />
+      <label for="exclude-from-ai-routines" class="cursor-pointer">
+        <span class="block text-sm font-semibold text-white">Nie proponuj w rutynach AI</span>
+        <span class="mt-1 block text-sm leading-6 text-blue-100/70">
+          Produkt pozostanie na Twojej półce i w ręcznej rutynie, ale nie zostanie wysłany do AI ani przez nią
+          zaproponowany.
+        </span>
+      </label>
+    </div>
+
+    <button
+      type="submit"
+      class="rounded-full bg-cyan-300 px-5 py-2.5 text-sm font-semibold text-slate-950 transition-transform hover:-translate-y-0.5"
+    >
+      Zapisz preferencje
+    </button>
+  </form>
+</section>
