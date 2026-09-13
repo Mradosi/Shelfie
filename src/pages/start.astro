@@ -25,7 +25,7 @@ try {
   const profile = await getUserProfile(supabase, user.id);
 
   if (isUserProfileComplete(profile)) {
-    return Astro.redirect("/dashboard");
+    return Astro.redirect("/today");
   }
 
   return Astro.redirect("/onboarding/skin-profile");
