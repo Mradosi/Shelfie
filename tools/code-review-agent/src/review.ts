@@ -51,6 +51,7 @@ async function main(): Promise<void> {
   validateWorkspace(workspaceRoot);
 
   const startedAt = performance.now();
+  // eslint-disable-next-line no-console -- CLI emits safe operational metrics to stderr for CI observability.
   console.error(
     JSON.stringify({
       event: "code_review_started",
@@ -77,7 +78,9 @@ async function main(): Promise<void> {
     throw new Error(`Codex zwrócił JSON niezgodny z kontraktem: ${parsed.error.message}`);
   }
 
+  // eslint-disable-next-line no-console -- CLI returns the machine-readable review report on stdout.
   console.log(JSON.stringify(finalizeReview(parsed.data), null, 2));
+  // eslint-disable-next-line no-console -- CLI emits safe operational metrics to stderr for CI observability.
   console.error(
     JSON.stringify({
       event: "code_review_completed",
@@ -92,6 +95,7 @@ try {
   await main();
 } catch (error: unknown) {
   const message = error instanceof Error ? error.message : "Nieznany błąd reviewera.";
+  // eslint-disable-next-line no-console -- CLI reports failures to stderr without exposing review input.
   console.error(`Code review nie powiodło się: ${message}`);
   process.exitCode = 1;
 }
