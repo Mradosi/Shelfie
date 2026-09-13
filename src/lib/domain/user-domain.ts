@@ -328,7 +328,7 @@ function mapUserShelfItem(row: UserShelfItemRow): UserShelfItem {
     userId: row.user_id,
     productId: row.product_id,
     note: normalizeShelfItemNote(row.note),
-    excludeFromAiRoutines: row.exclude_from_ai_routines === true,
+    excludeFromAiRoutines: row.exclude_from_ai_routines,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };

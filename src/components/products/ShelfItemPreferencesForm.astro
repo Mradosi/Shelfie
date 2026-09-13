@@ -38,21 +38,22 @@ const { shelfItem, successRedirectTo, errorRedirectTo } = Astro.props;
       <p class="mt-2 text-xs leading-5 text-blue-100/55">Maksymalnie {MAX_SHELF_ITEM_NOTE_LENGTH} znaków.</p>
     </label>
 
-    <label class="flex cursor-pointer gap-3 rounded-2xl border border-white/12 bg-slate-950/25 p-4">
+    <div class="flex gap-3 rounded-2xl border border-white/12 bg-slate-950/25 p-4">
       <input
+        id="exclude-from-ai-routines"
         type="checkbox"
         name="excludeFromAiRoutines"
         checked={shelfItem.excludeFromAiRoutines}
         class="mt-1 size-4 rounded border-white/30 bg-slate-950 text-cyan-300 focus:ring-cyan-300"
       />
-      <span>
+      <label for="exclude-from-ai-routines" class="cursor-pointer">
         <span class="block text-sm font-semibold text-white">Nie proponuj w rutynach AI</span>
         <span class="mt-1 block text-sm leading-6 text-blue-100/70">
           Produkt pozostanie na Twojej półce i w ręcznej rutynie, ale nie zostanie wysłany do AI ani przez nią
           zaproponowany.
         </span>
-      </span>
-    </label>
+      </label>
+    </div>
 
     <button
       type="submit"

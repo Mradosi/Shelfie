@@ -37,7 +37,9 @@ function createForm(overrides: Record<string, string> = {}) {
   form.set("successRedirectTo", "/products/product-1");
   form.set("errorRedirectTo", "/products/product-1");
   form.set("excludeFromAiRoutines", "on");
-  Object.entries(overrides).forEach(([key, value]) => form.set(key, value));
+  Object.entries(overrides).forEach(([key, value]) => {
+    form.set(key, value);
+  });
   return form;
 }
 
