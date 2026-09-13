@@ -1,12 +1,12 @@
 ---
 import Layout from "@/layouts/Layout.astro";
+import { getStartRedirectPath } from "@/lib/domain/app-navigation";
 import { setFlashMessage } from "@/lib/flash-message";
 import { createClient } from "@/lib/supabase";
 import {
   getMissingUserDomainContractMessage,
   getUserProfile,
   isMissingUserDomainContractError,
-  isUserProfileComplete,
 } from "@/lib/domain/user-domain";
 
 const user = Astro.locals.user;
@@ -24,11 +24,7 @@ if (!supabase) {
 try {
   const profile = await getUserProfile(supabase, user.id);
 
-  if (isUserProfileComplete(profile)) {
-    return Astro.redirect("/dashboard");
-  }
-
-  return Astro.redirect("/onboarding/skin-profile");
+  return Astro.redirect(getStartRedirectPath(profile));
 } catch (error) {
   const message = isMissingUserDomainContractError(error)
     ? getMissingUserDomainContractMessage()
