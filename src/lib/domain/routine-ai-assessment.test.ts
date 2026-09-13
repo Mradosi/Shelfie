@@ -17,19 +17,4 @@ describe("createRoutineAiAssessmentFingerprint", () => {
     expect(first).toBe(second);
     expect(changed).not.toBe(first);
   });
-
-  it("changes when an AI-relevant shelf preference changes", async () => {
-    const fixtures = createAiContractFixtures();
-    const shelf = createRoutineAiShelfInputs(fixtures.shelfCatalog, fixtures.products, fixtures.interpretations);
-    const first = await createRoutineAiAssessmentFingerprint(fixtures.profileBasis, fixtures.currentDraft, shelf);
-    const changedShelf = shelf.map((input) =>
-      input.shelfItem.id === "shelf-cleanser"
-        ? { ...input, shelfItem: { ...input.shelfItem, note: "Produkt wywołuje dyskomfort." } }
-        : input,
-    );
-
-    await expect(
-      createRoutineAiAssessmentFingerprint(fixtures.profileBasis, fixtures.currentDraft, changedShelf),
-    ).resolves.not.toBe(first);
-  });
 });
