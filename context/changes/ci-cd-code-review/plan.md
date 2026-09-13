@@ -282,5 +282,5 @@ Po wyniku job tworzy albo aktualizuje komentarz z markerem, zapewnia istnienie e
 
 #### Ręczne
 
-- [ ] 3.4 Skonfiguruj sekret repozytorium i potwierdź zachowanie workflow na testowym PR-ze oraz retry.
-- [ ] 3.5 Zweryfikuj pominięcie forków i dopiero wtedy opcjonalnie włącz status check jako branch protection.
+- [x] 3.4 Skonfiguruj sekret repozytorium i potwierdź zachowanie workflow na testowym PR-ze oraz retry.
+- [x] 3.5 Zweryfikuj pominięcie forków i dopiero wtedy opcjonalnie włącz status check jako branch protection.
