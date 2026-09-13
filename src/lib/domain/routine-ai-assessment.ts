@@ -104,6 +104,10 @@ function serializeAssessmentInput(
             promptVersion: input.interpretation.promptVersion,
             modelVersion: input.interpretation.modelVersion,
           },
+          preferences: {
+            note: input.shelfItem.note,
+            excludeFromAiRoutines: input.shelfItem.excludeFromAiRoutines,
+          },
         };
       }),
     })),

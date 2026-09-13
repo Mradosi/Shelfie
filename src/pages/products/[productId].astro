@@ -2,6 +2,7 @@
 import ProductInterpretationPanel from "@/components/products/ProductInterpretationPanel";
 import IngredientGlossaryPanel from "@/components/products/IngredientGlossaryPanel";
 import RemoveShelfItemForm from "@/components/products/RemoveShelfItemForm.astro";
+import ShelfItemPreferencesForm from "@/components/products/ShelfItemPreferencesForm.astro";
 import Layout from "@/layouts/Layout.astro";
 import { consumeFlashMessage } from "@/lib/flash-message";
 import {
@@ -41,6 +42,7 @@ let routeError: string | null = null;
 let details: Awaited<ReturnType<typeof getUserScopedProductDetails>> | null = null;
 let isOnShelf = false;
 let shelfItemId: string | null = null;
+let shelfItem: Awaited<ReturnType<typeof listUserShelfItems>>[number] | null = null;
 let ingredientGlossaryItems: IngredientGlossaryItem[] = [];
 let ingredientGlossaryError: string | null = null;
 
@@ -58,7 +60,7 @@ if (!supabase) {
       listUserShelfItems(supabase, user.id),
     ]);
     details = loadedDetails;
-    const shelfItem = shelfItems.find((item) => item.productId === loadedDetails.product.id);
+    shelfItem = shelfItems.find((item) => item.productId === loadedDetails.product.id) ?? null;
     isOnShelf = Boolean(shelfItem);
     shelfItemId = shelfItem?.id ?? null;
 
@@ -199,6 +201,14 @@ const provenance = [product?.inciSource, product?.inciConfidence ? `pewność: $
                 </div>
               </div>
             </section>
+
+            {shelfItem && (
+              <ShelfItemPreferencesForm
+                shelfItem={shelfItem}
+                successRedirectTo={`/products/${product.id}`}
+                errorRedirectTo={`/products/${product.id}`}
+              />
+            )}
 
             <ProductInterpretationPanel client:load initialInterpretation={details.interpretation} />
 
