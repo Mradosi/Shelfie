@@ -77,7 +77,7 @@ if (!supabase) {
           ),
           getUserRoutineAiAssessment(supabase, user.id),
         ]);
-        const draftHasAiExcludedItem = ["morning", "evening"].some((section) =>
+        const draftHasAiExcludedItem = (["morning", "evening"] as const).some((section) =>
           initialDraft[section].some((entry) =>
             ownedShelfCatalog.some((item) => item.id === entry.shelfItemId && item.excludeFromAiRoutines),
           ),
