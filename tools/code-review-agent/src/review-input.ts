@@ -24,7 +24,7 @@ export function excludePlanningContextFromReviewDiff(diff: string) {
   const sections = diff.split(/(?=^diff --git )/m);
   return sections
     .filter((section) => {
-      const header = section.match(/^diff --git a\/(.+) b\/(.+)$/m);
+      const header = /^diff --git a\/(.+) b\/(.+)$/m.exec(section);
       if (!header) {
         return true;
       }
