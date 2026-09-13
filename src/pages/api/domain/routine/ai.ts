@@ -95,25 +95,6 @@ function getFailurePayload(
   });
 }
 
-function getEligibleShelf(shelf: Awaited<ReturnType<typeof listUserShelfCatalog>>) {
-  return shelf.filter((item) => !item.excludeFromAiRoutines);
-}
-
-function assertDraftCanUseAi(draft: BaseRoutineDraft, shelf: Awaited<ReturnType<typeof listUserShelfCatalog>>) {
-  const shelfById = new Map(shelf.map((item) => [item.id, item]));
-  for (const section of ["morning", "evening"] as const) {
-    for (const entry of draft[section]) {
-      const shelfItem = shelfById.get(entry.shelfItemId);
-      if (!shelfItem) {
-        throw new Error("Bieżący draft odwołuje się do produktu spoza Twojej półki.");
-      }
-      if (shelfItem.excludeFromAiRoutines) {
-        throw new Error("Twoja rutyna zawiera produkt wykluczony z AI.");
-      }
-    }
-  }
-}
-
 async function loadReadyShelfInputs(
   supabase: NonNullable<ReturnType<typeof createClient>>,
   userId: string,
@@ -129,19 +110,23 @@ async function loadReadyShelfInputs(
   if (shelf.length === 0) {
     throw new Error("Dodaj co najmniej jeden produkt do półki przed użyciem AI do rutyny.");
   }
-  assertDraftCanUseAi(draft, shelf);
-  const eligibleShelf = getEligibleShelf(shelf);
-  if (eligibleShelf.length === 0) {
-    throw new Error("AI nie ma obecnie produktów do użycia.");
+
+  const ownedShelfItemIds = new Set(shelf.map((item) => item.id));
+  for (const section of ["morning", "evening"] as const) {
+    for (const entry of draft[section]) {
+      if (!ownedShelfItemIds.has(entry.shelfItemId)) {
+        throw new Error("Bieżący draft odwołuje się do produktu spoza Twojej półki.");
+      }
+    }
   }
 
   const [products, interpretations] = await Promise.all([
     getSharedProductsByIds(
       supabase,
-      eligibleShelf.map((item) => item.productId),
+      shelf.map((item) => item.productId),
     ),
     Promise.all(
-      eligibleShelf.map(async (item) => ({
+      shelf.map(async (item) => ({
         shelfItem: item,
         interpretation: await getUserProductInterpretation(supabase, userId, item.productId),
       })),
@@ -155,8 +140,8 @@ async function loadReadyShelfInputs(
   const readyInterpretations = interpretations.flatMap((item) =>
     item.interpretation?.status === "ready" ? [item.interpretation] : [],
   );
-  const readyShelf = createRoutineAiShelfInputs(eligibleShelf, products, readyInterpretations);
-  if (readyShelf.length !== eligibleShelf.length) {
+  const readyShelf = createRoutineAiShelfInputs(shelf, products, readyInterpretations);
+  if (readyShelf.length !== shelf.length) {
     throw new Error("Brakuje aktualnych danych produktu potrzebnych do oceny rutyny.");
   }
 
@@ -280,21 +265,14 @@ export const POST: APIRoute = async (context) => {
       if (shelf.length === 0) {
         throw new Error("Dodaj co najmniej jeden produkt do półki przed użyciem AI do rutyny.");
       }
-      const eligibleShelf = getEligibleShelf(shelf);
-      if (eligibleShelf.length === 0) {
-        throw new Error("AI nie ma obecnie produktów do użycia.");
-      }
 
       const preparation = await prepareUserProductInterpretations(
         supabase,
         user.id,
-        eligibleShelf.map((item) => item.productId),
+        shelf.map((item) => item.productId),
       );
       if (preparation.failures.length > 0) {
-        return Response.json({
-          status: "blocked",
-          failedProducts: getFailurePayload(preparation.failures, eligibleShelf),
-        });
+        return Response.json({ status: "blocked", failedProducts: getFailurePayload(preparation.failures, shelf) });
       }
 
       return Response.json({ status: "ready" });

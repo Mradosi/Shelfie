@@ -36,11 +36,4 @@ describe("AI error contract", () => {
       action: "retry",
     });
   });
-
-  it.each([
-    [new Error("AI nie ma obecnie produktów do użycia."), "no_eligible_shelf_items"],
-    [new Error("Twoja rutyna zawiera produkt wykluczony z AI."), "excluded_shelf_item_in_draft"],
-  ] as const)("classifies the routine preference boundary %s safely as %s", (error, expected) => {
-    expect(classifyAiError(error)).toBe(expected);
-  });
 });

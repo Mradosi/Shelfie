@@ -42,8 +42,7 @@ interface ManualRoutineEditorProps {
 
 function buildShelfLabel(item: UserShelfCatalogItem) {
   const brandPrefix = item.product.brand ? `${item.product.brand} · ` : "";
-  const aiExclusion = item.excludeFromAiRoutines ? " · Wykluczony tylko z AI" : "";
-  return `${brandPrefix}${item.product.name}${aiExclusion}`;
+  return `${brandPrefix}${item.product.name}`;
 }
 
 function getCategoryHint(category: string | null) {
@@ -393,11 +392,6 @@ export default function ManualRoutineEditor({
                           <span className="rounded-full border border-cyan-300/20 bg-cyan-300/8 px-3 py-1 text-xs text-cyan-100">
                             {ROUTINE_ROLE_LABELS[entry.routineRole]}
                           </span>
-                          {shelfItem.excludeFromAiRoutines && (
-                            <span className="rounded-full border border-violet-200/25 bg-violet-300/10 px-3 py-1 text-xs text-violet-100">
-                              Wykluczony tylko z AI
-                            </span>
-                          )}
                         </div>
                         <div>
                           <p className="text-sm text-blue-100/60">{shelfItem.product.brand ?? "Bez marki"}</p>
