@@ -73,6 +73,8 @@ export function createAiContractFixtures(): AiContractFixtures {
       id: "shelf-cleanser",
       userId: "user-test",
       productId: "product-cleanser",
+      note: null,
+      excludeFromAiRoutines: false,
       createdAt: TIMESTAMP,
       updatedAt: TIMESTAMP,
       product: {
@@ -87,6 +89,8 @@ export function createAiContractFixtures(): AiContractFixtures {
       id: "shelf-serum",
       userId: "user-test",
       productId: "product-serum",
+      note: null,
+      excludeFromAiRoutines: false,
       createdAt: TIMESTAMP,
       updatedAt: TIMESTAMP,
       product: {

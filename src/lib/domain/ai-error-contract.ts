@@ -7,6 +7,8 @@ export const AI_ERROR_CODES = [
   "invalid_model_output",
   "network_failure",
   "source_validation_failed",
+  "no_eligible_shelf_items",
+  "excluded_shelf_item_in_draft",
   "unknown",
 ] as const;
 
@@ -58,6 +60,15 @@ const ERROR_DETAILS: Record<AiErrorCode, Omit<AiErrorDetails, "code">> = {
     message: "Nie udało się potwierdzić danych produktu ze źródła. Doprecyzuj produkt albo dodaj go ręcznie.",
     action: "use_manual_entry",
   },
+  no_eligible_shelf_items: {
+    message: "AI nie ma obecnie produktów do użycia. Cofnij wykluczenie dla co najmniej jednego produktu na półce.",
+    action: "refine_input",
+  },
+  excluded_shelf_item_in_draft: {
+    message:
+      "Twoja rutyna zawiera produkt wykluczony z AI. Usuń go ręcznie z rutyny albo cofnij wykluczenie produktu, a potem spróbuj ponownie.",
+    action: "refine_input",
+  },
   unknown: {
     message: "Nie udało się wykonać tej akcji z pomocą AI. Spróbuj ponownie później.",
     action: "retry",
@@ -79,6 +90,12 @@ export function classifyAiError(error: unknown): AiErrorCode {
 
   const name = error instanceof Error ? error.name : "";
   const message = error instanceof Error ? error.message : "";
+  if (/AI nie ma obecnie produktów do użycia/i.test(message)) {
+    return "no_eligible_shelf_items";
+  }
+  if (/rutyna zawiera produkt wykluczony z AI/i.test(message)) {
+    return "excluded_shelf_item_in_draft";
+  }
   if (/Nie znaleziono|nie znaleźliśmy/i.test(message)) {
     return "not_found";
   }
