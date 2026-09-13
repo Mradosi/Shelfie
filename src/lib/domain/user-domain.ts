@@ -9,10 +9,12 @@ import {
 type UserDomainClient = SupabaseClient;
 
 const USER_PROFILE_COLUMNS = "user_id, skin_type, skin_aspects, concerns, goals, notes, created_at, updated_at";
-const USER_SHELF_ITEM_COLUMNS = "id, user_id, product_id, created_at, updated_at";
+const USER_SHELF_ITEM_COLUMNS = "id, user_id, product_id, note, exclude_from_ai_routines, created_at, updated_at";
 const USER_SHELF_CATALOG_COLUMNS =
-  "id, user_id, product_id, created_at, updated_at, product:products!user_shelf_items_product_id_fkey(id, name, brand, category, source_image_url, stored_image_url)";
+  "id, user_id, product_id, note, exclude_from_ai_routines, created_at, updated_at, product:products!user_shelf_items_product_id_fkey(id, name, brand, category, source_image_url, stored_image_url)";
 const USER_ROUTINE_CONFIG_COLUMNS = "user_id, schedule, created_at, updated_at";
+
+export const MAX_SHELF_ITEM_NOTE_LENGTH = 500;
 
 export const SKIN_TYPE_OPTIONS = ["dry", "oily", "combination", "normal", "balanced", "not_sure"] as const;
 export const SKIN_ASPECT_KEYS = ["sensitivity", "pigmentation", "firmness", "breakouts", "texture"] as const;
@@ -98,6 +100,8 @@ interface UserShelfItemRow {
   id: string;
   user_id: string;
   product_id: string;
+  note: string | null;
+  exclude_from_ai_routines: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -160,8 +164,15 @@ export interface UserShelfItem {
   id: string;
   userId: string;
   productId: string;
+  note: string | null;
+  excludeFromAiRoutines: boolean;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface UserShelfItemPreferencesInput {
+  note: string | null;
+  excludeFromAiRoutines: boolean;
 }
 
 export interface UserShelfCatalogProduct {
@@ -266,6 +277,15 @@ function normalizeOptionalText(value: string | null | undefined) {
   return trimmed;
 }
 
+export function normalizeShelfItemNote(value: string | null | undefined) {
+  const note = normalizeOptionalText(value);
+  if (note && note.length > MAX_SHELF_ITEM_NOTE_LENGTH) {
+    throw new Error(`Notatka produktu musi mieć maksymalnie ${MAX_SHELF_ITEM_NOTE_LENGTH} znaków`);
+  }
+
+  return note;
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
@@ -307,6 +327,8 @@ function mapUserShelfItem(row: UserShelfItemRow): UserShelfItem {
     id: row.id,
     userId: row.user_id,
     productId: row.product_id,
+    note: normalizeShelfItemNote(row.note),
+    excludeFromAiRoutines: row.exclude_from_ai_routines,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -464,6 +486,30 @@ export async function removeUserShelfItem(supabase: UserDomainClient, userId: st
 
   if (error) {
     throw new Error(`Nie udało się usunąć produktu z półki: ${error.message}`);
+  }
+
+  return data ? mapUserShelfItem(data) : null;
+}
+
+export async function updateUserShelfItemPreferences(
+  supabase: UserDomainClient,
+  userId: string,
+  shelfItemId: string,
+  preferences: UserShelfItemPreferencesInput,
+) {
+  const { data, error } = await supabase
+    .from("user_shelf_items")
+    .update({
+      note: normalizeShelfItemNote(preferences.note),
+      exclude_from_ai_routines: preferences.excludeFromAiRoutines,
+    })
+    .eq("id", shelfItemId)
+    .eq("user_id", userId)
+    .select(USER_SHELF_ITEM_COLUMNS)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`Nie udało się zapisać preferencji produktu na półce: ${error.message}`);
   }
 
   return data ? mapUserShelfItem(data) : null;
