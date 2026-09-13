@@ -1,7 +1,7 @@
 ---
 change_id: shelf-notes-and-routine-exclusions
 title: Add product notes and routine exclusions
-status: implementing
+status: implemented
 created: 2026-09-12
 updated: 2026-09-13
 archived_at: null

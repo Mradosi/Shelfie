@@ -236,12 +236,12 @@ Migracja jest wyłącznie addytywna. Wdrożenie lokalne używa `npx supabase mig
 
 #### Automated
 
-- [ ] 1.1 Addytywna migracja preferencji stosuje się bez resetu bazy.
+- [x] 1.1 Addytywna migracja preferencji stosuje się bez resetu bazy.
 - [x] 1.2 Typy, helper i testy preferencji pozycji półki przechodzą.
 
 #### Manual
 
-- [ ] 1.3 Istniejące produkty pozostają widoczne po migracji.
+- [x] 1.3 Istniejące produkty pozostają widoczne po migracji.
 
 ### Phase 2: Edycja preferencji na szczegółach produktu
 
@@ -253,7 +253,7 @@ Migracja jest wyłącznie addytywna. Wdrożenie lokalne używa `npx supabase mig
 
 #### Manual
 
-- [ ] 2.4 Notatkę i wykluczenie można zapisać, odświeżyć i zmienić bez wpływu na ręczną rutynę.
+- [x] 2.4 Notatkę i wykluczenie można zapisać, odświeżyć i zmienić bez wpływu na ręczną rutynę.
 
 ### Phase 3: Twarde wykluczenie w rutynach AI
 
@@ -266,4 +266,4 @@ Migracja jest wyłącznie addytywna. Wdrożenie lokalne używa `npx supabase mig
 
 #### Manual
 
-- [ ] 3.5 AI respektuje wykluczenie, a użytkownik może zachować ręczną rutynę i świadomie naprawić konflikt draftu.
+- [x] 3.5 AI respektuje wykluczenie, a użytkownik może zachować ręczną rutynę i świadomie naprawić konflikt draftu.
