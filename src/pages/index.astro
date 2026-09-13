@@ -1,9 +1,12 @@
 ---
 import Welcome from "@/components/Welcome.astro";
+import { getRootRedirectPath } from "@/lib/domain/app-navigation";
 import Layout from "@/layouts/Layout.astro";
 
-if (Astro.locals.user) {
-  return Astro.redirect("/today");
+const rootRedirectPath = getRootRedirectPath(Boolean(Astro.locals.user));
+
+if (rootRedirectPath) {
+  return Astro.redirect(rootRedirectPath);
 }
 ---
 
