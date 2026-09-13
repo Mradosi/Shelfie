@@ -2,6 +2,7 @@ import { SYSTEM_PROMPT } from "./review-schema.js";
 
 export const MAX_PR_DESCRIPTION_LENGTH = 4_000;
 export const MAX_DIFF_LENGTH = 60_000;
+const EXCLUDED_CHANGE_CONTEXT_FILES = new Set(["change.md", "plan.md", "plan-brief.md"]);
 
 export interface ReviewInput {
   title: string;
@@ -9,11 +10,35 @@ export interface ReviewInput {
   diff: string;
 }
 
+function isExcludedChangeContextPath(path: string) {
+  const pathParts = path.split("/");
+  return (
+    pathParts.length === 4 &&
+    pathParts[0] === "context" &&
+    pathParts[1] === "changes" &&
+    EXCLUDED_CHANGE_CONTEXT_FILES.has(pathParts[3])
+  );
+}
+
+export function excludePlanningContextFromReviewDiff(diff: string) {
+  const sections = diff.split(/(?=^diff --git )/m);
+  return sections
+    .filter((section) => {
+      const header = /^diff --git a\/(.+) b\/(.+)$/m.exec(section);
+      if (!header) {
+        return true;
+      }
+
+      return !isExcludedChangeContextPath(header[1]) && !isExcludedChangeContextPath(header[2]);
+    })
+    .join("");
+}
+
 export function parseReviewInput(input: ReviewInput): ReviewInput {
   const title = input.title.trim();
   const trimmedDescription = input.description?.trim();
   const description = trimmedDescription === "" || trimmedDescription === undefined ? null : trimmedDescription;
-  const diff = input.diff.trim();
+  const diff = excludePlanningContextFromReviewDiff(input.diff).trim();
 
   if (!title) {
     throw new Error("Brakuje tytułu pull requestu.");
