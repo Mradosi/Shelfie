@@ -77,7 +77,14 @@ if (!supabase) {
           ),
           getUserRoutineAiAssessment(supabase, user.id),
         ]);
-        if (storedAssessment) {
+        const draftHasAiExcludedItem = ["morning", "evening"].some((section) =>
+          initialDraft[section].some((entry) =>
+            ownedShelfCatalog.some((item) => item.id === entry.shelfItemId && item.excludeFromAiRoutines),
+          ),
+        );
+        if (storedAssessment && draftHasAiExcludedItem) {
+          initialAssessmentState = "stale";
+        } else if (storedAssessment) {
           const assessmentShelf = createRoutineAiShelfInputs(ownedShelfCatalog, products, interpretations);
           const fingerprint = await createRoutineAiAssessmentFingerprint(
             createUserProfileInterpretationBasis(profile),

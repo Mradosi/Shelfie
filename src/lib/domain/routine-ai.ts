@@ -9,13 +9,17 @@ import {
   type BaseRoutineSectionKey,
   type RoutineRole,
 } from "@/lib/domain/routine-schedule";
-import type { UserProfileInterpretationBasis, UserShelfCatalogItem } from "@/lib/domain/user-domain";
+import {
+  MAX_SHELF_ITEM_NOTE_LENGTH,
+  type UserProfileInterpretationBasis,
+  type UserShelfCatalogItem,
+} from "@/lib/domain/user-domain";
 
 export const MAX_ROUTINE_AI_MISSING_STEPS = 3;
 export const MAX_ROUTINE_AI_CANDIDATES_PER_STEP = 4;
 export const MAX_ROUTINE_AI_CANDIDATES_TOTAL = 12;
 export const MAX_ROUTINE_AI_RECOMMENDATIONS_PER_STEP = 3;
-export const ROUTINE_AI_ASSESSMENT_INPUT_VERSION = "routine-assessment-v4";
+export const ROUTINE_AI_ASSESSMENT_INPUT_VERSION = "routine-assessment-v5";
 
 export interface RoutineAiEntryReason {
   section: BaseRoutineSectionKey;
@@ -381,7 +385,8 @@ export function parseRoutineAiProposal(
     throw new Error("Propozycja AI musi zawierać co najmniej jeden krok rutyny.");
   }
 
-  const ownedIds = new Set(shelf.map((item) => item.shelfItem.id));
+  const eligibleShelf = shelf.filter((item) => !item.shelfItem.excludeFromAiRoutines);
+  const ownedIds = new Set(eligibleShelf.map((item) => item.shelfItem.id));
   for (const section of BASE_ROUTINE_SECTION_KEYS) {
     for (const entry of routine[section]) {
       if (!ownedIds.has(entry.shelfItemId)) {
@@ -430,7 +435,7 @@ export function parseRoutineAiProposal(
   const assessment =
     assessmentRaw === null || assessmentRaw === undefined
       ? null
-      : parseRoutineAiAssessment(assessmentRaw, currentDraft, shelf);
+      : parseRoutineAiAssessment(assessmentRaw, currentDraft, eligibleShelf);
   if (hasNonEmptyBaseRoutine(currentDraft) && !assessment) {
     throw new Error("Ocena istniejącej rutyny musi zawierać analizę całego układu.");
   }
@@ -485,6 +490,7 @@ export function createRoutineAiPromptInput(
   shelf: RoutineAiShelfInput[],
 ) {
   const shelfById = new Map(shelf.map((item) => [item.shelfItem.id, item]));
+  const serializeNote = (note: string | null) => note?.slice(0, MAX_SHELF_ITEM_NOTE_LENGTH) ?? null;
   const routineProducts = BASE_ROUTINE_SECTION_KEYS.flatMap((section) =>
     currentDraft[section].flatMap((entry) => {
       const shelfInput = shelfById.get(entry.shelfItemId);
@@ -504,6 +510,7 @@ export function createRoutineAiPromptInput(
             inciList: shelfInput.product.inciList,
             inciConfidence: shelfInput.product.inciConfidence,
           },
+          note: serializeNote(shelfInput.shelfItem.note),
           fit: {
             status: shelfInput.interpretation.fitStatus,
             score: shelfInput.interpretation.fitScore,
@@ -530,6 +537,7 @@ export function createRoutineAiPromptInput(
         brand: shelfItem.product.brand,
         category: shelfItem.product.category,
       },
+      note: serializeNote(shelfItem.note),
       fit: {
         status: interpretation.fitStatus,
         score: interpretation.fitScore,
